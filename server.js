@@ -32,11 +32,21 @@ const MAX_BARS = 90;
 const SPREAD = 0.50;
 const VISITOR_WINDOW_MS = 30_000;
 const REQUEST_WINDOW_MS = 30_000;
+const MARKET_MAKER = {
+  targetPrice: 100,
+  visitorWeight: 0.25,
+  reversion: 0.08,
+  noise: 0.06,
+  clampLow: 80,
+  clampHigh: 120
+};
 
 let liveVisitors = 0;
 let liveRequests = 0;
 let globalVelocity = 0;
 let globalPrice = 142;
+let mmFair = 100;
+let mmBias = 0;
 const bars = [];
 let curBar = { o: globalPrice, h: globalPrice, l: globalPrice, c: globalPrice, t: Date.now() };
 
@@ -91,9 +101,18 @@ function marketTick() {
   while (requestTimes.length && requestTimes[0] < reqCutoff) requestTimes.shift();
   liveRequests = Math.max(1, Math.round(requestTimes.length * (60_000 / REQUEST_WINDOW_MS)));
 
-  const delta = (Math.random() - 0.48) * 0.15;
-  globalVelocity = globalVelocity * 0.95 + delta * 0.05;
-  globalPrice = Math.max(1, liveVisitors + globalVelocity * 10);
+  mmFair = MARKET_MAKER.targetPrice + (liveVisitors - MARKET_MAKER.targetPrice) * MARKET_MAKER.visitorWeight;
+  mmBias = mmFair - globalPrice;
+  const noise = (Math.random() - 0.5) * MARKET_MAKER.noise;
+  globalVelocity = globalVelocity * 0.92 + mmBias * MARKET_MAKER.reversion + noise;
+  globalPrice = Math.max(1, globalPrice + globalVelocity);
+  if (globalPrice > MARKET_MAKER.clampHigh) {
+    globalVelocity -= (globalPrice - MARKET_MAKER.clampHigh) * 0.12;
+    globalPrice = MARKET_MAKER.clampHigh + (globalPrice - MARKET_MAKER.clampHigh) * 0.2;
+  } else if (globalPrice < MARKET_MAKER.clampLow) {
+    globalVelocity += (MARKET_MAKER.clampLow - globalPrice) * 0.12;
+    globalPrice = MARKET_MAKER.clampLow - (MARKET_MAKER.clampLow - globalPrice) * 0.2;
+  }
 
   if (!curBar || now - curBar.t >= BAR_MS) {
     if (curBar) { bars.push(curBar); if (bars.length > MAX_BARS) bars.shift(); }
@@ -193,7 +212,12 @@ app.get('/api/state', (req, res) => {
     bars: bars.slice(),
     curBar: curBar ? { ...curBar } : null,
     orderBook: getOrderBook(globalPrice),
-    topTrades: topTrades.slice()
+    topTrades: topTrades.slice(),
+    mm: {
+      target: MARKET_MAKER.targetPrice,
+      fair: mmFair,
+      bias: mmBias
+    }
   };
   if (callsign) {
     const u = getUser(callsign);

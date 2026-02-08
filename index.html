@@ -379,6 +379,7 @@
     }
     .mm-feed-row .side.buy { color: var(--green); }
     .mm-feed-row .side.sell { color: var(--red); }
+    .mm-feed-row .side.cash { color: var(--accent); }
     /* Right: Trading Panel — vertical sidebar */
     .tp-wrap {
         background: var(--bg-primary); padding: 14px 16px;
@@ -1851,9 +1852,10 @@
         }
         if ($['mmFeed']) {
             $['mmFeed'].innerHTML = mmFeed.map(f => {
+                const label = f.label || (f.side.toUpperCase() + ' ' + f.qty);
                 return '<div class="mm-feed-row">' +
                     '<span>' + f.trader + '</span>' +
-                    '<span class="side ' + f.side + '">' + f.side.toUpperCase() + ' ' + f.qty + '</span>' +
+                    '<span class="side ' + f.side + '">' + label + '</span>' +
                 '</div>';
             }).join('');
         }
@@ -1864,7 +1866,7 @@
         if (Math.random() > 0.35) return false;
         trader.high = trader.pnl;
         trader.place = 1 + Math.floor(Math.random() * 50);
-        mmFeed.unshift({ trader: trader.name, side: 'buy', qty: 'CASHOUT #' + trader.place });
+        mmFeed.unshift({ trader: trader.name, side: 'cash', label: 'CASHOUT #' + trader.place });
         mmFeed = mmFeed.slice(0, 4);
         trader.pnl = Math.round(trader.pnl * 0.15);
         return true;
