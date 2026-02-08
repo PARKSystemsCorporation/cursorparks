@@ -2541,6 +2541,10 @@
         const deployBtn = document.getElementById('traderDeploy');
         const exportBtn = document.getElementById('traderExport');
         const importInput = document.getElementById('traderImport');
+        let botTimer = null;
+        const botState = { callsign: null, position: 0, avgPrice: 0, entryIndex: null };
+
+        const setStatus = (msg) => { status.textContent = msg; };
 
         const stored = localStorage.getItem('psc_trader_config');
         if (stored) {
@@ -2556,11 +2560,30 @@
         deployBtn.addEventListener('click', () => {
             const cfg = getTraderConfig();
             if (!cfg.name) {
-                status.textContent = 'Name required before deploy.';
+                setStatus('Name required before deploy.');
                 return;
             }
+            if (botTimer) {
+                clearInterval(botTimer);
+                botTimer = null;
+                deployBtn.textContent = 'Deploy Trader';
+                setStatus('Trader stopped.');
+                return;
+            }
+            const safeName = cfg.name.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10) || 'BOT';
+            const callsign = 'BOT' + safeName.substring(0, 8);
+            if (hasBadWord(callsign)) {
+                setStatus('Trader name not allowed.');
+                return;
+            }
+            botState.callsign = callsign;
+            botState.position = 0;
+            botState.avgPrice = 0;
+            botState.entryIndex = null;
             localStorage.setItem('psc_trader_config', JSON.stringify(cfg));
-            status.textContent = 'Deploy queued. Connect your repo to run this trader.';
+            deployBtn.textContent = 'Stop Trader';
+            setStatus('Trader running locally in your browser.');
+            botTimer = setInterval(() => runTraderTick(cfg, botState, setStatus), 3000);
         });
 
         exportBtn.addEventListener('click', () => {
@@ -2584,13 +2607,117 @@
                 const cfg = JSON.parse(text);
                 setTraderConfig(cfg);
                 localStorage.setItem('psc_trader_config', JSON.stringify(cfg));
-                status.textContent = 'Imported config.';
+                setStatus('Imported config.');
             } catch (e) {
-                status.textContent = 'Invalid JSON file.';
+                setStatus('Invalid JSON file.');
             } finally {
                 importInput.value = '';
             }
         });
+    }
+
+    function runTraderTick(cfg, botState, setStatus) {
+        const allBars = curBar ? [...bars, curBar] : bars.slice();
+        const n = allBars.length;
+        if (n < 5) return;
+        const i = n - 1;
+        const priceNow = allBars[i].c;
+        const pricePrev = allBars[i - 1].c;
+
+        const emaFast = calcEMASeries(allBars, 12);
+        const emaSlow = calcEMASeries(allBars, 26);
+        const vwapNow = calcVWAP(allBars, i);
+        const vwapPrev = calcVWAP(allBars, i - 1);
+        const bbNow = calcBollinger(allBars, 20, i);
+        const bbPrev = calcBollinger(allBars, 20, i - 1);
+        const vbNow = calcVWAPBands(allBars, i);
+        const vbPrev = calcVWAPBands(allBars, i - 1);
+        const tl = calcTrendLine(allBars);
+
+        let score = 0;
+        if (cfg.signals.ema && emaFast[i] && emaSlow[i] && emaFast[i - 1] && emaSlow[i - 1]) {
+            if (emaFast[i - 1] <= emaSlow[i - 1] && emaFast[i] > emaSlow[i]) score += 1;
+            if (emaFast[i - 1] >= emaSlow[i - 1] && emaFast[i] < emaSlow[i]) score -= 1;
+        }
+        if (cfg.signals.vwap) {
+            if (pricePrev <= vwapPrev && priceNow > vwapNow) score += 1;
+            if (pricePrev >= vwapPrev && priceNow < vwapNow) score -= 1;
+        }
+        if (cfg.signals.vwapBands && vbNow && vbPrev) {
+            if (priceNow < vbNow.lower2) score += 1;
+            if (priceNow > vbNow.upper2) score -= 1;
+        }
+        if (cfg.signals.boll && bbNow && bbPrev) {
+            if (priceNow < bbNow.lower) score += 1;
+            if (priceNow > bbNow.upper) score -= 1;
+        }
+        if (cfg.signals.trend && tl) {
+            const trendNow = tl.intercept + tl.slope * i;
+            const trendPrev = tl.intercept + tl.slope * (i - 1);
+            if (pricePrev <= trendPrev && priceNow > trendNow) score += 1;
+            if (pricePrev >= trendPrev && priceNow < trendNow) score -= 1;
+        }
+
+        const desired = score >= 2 ? 1 : score <= -2 ? -1 : 0;
+
+        const pnlPct = botState.position !== 0 && botState.avgPrice
+            ? ((priceNow - botState.avgPrice) / botState.avgPrice) * 100 * Math.sign(botState.position)
+            : 0;
+        const barsHeld = botState.entryIndex !== null ? (i - botState.entryIndex) : 0;
+
+        const exitHit = (botState.position !== 0) && (
+            pnlPct >= cfg.exits.tp ||
+            pnlPct <= -cfg.exits.sl ||
+            (cfg.exits.bars && barsHeld >= cfg.exits.bars)
+        );
+
+        const size = Math.max(1, Math.min(cfg.maxPos, Math.round(cfg.maxPos * (cfg.risk / 5))));
+
+        if (exitHit) {
+            submitBotTrade(botState.callsign, botState.position > 0 ? 'sell' : 'buy', Math.abs(botState.position), botState, setStatus);
+            return;
+        }
+
+        if (desired > 0 && botState.position <= 0) {
+            submitBotTrade(botState.callsign, 'buy', size, botState, setStatus);
+        } else if (desired < 0 && botState.position >= 0) {
+            submitBotTrade(botState.callsign, 'sell', size, botState, setStatus);
+        }
+    }
+
+    function calcEMASeries(data, period) {
+        let prev = null;
+        const out = [];
+        for (let i = 0; i < data.length; i++) {
+            prev = calcEMA(data, period, i, prev);
+            out.push(prev);
+        }
+        return out;
+    }
+
+    async function submitBotTrade(callsign, side, size, botState, setStatus) {
+        try {
+            const r = await fetch('/api/trade', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ callsign, side, size })
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                setStatus(err.error || 'Trade rejected.');
+                return;
+            }
+            const d = await r.json();
+            botState.position = d.position;
+            botState.avgPrice = d.avgPrice;
+            if (botState.position !== 0 && botState.entryIndex === null) {
+                botState.entryIndex = (curBar ? bars.length : bars.length - 1);
+            }
+            if (botState.position === 0) botState.entryIndex = null;
+            setStatus(`Trader ran ${side.toUpperCase()} ${size}. Position: ${botState.position}`);
+        } catch (e) {
+            setStatus('Trader network error.');
+        }
     }
 
     function init() {
