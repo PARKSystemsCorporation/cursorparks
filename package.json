@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/PARKSystemsCorporation/parkswebsite.git"
+    "url": "git+https://github.com/PARKSystemsCorporation/cursorparks.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/PARKSystemsCorporation/parkswebsite/issues"
+    "url": "https://github.com/PARKSystemsCorporation/cursorparks/issues"
   },
-  "homepage": "https://github.com/PARKSystemsCorporation/parkswebsite#readme",
+  "homepage": "https://github.com/PARKSystemsCorporation/cursorparks#readme",
   "dependencies": {
     "better-sqlite3": "^12.6.2",
     "express": "^5.2.1"
