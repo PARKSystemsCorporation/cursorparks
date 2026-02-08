@@ -26,6 +26,11 @@ app.get('/version', (_req, res) => {
   res.json({ ok: true, uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
+// ── Keepalive endpoint ────────────────────────────────────
+app.get('/api/keepalive', (_req, res) => {
+  res.json({ ok: true, t: Date.now() });
+});
+
 // ── GLOBAL MARKET STATE (shared chart, all sessions) ───────
 const STARTING_BALANCE = 10_000_000;
 const BAR_MS = 3000;
@@ -650,4 +655,12 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`PARKSWEB Terminal live -> http://localhost:${PORT}`);
   console.log(`Deploy ID: ${DEPLOY_ID}`);
+
+  const keepAliveUrl = process.env.KEEPALIVE_URL || `http://127.0.0.1:${PORT}/api/keepalive`;
+  const keepAliveMs = Number(process.env.KEEPALIVE_INTERVAL_MS || 30000);
+  if (keepAliveMs > 0) {
+    setInterval(() => {
+      fetch(keepAliveUrl).catch(() => {});
+    }, keepAliveMs);
+  }
 });
