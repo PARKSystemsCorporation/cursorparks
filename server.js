@@ -20,6 +20,11 @@ app.use(noCache);
 
 app.use(express.static(__dirname));
 
+// ── Healthcheck for Railway ───────────────────────────────
+app.get('/version', (_req, res) => {
+  res.json({ ok: true, uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
 // ── GLOBAL MARKET STATE (shared chart, all sessions) ───────
 const STARTING_BALANCE = 10_000_000;
 const BAR_MS = 3000;
