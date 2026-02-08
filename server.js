@@ -49,6 +49,13 @@ const MARKET_MAKER = {
   clampLow: 90,
   clampHigh: 110
 };
+const MARKET_SESSION = {
+  tz: 'America/New_York',
+  peakHour: 10,
+  peakWidthMin: 90,
+  floor: 0.6,
+  peak: 2.2
+};
 
 let liveVisitors = 0;
 let liveRequests = 0;
@@ -105,6 +112,23 @@ function getUser(callsign) {
   return u;
 }
 
+function getIntradayActivity(now) {
+  const dt = new Date(now);
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: MARKET_SESSION.tz,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).formatToParts(dt);
+  const hour = Number(parts.find(p => p.type === 'hour')?.value || 0);
+  const minute = Number(parts.find(p => p.type === 'minute')?.value || 0);
+  const tMin = hour * 60 + minute;
+  const peakMin = MARKET_SESSION.peakHour * 60;
+  const sigma = MARKET_SESSION.peakWidthMin;
+  const gauss = Math.exp(-Math.pow(tMin - peakMin, 2) / (2 * sigma * sigma));
+  return MARKET_SESSION.floor + (MARKET_SESSION.peak - MARKET_SESSION.floor) * gauss;
+}
+
 function marketStep(now) {
   const cutoff = now - VISITOR_WINDOW_MS;
   for (const [ip, ts] of visitorLastSeen.entries()) {
@@ -116,10 +140,13 @@ function marketStep(now) {
   while (requestTimes.length && requestTimes[0] < reqCutoff) requestTimes.shift();
   liveRequests = Math.max(1, Math.round(requestTimes.length * (60_000 / REQUEST_WINDOW_MS)));
 
-  mmFair = MARKET_MAKER.targetPrice + (liveVisitors - MARKET_MAKER.targetPrice) * MARKET_MAKER.visitorWeight;
+  const activity = getIntradayActivity(now);
+  const visitorWeight = MARKET_MAKER.visitorWeight * (0.7 + activity * 0.3);
+  mmFair = MARKET_MAKER.targetPrice + (liveVisitors - MARKET_MAKER.targetPrice) * visitorWeight;
   mmBias = mmFair - globalPrice;
-  const noise = (Math.random() - 0.5) * MARKET_MAKER.noise;
-  globalVelocity = globalVelocity * 0.92 + mmBias * MARKET_MAKER.reversion + noise;
+  const noise = (Math.random() - 0.5) * MARKET_MAKER.noise * activity;
+  const reversion = MARKET_MAKER.reversion * (0.8 + activity * 0.6);
+  globalVelocity = globalVelocity * 0.92 + mmBias * reversion + noise;
   globalPrice = Math.max(1, globalPrice + globalVelocity);
   if (globalPrice > MARKET_MAKER.clampHigh) {
     globalVelocity -= (globalPrice - MARKET_MAKER.clampHigh) * 0.12;
