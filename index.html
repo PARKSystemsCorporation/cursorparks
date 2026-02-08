@@ -754,6 +754,39 @@
     }
     .cc-email:hover { border-color: var(--accent); }
 
+    /* ===== ADVANCED: TRADER BUILDER ===== */
+    .adv-wrap { padding: 40px 24px 80px; max-width: 980px; margin: 0 auto; }
+    .adv-hero { text-align: center; margin-bottom: 32px; }
+    .adv-title { font-size: 32px; font-weight: 800; color: var(--text-bright); letter-spacing: -1px; }
+    .adv-sub { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+    .adv-card {
+        background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: var(--radius-md); padding: 20px; margin-bottom: 16px;
+    }
+    .adv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .adv-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 6px; }
+    .adv-input, .adv-select, .adv-textarea {
+        width: 100%; background: var(--bg-elevated); color: var(--text-bright);
+        border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
+        padding: 10px 12px; font-size: 13px;
+    }
+    .adv-textarea { min-height: 120px; resize: vertical; font-family: var(--font-mono); font-size: 12px; }
+    .adv-row { display: flex; align-items: center; gap: 10px; }
+    .adv-pill {
+        display: inline-flex; align-items: center; gap: 8px; padding: 8px 10px;
+        border: 1px solid var(--border-mid); border-radius: 999px; font-size: 12px;
+        color: var(--text-secondary); background: var(--bg-elevated); cursor: pointer;
+    }
+    .adv-pill input { accent-color: var(--accent); }
+    .adv-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+    .adv-btn {
+        background: var(--accent); color: #0a0a12; border: none;
+        padding: 10px 14px; border-radius: var(--radius-sm); font-weight: 700;
+        cursor: pointer; font-size: 12px; letter-spacing: 0.4px;
+    }
+    .adv-btn.secondary { background: var(--bg-elevated); color: var(--text-bright); border: 1px solid var(--border-mid); }
+    .adv-status { font-size: 11px; color: var(--text-dim); margin-top: 8px; }
+
     /* ===== FOOTER ===== */
     .site-footer {
         border-top: 1px solid var(--border); padding: 16px 24px;
@@ -807,6 +840,7 @@
                 <button class="tab-btn" data-tab="story">The Story</button>
                 <button class="tab-btn" data-tab="company">Company</button>
                 <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
+                <button class="tab-btn" data-tab="advanced">Advanced</button>
             </nav>
             <div class="header-live"><span class="live-dot"></span> LIVE</div>
         </div>
@@ -1432,6 +1466,9 @@
             $['mmBias'].className = 'mm-bias-val ' + (bias >= 0 ? 'up' : 'down');
             updateMarketMakerStatus();
         }
+        if (d.bots && d.botFeed) {
+            renderMarketMakerBand(d.bots, d.botFeed);
+        }
         $['pbRequests'].textContent = liveRequests.toLocaleString() + '/min';
         $['pbDeficit'].textContent = '$' + mockDeficit.toLocaleString();
         $['pbVelocity'].textContent = mockVelocity.toFixed(6);
@@ -1890,13 +1927,8 @@
     // ================================================================
     // MARKET MAKER BAND — trader activity + status
     // ================================================================
-    const mmTraders = [
-        { name: 'AXEL', pnl: 1240, high: 1450, place: 12 },
-        { name: 'JUNO', pnl: -320, high: 900, place: 38 },
-        { name: 'MARA', pnl: 520, high: 880, place: 21 },
-        { name: 'KITE', pnl: 220, high: 600, place: 49 }
-    ];
-    let mmFeed = [];
+    let lastBots = [];
+    let lastBotFeed = [];
 
     function updateMarketMakerStatus() {
         if (!$['mmStatus'] || !$['mmSub']) return;
@@ -1913,19 +1945,22 @@
         }
     }
 
-    function renderMarketMakerBand() {
+    function renderMarketMakerBand(bots, feed) {
+        if (Array.isArray(bots)) lastBots = bots;
+        if (Array.isArray(feed)) lastBotFeed = feed;
         if ($['mmTraders']) {
-            $['mmTraders'].innerHTML = mmTraders.map(t => {
-                const sign = t.pnl >= 0 ? '+' : '';
-                const cls = t.pnl >= 0 ? 'positive' : 'negative';
+            $['mmTraders'].innerHTML = lastBots.map(t => {
+                const pnl = t.pnl || 0;
+                const sign = pnl >= 0 ? '+' : '';
+                const cls = pnl >= 0 ? 'positive' : 'negative';
                 return '<div class="mm-trader">' +
                     '<span>' + t.name + ' #' + t.place + '</span>' +
-                    '<span class="mm-pnl ' + cls + '">' + sign + formatMoney(t.pnl) + '</span>' +
+                    '<span class="mm-pnl ' + cls + '">' + sign + formatMoney(pnl) + '</span>' +
                 '</div>';
             }).join('');
         }
         if ($['mmFeed']) {
-            $['mmFeed'].innerHTML = mmFeed.map(f => {
+            $['mmFeed'].innerHTML = lastBotFeed.map(f => {
                 const label = f.label || (f.side.toUpperCase() + ' ' + f.qty);
                 return '<div class="mm-feed-row">' +
                     '<span>' + f.trader + '</span>' +
@@ -1934,37 +1969,9 @@
             }).join('');
         }
     }
-
-    function maybeCashOut(trader) {
-        if (trader.pnl <= trader.high) return false;
-        if (Math.random() > 0.35) return false;
-        trader.high = trader.pnl;
-        trader.place = 1 + Math.floor(Math.random() * 50);
-        mmFeed.unshift({ trader: trader.name, side: 'cash', label: 'CASHOUT #' + trader.place });
-        mmFeed = mmFeed.slice(0, 4);
-        trader.pnl = Math.round(trader.pnl * 0.15);
-        return true;
-    }
-
-    function tickMarketMakerBand() {
-        if (Math.random() > 0.4) return;
-        const trader = mmTraders[Math.floor(Math.random() * mmTraders.length)];
-        const bias = mmLastBias || 0;
-        const side = bias >= 0 ? 'buy' : 'sell';
-        const qty = Math.random() > 0.7 ? 10 : (Math.random() > 0.5 ? 5 : 1);
-        const drift = (Math.random() - 0.4) * 120;
-        trader.pnl = Math.round(trader.pnl + drift);
-        if (!maybeCashOut(trader)) {
-            mmFeed.unshift({ trader: trader.name, side, qty });
-            mmFeed = mmFeed.slice(0, 4);
-        }
-        renderMarketMakerBand();
-    }
-
     function initMarketMakerBand() {
-        renderMarketMakerBand();
+        renderMarketMakerBand([], []);
         updateMarketMakerStatus();
-        setInterval(tickMarketMakerBand, 1200);
     }
 
     // ================================================================
@@ -2486,6 +2493,106 @@
         cv.addEventListener('pointercancel', () => { isDrawing = false; drawState.inProgress = null; });
     }
 
+    // ================================================================
+    // ADVANCED: TRADER BUILDER
+    // ================================================================
+    function getTraderConfig() {
+        return {
+            name: document.getElementById('traderName').value.trim(),
+            type: document.getElementById('traderType').value,
+            risk: Number(document.getElementById('traderRisk').value || 0),
+            maxPos: Number(document.getElementById('traderMaxPos').value || 0),
+            signals: {
+                ema: document.getElementById('sigEma').checked,
+                vwap: document.getElementById('sigVwap').checked,
+                vwapBands: document.getElementById('sigVwapBands').checked,
+                boll: document.getElementById('sigBoll').checked,
+                trend: document.getElementById('sigTrend').checked,
+            },
+            exits: {
+                tp: Number(document.getElementById('exitTp').value || 0),
+                sl: Number(document.getElementById('exitSl').value || 0),
+                bars: Number(document.getElementById('exitBars').value || 0),
+            },
+            rules: document.getElementById('traderRules').value,
+        };
+    }
+
+    function setTraderConfig(cfg) {
+        if (!cfg) return;
+        document.getElementById('traderName').value = cfg.name || '';
+        document.getElementById('traderType').value = cfg.type || 'momentum';
+        document.getElementById('traderRisk').value = cfg.risk ?? 1;
+        document.getElementById('traderMaxPos').value = cfg.maxPos ?? 100;
+        document.getElementById('sigEma').checked = !!cfg.signals?.ema;
+        document.getElementById('sigVwap').checked = !!cfg.signals?.vwap;
+        document.getElementById('sigVwapBands').checked = !!cfg.signals?.vwapBands;
+        document.getElementById('sigBoll').checked = !!cfg.signals?.boll;
+        document.getElementById('sigTrend').checked = !!cfg.signals?.trend;
+        document.getElementById('exitTp').value = cfg.exits?.tp ?? 4;
+        document.getElementById('exitSl').value = cfg.exits?.sl ?? 2;
+        document.getElementById('exitBars').value = cfg.exits?.bars ?? 30;
+        document.getElementById('traderRules').value = cfg.rules || '';
+    }
+
+    function initTraderBuilder() {
+        const status = document.getElementById('traderStatus');
+        const saveBtn = document.getElementById('traderSave');
+        const deployBtn = document.getElementById('traderDeploy');
+        const exportBtn = document.getElementById('traderExport');
+        const importInput = document.getElementById('traderImport');
+
+        const stored = localStorage.getItem('psc_trader_config');
+        if (stored) {
+            try { setTraderConfig(JSON.parse(stored)); } catch (e) { /* ignore */ }
+        }
+
+        saveBtn.addEventListener('click', () => {
+            const cfg = getTraderConfig();
+            localStorage.setItem('psc_trader_config', JSON.stringify(cfg));
+            status.textContent = 'Draft saved locally.';
+        });
+
+        deployBtn.addEventListener('click', () => {
+            const cfg = getTraderConfig();
+            if (!cfg.name) {
+                status.textContent = 'Name required before deploy.';
+                return;
+            }
+            localStorage.setItem('psc_trader_config', JSON.stringify(cfg));
+            status.textContent = 'Deploy queued. Connect your repo to run this trader.';
+        });
+
+        exportBtn.addEventListener('click', () => {
+            const cfg = getTraderConfig();
+            const blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = (cfg.name || 'trader') + '.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        });
+
+        importInput.addEventListener('change', async () => {
+            const file = importInput.files?.[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const cfg = JSON.parse(text);
+                setTraderConfig(cfg);
+                localStorage.setItem('psc_trader_config', JSON.stringify(cfg));
+                status.textContent = 'Imported config.';
+            } catch (e) {
+                status.textContent = 'Invalid JSON file.';
+            } finally {
+                importInput.value = '';
+            }
+        });
+    }
+
     function init() {
         enableFullscreenOnInteraction();
         cacheDOM();           // cache all DOM refs first
@@ -2494,6 +2601,7 @@
         initIndicatorDropdown();
         initDrawTools();
         initDrawCanvas();
+        initTraderBuilder();
         initMarketMakerBand();
         fetchState(); setInterval(fetchState, 1000);
         // Story viz + formula ref deferred until tab first opens (storyInitDone flag)
