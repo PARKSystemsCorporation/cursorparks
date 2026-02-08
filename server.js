@@ -30,13 +30,31 @@ const STARTING_BALANCE = 10_000_000;
 const BAR_MS = 3000;
 const MAX_BARS = 90;
 const SPREAD = 0.50;
+const VISITOR_WINDOW_MS = 30_000;
+const REQUEST_WINDOW_MS = 30_000;
 
-let liveVisitors = 142;
-let liveRequests = 3420;
+let liveVisitors = 0;
+let liveRequests = 0;
 let globalVelocity = 0;
 let globalPrice = 142;
 const bars = [];
 let curBar = { o: globalPrice, h: globalPrice, l: globalPrice, c: globalPrice, t: Date.now() };
+
+const visitorLastSeen = new Map();
+const requestTimes = [];
+
+app.use((req, _res, next) => {
+  const now = Date.now();
+  liveRequests++;
+  requestTimes.push(now);
+
+  const xfwd = req.headers['x-forwarded-for'];
+  const ip = Array.isArray(xfwd) ? xfwd[0] : (xfwd || req.socket.remoteAddress || '');
+  const cleanIp = String(ip).split(',')[0].trim();
+  if (cleanIp) visitorLastSeen.set(cleanIp, now);
+
+  next();
+});
 
 // Per-user accounts
 const users = new Map();
@@ -62,13 +80,21 @@ function getUser(callsign) {
 }
 
 function marketTick() {
-  liveVisitors = Math.max(10, liveVisitors + (Math.random() - 0.5) * 3);
-  liveRequests = Math.max(100, liveRequests + Math.floor((Math.random() - 0.5) * 40));
+  const now = Date.now();
+  const cutoff = now - VISITOR_WINDOW_MS;
+  for (const [ip, ts] of visitorLastSeen.entries()) {
+    if (ts < cutoff) visitorLastSeen.delete(ip);
+  }
+  liveVisitors = Math.max(1, visitorLastSeen.size);
+
+  const reqCutoff = now - REQUEST_WINDOW_MS;
+  while (requestTimes.length && requestTimes[0] < reqCutoff) requestTimes.shift();
+  liveRequests = Math.max(1, Math.round(requestTimes.length * (60_000 / REQUEST_WINDOW_MS)));
+
   const delta = (Math.random() - 0.48) * 0.15;
   globalVelocity = globalVelocity * 0.95 + delta * 0.05;
   globalPrice = Math.max(1, liveVisitors + globalVelocity * 10);
 
-  const now = Date.now();
   if (!curBar || now - curBar.t >= BAR_MS) {
     if (curBar) { bars.push(curBar); if (bars.length > MAX_BARS) bars.shift(); }
     curBar = { o: globalPrice, h: globalPrice, l: globalPrice, c: globalPrice, t: now };
