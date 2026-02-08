@@ -151,6 +151,7 @@
     .tab-panel { display: none; overflow: hidden; }
     .tab-panel.active { display: block; }
     .tab-panel.scrollable { overflow-y: auto; overflow-x: hidden; touch-action: pan-y; height: calc(100vh - 100px); }
+    .tab-select { display: none; }
 
     /* ===== TERMINAL TAB — 4-column Bloomberg layout ===== */
     .terminal-wrap {
@@ -277,6 +278,15 @@
     .chart-draw-dropdown { left: 140px; }
     .chart-draw-opt.danger { color: #ff7b7b; }
     .chart-draw-divider { height: 1px; background: var(--border); margin: 6px 0; }
+
+    .fs-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 10px; font-size: 11px; font-weight: 700;
+        color: var(--text-secondary); background: var(--bg-elevated);
+        border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
+        cursor: pointer; letter-spacing: 0.6px;
+    }
+    .fs-btn:hover { color: var(--text-bright); border-color: var(--border-bright); }
     /* Left: Order Book */
     .ob-wrap {
         background: var(--bg-primary);
@@ -786,6 +796,27 @@
     }
     .adv-btn.secondary { background: var(--bg-elevated); color: var(--text-bright); border: 1px solid var(--border-mid); }
     .adv-status { font-size: 11px; color: var(--text-dim); margin-top: 8px; }
+    .adv-back {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 8px 10px; border-radius: var(--radius-sm);
+        border: 1px solid var(--border-mid); background: var(--bg-elevated);
+        color: var(--text-secondary); font-size: 11px; cursor: pointer;
+    }
+
+    /* ===== BOT PANEL ===== */
+    .bot-panel {
+        margin-top: 12px; background: var(--bg-surface); border: 1px solid var(--border);
+        border-radius: var(--radius-md); padding: 12px;
+    }
+    .bot-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .bot-title { font-size: 10px; letter-spacing: 1.2px; color: var(--text-dim); text-transform: uppercase; }
+    .bot-pill { font-size: 10px; padding: 4px 8px; border-radius: 999px; background: var(--bg-elevated); color: var(--text-secondary); }
+    .bot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .bot-item { background: var(--bg-elevated); border: 1px solid var(--border-mid); border-radius: var(--radius-sm); padding: 8px; }
+    .bot-item .label { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.8px; }
+    .bot-item .value { font-size: 12px; color: var(--text-bright); margin-top: 4px; font-weight: 700; }
+    .bot-item .value.pos { color: var(--green); }
+    .bot-item .value.neg { color: var(--red); }
 
     /* ===== FOOTER ===== */
     .site-footer {
@@ -820,6 +851,15 @@
         .fr-grid { grid-template-columns: 1fr; }
         .price-bar-inner { gap: 16px; }
         .chart-container { height: 200px; }
+        .tab-nav { display: none; }
+        .tab-select {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--bg-elevated); color: var(--text-bright);
+            border: 1px solid var(--border-mid); border-radius: var(--radius-sm);
+            padding: 6px 10px; font-size: 12px;
+        }
+        .adv-card { display: none; }
+        .adv-card.active { display: block; }
     }
     </style>
 </head>
@@ -842,6 +882,14 @@
                 <button class="tab-btn" data-tab="leaderboard">Leaderboard</button>
                 <button class="tab-btn" data-tab="advanced">Advanced</button>
             </nav>
+            <select class="tab-select" id="tabSelect" aria-label="Tabs">
+                <option value="terminal">Terminal</option>
+                <option value="story">The Story</option>
+                <option value="company">Company</option>
+                <option value="leaderboard">Leaderboard</option>
+                <option value="advanced">Advanced</option>
+            </select>
+            <button class="fs-btn" id="fullscreenBtn">Fullscreen</button>
             <div class="header-live"><span class="live-dot"></span> LIVE</div>
         </div>
     </header>
@@ -957,6 +1005,18 @@
                 <div class="tp-top-trades" id="topTradesWrap">
                     <div class="tp-top-trades-label">TOP 3 SINGLE TRADES</div>
                     <div class="tp-top-trades-list" id="topTradesList"></div>
+                </div>
+                <div class="bot-panel" id="botPanel">
+                    <div class="bot-header">
+                        <div class="bot-title">BOT PANEL</div>
+                        <div class="bot-pill" id="botStatusPill">OFFLINE</div>
+                    </div>
+                    <div class="bot-grid">
+                        <div class="bot-item"><div class="label">Callsign</div><div class="value" id="botCallsign">--</div></div>
+                        <div class="bot-item"><div class="label">Position</div><div class="value" id="botPosition">--</div></div>
+                        <div class="bot-item"><div class="label">Equity</div><div class="value" id="botEquity">--</div></div>
+                        <div class="bot-item"><div class="label">P&amp;L</div><div class="value" id="botPnl">--</div></div>
+                    </div>
                 </div>
                 <div class="tp-controls">
                     <div class="tp-identity">
@@ -1205,6 +1265,93 @@
         </div>
     </div>
 
+    <!-- ==================== ADVANCED TAB ==================== -->
+    <div class="tab-panel scrollable" id="panel-advanced">
+        <div class="adv-wrap">
+            <div class="adv-hero">
+                <button class="adv-back" id="advBackBtn">Back to Terminal</button>
+                <div class="adv-title">Create a Trader</div>
+                <div class="adv-sub">Simple defaults, deep controls when you want them.</div>
+                <select class="tab-select" id="advSectionSelect" aria-label="Trader Sections">
+                    <option value="basics">Basics</option>
+                    <option value="signals">Signals</option>
+                    <option value="exits">Exits</option>
+                    <option value="rules">Advanced</option>
+                </select>
+            </div>
+
+            <div class="adv-card active" data-adv="basics">
+                <div class="adv-grid">
+                    <div>
+                        <div class="adv-label">Trader Name</div>
+                        <input class="adv-input" id="traderName" placeholder="e.g. Night Watch" />
+                    </div>
+                    <div>
+                        <div class="adv-label">Strategy Type</div>
+                        <select class="adv-select" id="traderType">
+                            <option value="momentum">Momentum</option>
+                            <option value="mean">Mean Reversion</option>
+                            <option value="breakout">Breakout</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="adv-label">Risk Per Trade (%)</div>
+                        <input class="adv-input" id="traderRisk" type="number" step="0.1" min="0.1" max="5" value="1.0" />
+                    </div>
+                    <div>
+                        <div class="adv-label">Max Position (lots)</div>
+                        <input class="adv-input" id="traderMaxPos" type="number" step="1" min="1" max="10000" value="100" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="adv-card" data-adv="signals">
+                <div class="adv-label">Entry Signals</div>
+                <div class="adv-row" style="flex-wrap:wrap;gap:10px">
+                    <label class="adv-pill"><input type="checkbox" id="sigEma" checked /> EMA Cross</label>
+                    <label class="adv-pill"><input type="checkbox" id="sigVwap" checked /> VWAP Reclaim</label>
+                    <label class="adv-pill"><input type="checkbox" id="sigVwapBands" checked /> Intraday VWAP Bands</label>
+                    <label class="adv-pill"><input type="checkbox" id="sigBoll" checked /> Bollinger Mean Revert</label>
+                    <label class="adv-pill"><input type="checkbox" id="sigTrend" /> Trendline Break</label>
+                </div>
+            </div>
+
+            <div class="adv-card" data-adv="exits">
+                <div class="adv-label">Exit Logic</div>
+                <div class="adv-grid">
+                    <div>
+                        <div class="adv-label">Take Profit (%)</div>
+                        <input class="adv-input" id="exitTp" type="number" step="0.1" min="0.5" max="50" value="4.0" />
+                    </div>
+                    <div>
+                        <div class="adv-label">Stop Loss (%)</div>
+                        <input class="adv-input" id="exitSl" type="number" step="0.1" min="0.5" max="50" value="2.0" />
+                    </div>
+                    <div>
+                        <div class="adv-label">Time Stop (bars)</div>
+                        <input class="adv-input" id="exitBars" type="number" step="1" min="1" max="200" value="30" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="adv-card" data-adv="rules">
+                <div class="adv-label">Advanced Rules (optional)</div>
+                <textarea class="adv-textarea" id="traderRules" placeholder="// Example&#10;if vwapBands.zScore &gt; 1.5 and ema.crossUp then buy()"></textarea>
+                <div class="adv-actions">
+                    <button class="adv-btn" id="traderDeploy">Deploy Trader</button>
+                    <button class="adv-btn secondary" id="traderSave">Save Draft</button>
+                    <button class="adv-btn secondary" id="traderExport">Export JSON</button>
+                    <label class="adv-btn secondary" style="cursor:pointer">
+                        Import JSON
+                        <input id="traderImport" type="file" accept="application/json" style="display:none" />
+                    </label>
+                </div>
+                <div class="adv-status" id="traderStatus">Draft not deployed.</div>
+            </div>
+        </div>
+    </div>
+
     <!-- LEADERBOARD OVERLAY (used after cashout) -->
     <div class="lb-overlay" id="lbOverlay">
         <div class="lb-panel">
@@ -1228,22 +1375,28 @@
     // ================================================================
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabPanels = document.querySelectorAll('.tab-panel');
+    const tabSelect = document.getElementById('tabSelect');
     let activeTab = 'terminal';
     let storyInitDone = false;
+
+    function activateTab(tab) {
+        tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+        tabPanels.forEach(p => p.classList.remove('active'));
+        activeTab = tab;
+        const panel = document.getElementById('panel-' + activeTab);
+        if (panel) panel.classList.add('active');
+        if (tabSelect && tabSelect.value !== tab) tabSelect.value = tab;
+        if (activeTab === 'story' && !storyInitDone) {
+            storyInitDone = true; renderFormulaRef(); redrawViz();
+        } else if (activeTab === 'story') { setTimeout(redrawViz, 50); }
+        if (activeTab === 'leaderboard') fetchLb().then(d => renderLbTab(d));
+        if (activeTab === 'terminal') { sizeChart(); rafPending || (rafPending = requestAnimationFrame(renderFrame)); }
+    }
+
     tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            tabBtns.forEach(b => b.classList.remove('active'));
-            tabPanels.forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-            activeTab = btn.dataset.tab;
-            document.getElementById('panel-' + activeTab).classList.add('active');
-            if (activeTab === 'story' && !storyInitDone) {
-                storyInitDone = true; renderFormulaRef(); redrawViz();
-            } else if (activeTab === 'story') { setTimeout(redrawViz, 50); }
-            if (activeTab === 'leaderboard') fetchLb().then(d => renderLbTab(d));
-            if (activeTab === 'terminal') { sizeChart(); rafPending || (rafPending = requestAnimationFrame(renderFrame)); }
-        });
+        btn.addEventListener('click', () => activateTab(btn.dataset.tab));
     });
+    if (tabSelect) tabSelect.addEventListener('change', () => activateTab(tabSelect.value));
 
     // ================================================================
     // STARTING BALANCE
@@ -1379,7 +1532,8 @@
             'balanceValue','equityValue','accountPnl','posSize','posAvg','posPnl',
             'buyText','sellText','buyLabel','sellLabel','tradeLog','orderBook','priceChart',
             'lpBody','lpCount','topTradesList','mmTarget','mmVisitors','mmBias',
-            'mmStatus','mmSub','mmTraders','mmFeed'];
+            'mmStatus','mmSub','mmTraders','mmFeed','botStatusPill','botCallsign',
+            'botPosition','botEquity','botPnl'];
         for (const id of ids) $[id] = document.getElementById(id);
     }
 
@@ -1961,10 +2115,11 @@
         }
         if ($['mmFeed']) {
             $['mmFeed'].innerHTML = lastBotFeed.map(f => {
-                const label = f.label || (f.side.toUpperCase() + ' ' + f.qty);
+                const side = f.side || 'buy';
+                const label = f.label || (side.toUpperCase() + ' ' + f.qty);
                 return '<div class="mm-feed-row">' +
                     '<span>' + f.trader + '</span>' +
-                    '<span class="side ' + f.side + '">' + label + '</span>' +
+                    '<span class="side ' + side + '">' + label + '</span>' +
                 '</div>';
             }).join('');
         }
@@ -2496,6 +2651,20 @@
     // ================================================================
     // ADVANCED: TRADER BUILDER
     // ================================================================
+    function updateBotPanel(botState) {
+        if (!$['botStatusPill']) return;
+        const active = !!botState?.callsign && botState?.running;
+        $['botStatusPill'].textContent = active ? 'RUNNING' : 'OFFLINE';
+        $['botCallsign'].textContent = botState?.callsign || '--';
+        $['botPosition'].textContent = botState?.position !== undefined ? String(botState.position) : '--';
+        const eq = botState?.equity;
+        const pnl = botState?.pnl;
+        $['botEquity'].textContent = (eq === undefined || eq === null) ? '--' : formatMoney(eq);
+        const pnlEl = $['botPnl'];
+        pnlEl.textContent = (pnl === undefined || pnl === null) ? '--' : (pnl >= 0 ? '+' : '') + formatMoney(pnl);
+        pnlEl.className = 'value ' + (pnl >= 0 ? 'pos' : 'neg');
+    }
+
     function getTraderConfig() {
         return {
             name: document.getElementById('traderName').value.trim(),
@@ -2542,7 +2711,7 @@
         const exportBtn = document.getElementById('traderExport');
         const importInput = document.getElementById('traderImport');
         let botTimer = null;
-        const botState = { callsign: null, position: 0, avgPrice: 0, entryIndex: null };
+        const botState = { callsign: null, position: 0, avgPrice: 0, entryIndex: null, equity: null, pnl: null, running: false };
 
         const setStatus = (msg) => { status.textContent = msg; };
 
@@ -2567,7 +2736,9 @@
                 clearInterval(botTimer);
                 botTimer = null;
                 deployBtn.textContent = 'Deploy Trader';
+                botState.running = false;
                 setStatus('Trader stopped.');
+                updateBotPanel(botState);
                 return;
             }
             const safeName = cfg.name.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 10) || 'BOT';
@@ -2580,11 +2751,16 @@
             botState.position = 0;
             botState.avgPrice = 0;
             botState.entryIndex = null;
+            botState.equity = null;
+            botState.pnl = null;
+            botState.running = true;
             localStorage.setItem('psc_trader_config', JSON.stringify(cfg));
             deployBtn.textContent = 'Stop Trader';
             setStatus('Trader running locally in your browser.');
+            updateBotPanel(botState);
             botTimer = setInterval(() => runTraderTick(cfg, botState, setStatus), 3000);
         });
+        if (!botTimer) updateBotPanel(botState);
 
         exportBtn.addEventListener('click', () => {
             const cfg = getTraderConfig();
@@ -2614,6 +2790,19 @@
                 importInput.value = '';
             }
         });
+    }
+
+    function initAdvancedUI() {
+        const backBtn = document.getElementById('advBackBtn');
+        const sectionSelect = document.getElementById('advSectionSelect');
+        const cards = document.querySelectorAll('.adv-card');
+        if (backBtn) backBtn.addEventListener('click', () => activateTab('terminal'));
+        if (sectionSelect) {
+            sectionSelect.addEventListener('change', () => {
+                const v = sectionSelect.value;
+                cards.forEach(c => c.classList.toggle('active', c.dataset.adv === v));
+            });
+        }
     }
 
     function runTraderTick(cfg, botState, setStatus) {
@@ -2710,11 +2899,14 @@
             const d = await r.json();
             botState.position = d.position;
             botState.avgPrice = d.avgPrice;
+            botState.equity = d.equity;
+            botState.pnl = d.pnl;
             if (botState.position !== 0 && botState.entryIndex === null) {
                 botState.entryIndex = (curBar ? bars.length : bars.length - 1);
             }
             if (botState.position === 0) botState.entryIndex = null;
             setStatus(`Trader ran ${side.toUpperCase()} ${size}. Position: ${botState.position}`);
+            updateBotPanel(botState);
         } catch (e) {
             setStatus('Trader network error.');
         }
@@ -2729,6 +2921,9 @@
         initDrawTools();
         initDrawCanvas();
         initTraderBuilder();
+        initAdvancedUI();
+        const fsBtn = document.getElementById('fullscreenBtn');
+        if (fsBtn) fsBtn.addEventListener('click', tryFullscreen);
         initMarketMakerBand();
         fetchState(); setInterval(fetchState, 1000);
         // Story viz + formula ref deferred until tab first opens (storyInitDone flag)
