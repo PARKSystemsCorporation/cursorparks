@@ -1450,8 +1450,6 @@
 
         // Indicators overlay
         const allBars = hasCur ? [...bars, curBar] : bars.slice();
-        const gap = pw / MAX_BARS;
-        const baseX = CM.l + (MAX_BARS - n + 0.5) * gap;
         const toY = (p) => CM.t + (1 - (p - yMin) / (yMax - yMin)) * ph;
 
         if (indicatorState.trend && allBars.length >= 2) {
