@@ -221,6 +221,7 @@
         flex-shrink: 0; display: flex; align-items: center; gap: 6px;
         padding: 8px 10px; background: var(--bg-surface);
         border-bottom: 1px solid var(--border);
+        position: relative;
     }
     .chart-indicator-btn {
         min-height: 44px; min-width: 44px; padding: 10px 14px;
@@ -259,11 +260,13 @@
     .chart-indicator-opt.ema .indicator-dot { background: #5b8def; }
     .chart-indicator-opt.bollinger .indicator-dot { background: #a78bfa; }
     .chart-indicator-opt.vwap .indicator-dot { background: #22d3ee; }
+    .chart-indicator-opt.vwap-bands .indicator-dot { background: rgba(34,211,238,0.7); }
     .chart-indicator-opt.active { background: var(--accent-soft); color: var(--accent); }
     /* Left: Order Book */
     .ob-wrap {
         background: var(--bg-primary);
         display: flex; flex-direction: column; overflow: hidden;
+        position: relative;
     }
     .ob-header {
         display: grid; grid-template-columns: 1fr 1fr;
@@ -292,6 +295,90 @@
         border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
         letter-spacing: 0.5px;
     }
+    .mm-wrap {
+        border-top: 1px solid var(--border);
+        background: rgba(16, 16, 28, 0.9);
+        padding: 8px 10px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-dim);
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+    }
+    .mm-title {
+        font-size: 9px;
+        font-weight: 800;
+        color: var(--text-bright);
+        margin-bottom: 6px;
+    }
+    .mm-row { display: flex; justify-content: space-between; }
+    .mm-row span:last-child { color: var(--text-primary); }
+    .mm-bias-val.up { color: var(--green); }
+    .mm-bias-val.down { color: var(--red); }
+    .mm-band {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 8px 0 6px;
+        padding: 6px 8px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--bg-surface);
+        text-transform: none;
+        letter-spacing: 0;
+    }
+    .mm-avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #9bdcff, #1b2a44);
+        border: 1px solid var(--border-mid);
+        flex-shrink: 0;
+    }
+    .mm-bubble { display: flex; flex-direction: column; gap: 2px; }
+    .mm-status {
+        font-weight: 800;
+        font-size: 10px;
+        color: var(--text-bright);
+        text-transform: uppercase;
+    }
+    .mm-sub { font-size: 9px; color: var(--text-dim); }
+    .mm-traders {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4px;
+        margin-top: 6px;
+    }
+    .mm-trader {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 6px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        background: rgba(12, 12, 22, 0.8);
+        font-size: 9px;
+        text-transform: uppercase;
+    }
+    .mm-trader span:last-child { color: var(--text-primary); }
+    .mm-trader .mm-pnl.positive { color: var(--green); }
+    .mm-trader .mm-pnl.negative { color: var(--red); }
+    .mm-feed {
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: 9px;
+    }
+    .mm-feed-row {
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-dim);
+    }
+    .mm-feed-row .side.buy { color: var(--green); }
+    .mm-feed-row .side.sell { color: var(--red); }
     /* Right: Trading Panel — vertical sidebar */
     .tp-wrap {
         background: var(--bg-primary); padding: 14px 16px;
@@ -754,6 +841,21 @@
             <div class="ob-wrap">
                 <div class="ob-header"><span>SIZE</span><span>PRICE</span></div>
                 <div class="ob-body" id="orderBook"></div>
+                <div class="mm-wrap">
+                    <div class="mm-title">MARKET MAKER AI</div>
+                    <div class="mm-row"><span>Target</span><span id="mmTarget">$100.00</span></div>
+                    <div class="mm-row"><span>Visitors</span><span id="mmVisitors">--</span></div>
+                    <div class="mm-row"><span>Bias</span><span id="mmBias" class="mm-bias-val">--</span></div>
+                    <div class="mm-band">
+                        <div class="mm-avatar" aria-hidden="true"></div>
+                        <div class="mm-bubble">
+                            <div class="mm-status" id="mmStatus">FAIR - PROVIDING</div>
+                            <div class="mm-sub" id="mmSub">Keeping the spread tight</div>
+                        </div>
+                    </div>
+                    <div class="mm-traders" id="mmTraders"></div>
+                    <div class="mm-feed" id="mmFeed"></div>
+                </div>
             </div>
             <!-- CENTER: Chart -->
             <div class="chart-wrap">
@@ -763,12 +865,12 @@
                         <span>Indicators</span>
                     </button>
                     <div class="chart-indicator-dropdown" id="indicatorDropdown" role="menu">
-                        <button type="button" class="chart-indicator-opt trend" data-id="trend" role="menuitem">Trend Line</button>
-                        <button type="button" class="chart-indicator-opt sma" data-id="sma" role="menuitem">SMA (20)</button>
-                        <button type="button" class="chart-indicator-opt ema" data-id="ema" role="menuitem">EMA (12)</button>
-                        <button type="button" class="chart-indicator-opt bollinger" data-id="bollinger" role="menuitem">Bollinger Bands</button>
-                        <button type="button" class="chart-indicator-opt vwap" data-id="vwap" role="menuitem">VWAP</button>
-                        <button type="button" class="chart-indicator-opt vwap-bands" data-id="vwapBands" role="menuitem">Intraday VWAP Bands</button>
+                        <button type="button" class="chart-indicator-opt trend" data-id="trend" role="menuitem"><span class="indicator-dot"></span>Trend Line</button>
+                        <button type="button" class="chart-indicator-opt sma" data-id="sma" role="menuitem"><span class="indicator-dot"></span>SMA (20)</button>
+                        <button type="button" class="chart-indicator-opt ema" data-id="ema" role="menuitem"><span class="indicator-dot"></span>EMA (12)</button>
+                        <button type="button" class="chart-indicator-opt bollinger" data-id="bollinger" role="menuitem"><span class="indicator-dot"></span>Bollinger Bands</button>
+                        <button type="button" class="chart-indicator-opt vwap" data-id="vwap" role="menuitem"><span class="indicator-dot"></span>VWAP</button>
+                        <button type="button" class="chart-indicator-opt vwap-bands" data-id="vwapBands" role="menuitem"><span class="indicator-dot"></span>Intraday VWAP Bands</button>
                     </div>
                 </div>
                 <div class="chart-container"><canvas id="priceChart"></canvas></div>
@@ -846,7 +948,7 @@
                 <div class="ch-body">
                     <p>Every second, a number crosses the wire. Not from a stock exchange. Not from a bank. <em>From your browser.</em></p>
                     <p>The PSC price is the raw, unfiltered count of human attention &mdash; visitors currently on this site, right now, reading these words. When you arrived, the price moved. When you leave, it will move again.</p>
-                    <p>There is no order book. No market maker. No dark pool. Just the hum of HTTP connections tallied into a single number, with a thin layer of micro-volatility that makes the flat line <em>breathe</em>.</p>
+                    <p>There is an order book. A market maker hums under the DOM. No dark pool. Just the hum of HTTP connections tallied into a single number, with a thin layer of micro-volatility that makes the flat line <em>breathe</em>.</p>
                     <div class="ch-formula-box">price(t) = visitors(t) + velocity &times; 10</div>
                     <p>This is the foundation. Everything else &mdash; the formulas, the trading, the leaderboard &mdash; is built on top of this single observation: <strong>attention has a price.</strong></p>
                 </div>
@@ -1216,7 +1318,8 @@
         const ids = ['pbPrice','pbChange','pbVisitors','pbRequests','pbDeficit','pbVelocity',
             'balanceValue','equityValue','accountPnl','posSize','posAvg','posPnl',
             'buyText','sellText','buyLabel','sellLabel','tradeLog','orderBook','priceChart',
-            'lpBody','lpCount','topTradesList'];
+            'lpBody','lpCount','topTradesList','mmTarget','mmVisitors','mmBias',
+            'mmStatus','mmSub','mmTraders','mmFeed'];
         for (const id of ids) $[id] = document.getElementById(id);
     }
 
@@ -1260,6 +1363,7 @@
     // ================================================================
     let liveVisitors = 142, liveRequests = 3420, mockDeficit = 11041059958;
     let mockVelocity = 0, mockPrice = liveVisitors;
+    let mmLastBias = 0;
     let lastTopTrades = [];
 
     async function fetchState() {
@@ -1293,6 +1397,15 @@
         if (mockVelocity >= 0) { $['pbChange'].textContent = '+' + mockVelocity.toFixed(4) + ' (+' + pct + '%)'; $['pbChange'].className = 'pb-change up'; }
         else { $['pbChange'].textContent = mockVelocity.toFixed(4) + ' (' + pct + '%)'; $['pbChange'].className = 'pb-change down'; }
         $['pbVisitors'].textContent = Math.round(liveVisitors).toLocaleString();
+        if ($['mmVisitors']) $['mmVisitors'].textContent = Math.round(liveVisitors).toLocaleString();
+        if (d.mm && $['mmTarget'] && $['mmBias']) {
+            $['mmTarget'].textContent = '$' + d.mm.target.toFixed(2);
+            const bias = d.mm.bias || 0;
+            mmLastBias = bias;
+            $['mmBias'].textContent = (bias >= 0 ? '+' : '') + bias.toFixed(2);
+            $['mmBias'].className = 'mm-bias-val ' + (bias >= 0 ? 'up' : 'down');
+            updateMarketMakerStatus();
+        }
         $['pbRequests'].textContent = liveRequests.toLocaleString() + '/min';
         $['pbDeficit'].textContent = '$' + mockDeficit.toLocaleString();
         $['pbVelocity'].textContent = mockVelocity.toFixed(6);
@@ -1697,6 +1810,85 @@
                 b.bar.style.width = (obBids[i] * inv) + '%';
             }
         }
+    }
+
+    // ================================================================
+    // MARKET MAKER BAND — trader activity + status
+    // ================================================================
+    const mmTraders = [
+        { name: 'AXEL', pnl: 1240, high: 1450, place: 12 },
+        { name: 'JUNO', pnl: -320, high: 900, place: 38 },
+        { name: 'MARA', pnl: 520, high: 880, place: 21 },
+        { name: 'KITE', pnl: 220, high: 600, place: 49 }
+    ];
+    let mmFeed = [];
+
+    function updateMarketMakerStatus() {
+        if (!$['mmStatus'] || !$['mmSub']) return;
+        const bias = mmLastBias || 0;
+        if (bias > 0.6) {
+            $['mmStatus'].textContent = 'TOO LOW - BUYING';
+            $['mmSub'].textContent = 'Leaning bids to lift price';
+        } else if (bias < -0.6) {
+            $['mmStatus'].textContent = 'TOO HIGH - SELLING';
+            $['mmSub'].textContent = 'Leaning offers to cool';
+        } else {
+            $['mmStatus'].textContent = 'FAIR - PROVIDING';
+            $['mmSub'].textContent = 'Keeping the spread tight';
+        }
+    }
+
+    function renderMarketMakerBand() {
+        if ($['mmTraders']) {
+            $['mmTraders'].innerHTML = mmTraders.map(t => {
+                const sign = t.pnl >= 0 ? '+' : '';
+                const cls = t.pnl >= 0 ? 'positive' : 'negative';
+                return '<div class="mm-trader">' +
+                    '<span>' + t.name + ' #' + t.place + '</span>' +
+                    '<span class="mm-pnl ' + cls + '">' + sign + formatMoney(t.pnl) + '</span>' +
+                '</div>';
+            }).join('');
+        }
+        if ($['mmFeed']) {
+            $['mmFeed'].innerHTML = mmFeed.map(f => {
+                return '<div class="mm-feed-row">' +
+                    '<span>' + f.trader + '</span>' +
+                    '<span class="side ' + f.side + '">' + f.side.toUpperCase() + ' ' + f.qty + '</span>' +
+                '</div>';
+            }).join('');
+        }
+    }
+
+    function maybeCashOut(trader) {
+        if (trader.pnl <= trader.high) return false;
+        if (Math.random() > 0.35) return false;
+        trader.high = trader.pnl;
+        trader.place = 1 + Math.floor(Math.random() * 50);
+        mmFeed.unshift({ trader: trader.name, side: 'buy', qty: 'CASHOUT #' + trader.place });
+        mmFeed = mmFeed.slice(0, 4);
+        trader.pnl = Math.round(trader.pnl * 0.15);
+        return true;
+    }
+
+    function tickMarketMakerBand() {
+        if (Math.random() > 0.4) return;
+        const trader = mmTraders[Math.floor(Math.random() * mmTraders.length)];
+        const bias = mmLastBias || 0;
+        const side = bias >= 0 ? 'buy' : 'sell';
+        const qty = Math.random() > 0.7 ? 10 : (Math.random() > 0.5 ? 5 : 1);
+        const drift = (Math.random() - 0.4) * 120;
+        trader.pnl = Math.round(trader.pnl + drift);
+        if (!maybeCashOut(trader)) {
+            mmFeed.unshift({ trader: trader.name, side, qty });
+            mmFeed = mmFeed.slice(0, 4);
+        }
+        renderMarketMakerBand();
+    }
+
+    function initMarketMakerBand() {
+        renderMarketMakerBand();
+        updateMarketMakerStatus();
+        setInterval(tickMarketMakerBand, 1200);
     }
 
     // ================================================================
@@ -2130,6 +2322,7 @@
         initOB();             // build OB DOM nodes once
         sizeChart();          // size canvas once
         initIndicatorDropdown();
+        initMarketMakerBand();
         fetchState(); setInterval(fetchState, 1000);
         // Story viz + formula ref deferred until tab first opens (storyInitDone flag)
         // Slider wiring is cheap — do it now so they're ready
