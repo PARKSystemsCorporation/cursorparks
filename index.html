@@ -768,6 +768,7 @@
                         <button type="button" class="chart-indicator-opt ema" data-id="ema" role="menuitem">EMA (12)</button>
                         <button type="button" class="chart-indicator-opt bollinger" data-id="bollinger" role="menuitem">Bollinger Bands</button>
                         <button type="button" class="chart-indicator-opt vwap" data-id="vwap" role="menuitem">VWAP</button>
+                        <button type="button" class="chart-indicator-opt vwap-bands" data-id="vwapBands" role="menuitem">Intraday VWAP Bands</button>
                     </div>
                 </div>
                 <div class="chart-container"><canvas id="priceChart"></canvas></div>
@@ -1349,7 +1350,7 @@
     // ================================================================
     // INDICATORS — toggle state + calculations
     // ================================================================
-    const indicatorState = { trend: false, sma: false, ema: false, bollinger: false, vwap: false };
+    const indicatorState = { trend: false, sma: false, ema: true, bollinger: true, vwap: true, vwapBands: true };
 
     function calcSMA(data, period, i) {
         if (i < period - 1) return null;
@@ -1395,6 +1396,27 @@
             sumVTP += tp * v; sumV += v;
         }
         return sumV > 0 ? sumVTP / sumV : data[i].c;
+    }
+
+    function calcVWAPBands(data, i) {
+        let sumTP = 0, sumTP2 = 0, count = 0;
+        for (let j = 0; j <= i; j++) {
+            const tp = (data[j].h + data[j].l + data[j].c) / 3;
+            sumTP += tp;
+            sumTP2 += tp * tp;
+            count += 1;
+        }
+        if (!count) return null;
+        const vwap = sumTP / count;
+        const variance = Math.max(0, sumTP2 / count - vwap * vwap);
+        const std = Math.sqrt(variance);
+        return {
+            vwap,
+            upper1: vwap + std,
+            lower1: vwap - std,
+            upper2: vwap + 2 * std,
+            lower2: vwap - 2 * std,
+        };
     }
 
     function renderChart() {
@@ -1537,6 +1559,27 @@
                 else ctx.lineTo(baseX + i * gap, yy);
             }
             ctx.stroke();
+        }
+        if (indicatorState.vwapBands) {
+            const drawBand = (key, color, dash) => {
+                ctx.strokeStyle = color; ctx.setLineDash(dash || []);
+                ctx.beginPath();
+                let first = true;
+                for (let i = 0; i < n; i++) {
+                    const vb = calcVWAPBands(allBars, i);
+                    if (vb) {
+                        const yy = toY(vb[key]);
+                        if (first) { ctx.moveTo(baseX + i * gap, yy); first = false; }
+                        else ctx.lineTo(baseX + i * gap, yy);
+                    }
+                }
+                if (!first) ctx.stroke();
+            };
+            drawBand('upper1', 'rgba(34,211,238,0.45)', [5, 4]);
+            drawBand('lower1', 'rgba(34,211,238,0.45)', [5, 4]);
+            drawBand('upper2', 'rgba(34,211,238,0.25)', [2, 6]);
+            drawBand('lower2', 'rgba(34,211,238,0.25)', [2, 6]);
+            ctx.setLineDash([]);
         }
 
         // Current price line + tag
