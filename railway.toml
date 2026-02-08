@@ -1,0 +1,10 @@
+# Railway Config — deploy fingerprint + healthcheck
+# See: https://docs.railway.com/reference/config-as-code
+
+[build]
+# Optional: set NIXPACKS_NO_CACHE=1 in Railway dashboard Variables
+# to disable build cache and force fresh installs on each deploy.
+
+[deploy]
+healthcheckPath = "/version"
+healthcheckTimeout = 10
