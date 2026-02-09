@@ -47,15 +47,16 @@ app.prepare().then(() => {
   }
 
   async function getRiskProfile(userId) {
-    if (!userId) return { maxSize: 500, slippageBoost: 1.2 };
+    if (!userId) return { maxSize: 100, slippageBoost: 1.2 };
     const cached = upgradeCache.get(userId);
     if (cached && cached.expires > Date.now()) return cached.value;
     const upgrades = await prisma.userUpgrade.findMany({
       where: { userId },
       include: { upgrade: true }
     });
+    const lotsLevel = upgrades.find((u) => u.upgrade.key === "attr_lots")?.level || 0;
     const riskLevel = upgrades.find((u) => u.upgrade.key === "bot_risk")?.level || 0;
-    const maxSize = 500 + riskLevel * 500;
+    const maxSize = 100 + lotsLevel * 50 + riskLevel * 50;
     const slippageBoost = Math.max(0.7, 1 - riskLevel * 0.05);
     const value = { maxSize, slippageBoost };
     upgradeCache.set(userId, { value, expires: Date.now() + 30_000 });

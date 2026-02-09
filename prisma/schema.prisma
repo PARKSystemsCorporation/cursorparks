@@ -50,6 +50,9 @@ model UpgradeDef {
   description String
   baseCost    Float
   costScale   Float
+  maxLevel    Int?
+  requiresKey String?
+  requiresLevel Int?
   userUpgrades UserUpgrade[]
 }
 

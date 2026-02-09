@@ -10,11 +10,22 @@ import { getSocket } from "../src/engine/socketClient";
 import type { Bar, MarketTick, OrderBook as Book } from "../src/engine/types";
 import { db, type TradeRow, type NewsRow, type LeaderboardRun } from "../src/db/db";
 
-const START_CASH = 100000;
+const BASE_START_CASH = 100000;
 
 type AuthUser = { id: string; username: string };
 type PlayerStats = { cashoutBalance: number; totalPnl: number; level: number; reputation: number; xp: number };
-type UpgradeDef = { id: string; key: string; category: string; title: string; description: string; baseCost: number; costScale: number };
+type UpgradeDef = {
+  id: string;
+  key: string;
+  category: string;
+  title: string;
+  description: string;
+  baseCost: number;
+  costScale: number;
+  maxLevel?: number | null;
+  requiresKey?: string | null;
+  requiresLevel?: number | null;
+};
 type UserUpgrade = { id: string; upgradeId: string; level: number; upgrade: UpgradeDef };
 type FirmMember = { firmId: string; role: string; firm: { name: string } };
 type ChatMessage = { id: string; user: string; message: string; t: string };
@@ -23,7 +34,8 @@ export default function Home() {
   const [bars, setBars] = useState<Bar[]>([]);
   const [tick, setTick] = useState<MarketTick | null>(null);
   const [position, setPosition] = useState({ size: 0, avgPrice: 0 });
-  const [cash, setCash] = useState(START_CASH);
+  const [cash, setCash] = useState(BASE_START_CASH);
+  const [startCash, setStartCash] = useState(BASE_START_CASH);
   const [qty, setQty] = useState(10);
   const [symbol, setSymbol] = useState("PSC");
   const [trades, setTrades] = useState<TradeRow[]>([]);
@@ -52,6 +64,7 @@ export default function Home() {
   const [chatMessage, setChatMessage] = useState("");
   const [globalTape, setGlobalTape] = useState<TradeRow[]>([]);
   const newsDelayRef = useRef(6000);
+  const startCashRef = useRef(BASE_START_CASH);
   const [panelTab, setPanelTab] = useState<"account" | "upgrades" | "firms" | "leaderboards">("account");
 
   const orderBook: Book = tick?.orderBook || {
@@ -82,8 +95,17 @@ export default function Home() {
     return out;
   }, [bars, timeframeMs]);
 
+  const levelByKey = useMemo(() => {
+    return new Map(userUpgrades.map((u) => [u.upgrade.key, u.level]));
+  }, [userUpgrades]);
+
+  const getLevelByKey = (key: string) => levelByKey.get(key) || 0;
+  const defByKey = useMemo(() => {
+    return new Map(upgradeDefs.map((d) => [d.key, d]));
+  }, [upgradeDefs]);
+
   const equity = cash + position.size * (tick?.price || 0);
-  const pnl = equity - START_CASH;
+  const pnl = equity - startCash;
   const bid = orderBook.bids[0]?.price || (tick?.price || 0) - 0.05;
   const ask = orderBook.asks[0]?.price || (tick?.price || 0) + 0.05;
 
@@ -92,7 +114,7 @@ export default function Home() {
     const onTick = async (payload: MarketTick) => {
       setTick(payload);
       setBars(payload.bars || []);
-      if (payload.news) {
+      if (payload.news && hasNews) {
         const n = payload.news;
         setTimeout(async () => {
           setNews((prev) => [{ id: n.id, t: n.t, headline: n.headline, sentiment: n.sentiment, impact: n.impact }, ...prev].slice(0, 20));
@@ -153,7 +175,7 @@ export default function Home() {
       socket.off("trade:tape");
       socket.off("trade:reject");
     };
-  }, [symbol]);
+  }, [symbol, hasNews]);
 
   useEffect(() => {
     db.leaderboard_runs.orderBy("t").reverse().limit(10).toArray().then(setLeaderboard);
@@ -190,8 +212,27 @@ export default function Home() {
 
   useEffect(() => {
     const level = getUpgradeLevel("info_news_speed");
-    newsDelayRef.current = Math.max(0, 6000 - level * 1000);
+    newsDelayRef.current = Math.max(500, Math.round(6000 * Math.pow(0.9, level)));
   }, [userUpgrades]);
+
+  const lotsLevel = getLevelByKey("attr_lots");
+  const balanceLevel = getLevelByKey("attr_balance");
+  const infoLevel = getLevelByKey("attr_info");
+  const riskLevel = getLevelByKey("bot_risk");
+  const maxOrderSize = 100 + lotsLevel * 50 + riskLevel * 50;
+  const computedStartCash = Math.round(BASE_START_CASH * (1 + balanceLevel * 0.1));
+
+  useEffect(() => {
+    setStartCash(computedStartCash);
+    if (position.size === 0 && cash === startCashRef.current) {
+      setCash(computedStartCash);
+    }
+    startCashRef.current = computedStartCash;
+  }, [computedStartCash, position.size, cash]);
+
+  useEffect(() => {
+    if (qty > maxOrderSize) setQty(Math.max(1, Math.floor(maxOrderSize)));
+  }, [qty, maxOrderSize]);
 
   async function fetchJson(url: string, opts?: RequestInit) {
     const res = await fetch(url, {
@@ -381,28 +422,93 @@ export default function Home() {
   }
 
   function getUpgradeLevel(key: string) {
-    const def = upgradeDefs.find((d) => d.key === key);
-    if (!def) return 0;
-    const owned = userUpgrades.find((u) => u.upgradeId === def.id);
-    return owned?.level || 0;
+    return getLevelByKey(key);
   }
 
-  const onCashout = () => {
+  function upgradeLabel(key: string) {
+    if (key === "attr_lots") return "LOTS";
+    if (key === "attr_balance") return "BALANCE";
+    if (key === "attr_info") return "INFO";
+    return key;
+  }
+
+  function getRequirements(def: UpgradeDef) {
+    const reqs: { key: string; level: number }[] = [];
+    if (def.requiresKey && def.requiresLevel) {
+      reqs.push({ key: def.requiresKey, level: def.requiresLevel });
+    }
+    if (def.key === "bot_scalper") {
+      reqs.push({ key: "attr_info", level: 8 });
+    }
+    return reqs;
+  }
+
+  function canPurchase(def: UpgradeDef, level: number) {
+    if (def.maxLevel && level >= def.maxLevel) return false;
+    const reqs = getRequirements(def);
+    return reqs.every((r) => getLevelByKey(r.key) >= r.level);
+  }
+
+  function renderUpgradeCard(def?: UpgradeDef) {
+    if (!def) return null;
+    const level = getLevelByKey(def.key);
+    const cost = upgradeCost(def, level);
+    const reqs = getRequirements(def);
+    const locked = reqs.some((r) => getLevelByKey(r.key) < r.level);
+    const maxed = !!def.maxLevel && level >= def.maxLevel;
+    const canBuy = !!authUser && !locked && !maxed;
+    return (
+      <div key={def.key} className={`rounded-xl border border-white/10 p-3 ${locked ? "bg-white/5" : "bg-white/10"}`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-white/90">{def.title}</div>
+            <div className="text-[10px] text-white/40">{def.description}</div>
+          </div>
+          <div className="text-[10px] text-white/60">
+            Lv {level}{def.maxLevel ? `/${def.maxLevel}` : ""}
+          </div>
+        </div>
+        {reqs.length > 0 && (
+          <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-white/40">
+            Requires {reqs.map((r) => `${upgradeLabel(r.key)} ${r.level}`).join(" + ")}
+          </div>
+        )}
+        <div className="mt-3 flex items-center justify-between">
+          <span className="text-white/70">{maxed ? "MAX" : `$${cost}`}</span>
+          <button
+            className="rounded-md bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={!canBuy}
+            onClick={() => purchaseUpgrade(def.key)}
+          >
+            {maxed ? "Maxed" : locked ? "Locked" : "Upgrade"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const onCashout = async () => {
     db.leaderboard_runs.add({ t: Date.now(), pnl, trades: trades.length });
     db.leaderboard_runs.orderBy("t").reverse().limit(10).toArray().then(setLeaderboard);
     if (authUser) {
-      fetch("/api/leaderboards/run", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pnl, trades: trades.length, riskScore: Math.abs(pnl) / Math.max(1, trades.length), streak: trades.length })
-      })
-        .then(() => {
-          loadAuth();
-          loadLeaderboards();
-        })
-        .catch(() => {});
+      try {
+        await fetchJson("/api/leaderboards/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pnl,
+            trades: trades.length,
+            riskScore: Math.abs(pnl) / Math.max(1, trades.length),
+            streak: trades.length
+          })
+        });
+        loadAuth();
+        loadLeaderboards();
+      } catch (e) {
+        setAuthError(e instanceof Error ? e.message : "Cashout failed.");
+      }
     }
-    setCash(START_CASH);
+    setCash(startCash);
     setPosition({ size: 0, avgPrice: 0 });
     setTrades([]);
   };
@@ -412,7 +518,26 @@ export default function Home() {
   const sentiment = news[0]?.sentiment ?? 0;
   const showIndicators = getUpgradeLevel("chart_indicators") > 0;
   const showBotAlerts = getUpgradeLevel("bot_alerts") > 0;
+  const hasNews = getUpgradeLevel("info_news_speed") > 0;
+  const hasMultiTf = getUpgradeLevel("chart_multi_tf") > 0;
   const botSignal = tick ? (tick.velocity >= 0 ? "BUY BIAS" : "SELL BIAS") : "--";
+
+  const timeframes = hasMultiTf
+    ? [
+        { label: "Fast", value: 1000 },
+        { label: "5s", value: 5000 },
+        { label: "10s", value: 10000 }
+      ]
+    : [{ label: "Fast", value: 1000 }];
+
+  useEffect(() => {
+    if (!hasMultiTf && timeframeMs !== 1000) setTimeframeMs(1000);
+  }, [hasMultiTf, timeframeMs]);
+
+  const coreKeys = ["attr_lots", "attr_balance", "attr_info"];
+  const chartKeys = ["chart_indicators", "chart_drawing", "chart_multi_tf"];
+  const botKeys = ["bot_alerts", "bot_risk", "bot_scalper"];
+  const intelKeys = ["info_news_speed", "info_sentiment", "info_vol_forecast"];
 
   const symbols = useMemo(() => ["PSC"], []);
   const canRug = position.size !== 0;
@@ -452,11 +577,7 @@ export default function Home() {
             <div className="flex items-center gap-2">
               <span className="text-[10px] uppercase tracking-[0.18em] text-white/40">Candle View</span>
               <div className="flex rounded-full bg-white/5 p-1">
-                {[
-                  { label: "Fast", value: 1000 },
-                  { label: "5s", value: 5000 },
-                  { label: "10s", value: 10000 }
-                ].map((opt) => (
+                {timeframes.map((opt) => (
                   <button
                     key={opt.value}
                     className={`rounded-full px-2 py-1 text-[10px] ${timeframeMs === opt.value ? "bg-neon-cyan text-black" : "text-white/60"}`}
@@ -490,6 +611,7 @@ export default function Home() {
             bid={bid}
             ask={ask}
             qty={qty}
+            maxQty={maxOrderSize}
             onQty={setQty}
             onBuy={() => handleTrade("buy")}
             onSell={() => handleTrade("sell")}
@@ -499,7 +621,13 @@ export default function Home() {
             onSymbol={setSymbol}
           />
           <TradeTape trades={globalTape.length ? globalTape : trades} />
-          <NewsFeed news={news} />
+          {hasNews ? (
+            <NewsFeed news={news} />
+          ) : (
+            <div className="glass rounded-xl p-3 text-xs text-white/50">
+              Unlock INFO Rank 1 to access the macro news feed.
+            </div>
+          )}
         </div>
       </div>
 
@@ -538,6 +666,7 @@ export default function Home() {
                 bid={bid}
                 ask={ask}
                 qty={qty}
+                maxQty={maxOrderSize}
                 onQty={setQty}
                 onBuy={() => handleTrade("buy")}
                 onSell={() => handleTrade("sell")}
@@ -549,7 +678,13 @@ export default function Home() {
               <TradeTape trades={globalTape.length ? globalTape : trades} />
             </div>
           ) : (
-            <NewsFeed news={news} />
+            hasNews ? (
+              <NewsFeed news={news} />
+            ) : (
+              <div className="rounded-lg bg-white/5 px-3 py-2 text-xs text-white/50">
+                Unlock INFO Rank 1 to access the macro news feed.
+              </div>
+            )
           )}
         </div>
       </div>
@@ -613,33 +748,77 @@ export default function Home() {
         )}
 
         {panelTab === "upgrades" && (
-          <div className="space-y-2 text-xs">
-            {authUser ? (
-              <div className="grid gap-2 md:grid-cols-2">
-                {upgradeDefs.map((def) => {
-                  const owned = userUpgrades.find((u) => u.upgradeId === def.id);
-                  const level = owned?.level || 0;
-                  const cost = upgradeCost(def, level);
-                  return (
-                    <div key={def.id} className="rounded-lg border border-white/10 bg-white/5 p-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-white/80">{def.title}</div>
-                          <div className="text-[10px] text-white/40">{def.category}</div>
-                        </div>
-                        <div className="text-[10px] text-white/60">Lv {level}</div>
+          <div className="space-y-4 text-xs">
+            {!authUser && (
+              <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/50">
+                Login to unlock upgrades and progression.
+              </div>
+            )}
+            <div className="grid gap-3 md:grid-cols-3">
+              {coreKeys.map((key) => {
+                const def = defByKey.get(key);
+                if (!def) return null;
+                const level = getLevelByKey(key);
+                const cost = upgradeCost(def, level);
+                const maxed = !!def.maxLevel && level >= def.maxLevel;
+                const canBuy = authUser && canPurchase(def, level);
+                const nextMax = 100 + (lotsLevel + 1) * 50 + riskLevel * 50;
+                const nextCash = Math.round(BASE_START_CASH * (1 + (balanceLevel + 1) * 0.1));
+                return (
+                  <div key={key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">
+                        {key === "attr_lots" ? "LOTS" : key === "attr_balance" ? "BALANCE" : "INFO"}
                       </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-white/60">${cost}</span>
-                        <button className="rounded-md bg-white/10 px-2 py-1" onClick={() => purchaseUpgrade(def.key)}>Upgrade</button>
+                      <div className="text-[10px] text-white/40">
+                        Lv {level}{def.maxLevel ? `/${def.maxLevel}` : ""}
                       </div>
                     </div>
-                  );
-                })}
+                    <div className="mt-2 text-lg font-semibold text-white">
+                      {key === "attr_lots" && `Max ${Math.floor(maxOrderSize)}`}
+                      {key === "attr_balance" && `$${startCash.toFixed(0)}`}
+                      {key === "attr_info" && `Rank ${infoLevel}`}
+                    </div>
+                    <div className="mt-1 text-[10px] text-white/40">
+                      {key === "attr_lots" && `Next: ${Math.floor(nextMax)}`}
+                      {key === "attr_balance" && `Next: $${nextCash.toFixed(0)}`}
+                      {key === "attr_info" && "Unlocks intel + chart + bots"}
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-white/70">{maxed ? "MAX" : `$${cost}`}</span>
+                      <button
+                        className="rounded-md bg-neon-cyan px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-black disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={!canBuy || maxed}
+                        onClick={() => purchaseUpgrade(def.key)}
+                      >
+                        {maxed ? "Maxed" : "Rank Up"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">Indicators + Drawing</div>
+                <div className="mt-3 space-y-2">
+                  {chartKeys.map((key) => renderUpgradeCard(defByKey.get(key)))}
+                </div>
               </div>
-            ) : (
-              <div className="text-white/40 text-xs">Login to unlock upgrades.</div>
-            )}
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">Bots</div>
+                <div className="mt-3 space-y-2">
+                  {botKeys.map((key) => renderUpgradeCard(defByKey.get(key)))}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-2">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">Intel Modules</div>
+                <div className="mt-3 grid gap-2 md:grid-cols-3">
+                  {intelKeys.map((key) => renderUpgradeCard(defByKey.get(key)))}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

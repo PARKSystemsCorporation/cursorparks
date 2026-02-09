@@ -13,10 +13,35 @@ export async function POST(req: Request) {
   if (!def) return NextResponse.json({ error: "Upgrade not found" }, { status: 404 });
   const stats = await prisma.playerStats.findUnique({ where: { userId: user.id } });
   if (!stats) return NextResponse.json({ error: "Stats missing" }, { status: 400 });
+  const ownedUpgrades = await prisma.userUpgrade.findMany({
+    where: { userId: user.id },
+    include: { upgrade: true }
+  });
+  const levelByKey = new Map(ownedUpgrades.map((u) => [u.upgrade.key, u.level]));
+  const getLevel = (upgradeKey: string) => levelByKey.get(upgradeKey) || 0;
   const existing = await prisma.userUpgrade.findUnique({
     where: { userId_upgradeId: { userId: user.id, upgradeId: def.id } }
   });
   const level = existing?.level || 0;
+  if (def.maxLevel && level >= def.maxLevel) {
+    return NextResponse.json({ error: "Max level reached" }, { status: 400 });
+  }
+  if (def.requiresKey && def.requiresLevel) {
+    if (getLevel(def.requiresKey) < def.requiresLevel) {
+      return NextResponse.json({
+        error: "Requires higher rank",
+        requiresKey: def.requiresKey,
+        requiresLevel: def.requiresLevel
+      }, { status: 400 });
+    }
+  }
+  if (def.key === "bot_scalper" && getLevel("attr_info") < 8) {
+    return NextResponse.json({
+      error: "Requires higher rank",
+      requiresKey: "attr_info",
+      requiresLevel: 8
+    }, { status: 400 });
+  }
   const cost = upgradeCost(def.baseCost, def.costScale, level);
   if (stats.cashoutBalance < cost) {
     return NextResponse.json({ error: "Insufficient balance", cost }, { status: 400 });

@@ -9,6 +9,7 @@ type Props = {
   bid: number;
   ask: number;
   qty: number;
+  maxQty: number;
   onQty: (q: number) => void;
   onBuy: () => void;
   onSell: () => void;
@@ -29,6 +30,7 @@ export function TradePanel({
   bid,
   ask,
   qty,
+  maxQty,
   onQty,
   onBuy,
   onSell,
@@ -89,13 +91,17 @@ export function TradePanel({
           <button
             key={q}
             onClick={() => onQty(q)}
-            className={`rounded-md py-2 text-xs font-semibold ${
+            disabled={q > maxQty}
+            className={`rounded-md py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 ${
               qty === q ? "bg-neon-cyan text-black" : "bg-white/10 text-white/70"
             }`}
           >
             {q >= 1000 ? `${q / 1000}K` : q}
           </button>
         ))}
+      </div>
+      <div className="text-center text-[10px] uppercase tracking-[0.18em] text-white/40">
+        Max size {Math.max(10, Math.floor(maxQty))}
       </div>
       <div className="grid grid-cols-2 gap-2">
         <button
