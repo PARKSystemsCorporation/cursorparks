@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { RANKS, type RankInfo } from "../engine/ranks";
+import type { LeaderboardRun } from "../db/db";
 
 type UpgradeDef = {
   id: string;
@@ -32,6 +33,7 @@ type Props = {
   tradeCount: number;
   cash: number;
   maxOrderSize: number;
+  pnlLogs: LeaderboardRun[];
   upgradeDefs: UpgradeDef[];
   getLevelByKey: (key: string) => number;
   authError: string | null;
@@ -123,6 +125,7 @@ export function AccountPanel({
   tradeCount,
   cash,
   maxOrderSize,
+  pnlLogs,
   upgradeDefs,
   getLevelByKey,
   authError,
@@ -338,6 +341,35 @@ export function AccountPanel({
               <div className={`font-mono text-[12px] font-semibold ${s.c}`}>{s.value}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ── PnL Logs ── */}
+      <div>
+        <div className="mb-1.5 text-[9px] uppercase tracking-[0.2em] text-white/70">
+          PnL Logs
+        </div>
+        <div className="space-y-1.5">
+          {pnlLogs.length === 0 ? (
+            <div className="rounded border border-white/5 bg-white/[0.02] p-3 text-[10px] text-white/40">
+              No cashouts logged yet.
+            </div>
+          ) : (
+            pnlLogs.slice(0, 6).map((run, idx) => (
+              <div
+                key={run.id ?? `pnl-log-${idx}`}
+                className="flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-3 py-2 text-[10px]"
+              >
+                <div className="font-mono text-white/60">
+                  {new Date(run.t).toLocaleString([], { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                </div>
+                <div className="font-mono text-white/40">{run.trades} trades</div>
+                <div className={`font-mono ${run.pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
+                  {run.pnl >= 0 ? "+" : ""}${run.pnl.toFixed(2)}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

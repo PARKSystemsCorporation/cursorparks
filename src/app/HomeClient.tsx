@@ -29,7 +29,7 @@ import { MobileTabBar } from "../components/MobileTabBar";
 import { SystemMetricsPanel, type SystemMetrics } from "../components/SystemMetricsPanel";
 import { getSocket } from "../engine/socketClient";
 import type { Bar, MarketTick, OrderBook as Book } from "../engine/types";
-import { db, type TradeRow, type NewsRow } from "../db/db";
+import { db, type TradeRow, type NewsRow, type LeaderboardRun } from "../db/db";
 import { getRank } from "../engine/ranks";
 
 const BASE_START_CASH = 100000;
@@ -134,6 +134,7 @@ export default function HomeClient() {
   const [firmError, setFirmError] = useState<string | null>(null);
   const [firmBusy, setFirmBusy] = useState(false);
   const [globalTape, setGlobalTape] = useState<TradeRow[]>([]);
+  const [pnlLogs, setPnlLogs] = useState<LeaderboardRun[]>([]);
   const newsDelayRef = useRef(6000);
   const startCashRef = useRef(BASE_START_CASH);
   const [panelTab, setPanelTab] = useState<PanelTab>("account");
@@ -363,6 +364,15 @@ export default function HomeClient() {
     }
   }, [loadProgression, loadFirm]);
 
+  const loadPnlLogs = useCallback(async () => {
+    try {
+      const runs = await db.leaderboard_runs.orderBy("t").reverse().limit(50).toArray();
+      setPnlLogs(runs);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const refreshProgression = useCallback(async () => {
     if (!authUser || progressionRefreshInFlight.current) return null;
     progressionRefreshInFlight.current = true;
@@ -376,7 +386,8 @@ export default function HomeClient() {
   useEffect(() => {
     loadAuth();
     loadLeaderboards();
-  }, [loadAuth, loadLeaderboards]);
+    loadPnlLogs();
+  }, [loadAuth, loadLeaderboards, loadPnlLogs]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -706,7 +717,6 @@ export default function HomeClient() {
   }
 
   const onCashout = async () => {
-    db.leaderboard_runs.add({ t: Date.now(), pnl, trades: trades.length });
     if (!authUser) {
       setAuthError("Login required to save cashouts.");
       addToast("error", "LOGIN REQUIRED", "Sign in to persist your PnL.");
@@ -725,6 +735,10 @@ export default function HomeClient() {
       });
       await loadAuth();
       await loadLeaderboards();
+      const now = Date.now();
+      const log: LeaderboardRun = { t: now, pnl, trades: trades.length };
+      const id = await db.leaderboard_runs.add(log);
+      setPnlLogs((prev) => [{ ...log, id }, ...prev].slice(0, 50));
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Cashout failed.");
       addToast("error", "CASHOUT FAILED", "PnL not saved. Try again.");
@@ -915,6 +929,7 @@ export default function HomeClient() {
           tradeCount={trades.length}
           cash={cash}
           maxOrderSize={maxOrderSize}
+          pnlLogs={pnlLogs}
           upgradeDefs={upgradeDefs}
           getLevelByKey={getLevelByKey}
           authError={authError}

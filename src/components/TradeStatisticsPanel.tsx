@@ -9,15 +9,6 @@ type Props = {
 };
 
 export function TradeStatisticsPanel({ trades, pnl, startCash }: Props) {
-  if (trades.length === 0) {
-    return (
-      <div className="glass animate-fadeIn rounded-md p-3 text-xs">
-        <div className="mb-2 text-[9px] uppercase tracking-[0.15em] text-white/30">Session Analytics</div>
-        <div className="py-3 text-center text-white/20">Place your first trade to see stats.</div>
-      </div>
-    );
-  }
-
   // Compute stats from trades
   const wins: number[] = [];
   const losses: number[] = [];
@@ -62,6 +53,7 @@ export function TradeStatisticsPanel({ trades, pnl, startCash }: Props) {
   const returnPct = startCash > 0 ? (pnl / startCash) * 100 : 0;
 
   const stats = [
+    { label: "PnL", value: `${pnl >= 0 ? "+" : ""}$${pnl.toFixed(0)}`, color: pnl >= 0 ? "text-neon-green" : "text-neon-red" },
     { label: "Win Rate", value: `${winRate.toFixed(1)}%`, color: winRate >= 50 ? "text-neon-green" : "text-neon-red" },
     { label: "Profit Factor", value: profitFactor === Infinity ? "INF" : profitFactor.toFixed(2), color: profitFactor >= 1 ? "text-neon-green" : "text-neon-red" },
     { label: "Avg Win", value: `$${avgWin.toFixed(0)}`, color: "text-neon-green" },
@@ -91,6 +83,11 @@ export function TradeStatisticsPanel({ trades, pnl, startCash }: Props) {
         <span className="text-[9px] uppercase tracking-[0.15em] text-white/30">Session Analytics</span>
         <span className="font-mono text-[9px] text-white/20">{totalTrades} trades</span>
       </div>
+      {totalTrades === 0 && (
+        <div className="mb-2 rounded border border-white/5 bg-white/[0.02] px-2 py-1 text-[10px] text-white/40">
+          Place your first trade to unlock full analytics.
+        </div>
+      )}
 
       {/* Sparkline */}
       {sparkData.length > 1 && (

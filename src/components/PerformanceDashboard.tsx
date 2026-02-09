@@ -10,15 +10,6 @@ type Props = {
 };
 
 export function PerformanceDashboard({ trades, pnl, equity, startCash }: Props) {
-  if (trades.length === 0) {
-    return (
-      <div className="glass animate-fadeIn rounded-md p-4 text-xs">
-        <div className="mb-2 text-[9px] uppercase tracking-[0.2em] text-white/30">Performance</div>
-        <div className="py-4 text-center text-white/20">Trade to generate performance data.</div>
-      </div>
-    );
-  }
-
   // Build equity curve
   const equityCurve: number[] = [startCash];
   let cumCash = startCash;
@@ -76,6 +67,7 @@ export function PerformanceDashboard({ trades, pnl, equity, startCash }: Props) 
   }).join(" ");
 
   const metrics = [
+    { label: "PnL", value: `${pnl >= 0 ? "+" : ""}$${pnl.toFixed(0)}`, color: pnl >= 0 ? "text-neon-green" : "text-neon-red" },
     { label: "Total Return", value: `${returnPct >= 0 ? "+" : ""}${returnPct.toFixed(2)}%`, color: returnPct >= 0 ? "text-neon-green" : "text-neon-red" },
     { label: "Sharpe Ratio", value: sharpe.toFixed(2), color: sharpe > 1 ? "text-neon-green" : sharpe > 0 ? "text-neon-yellow" : "text-neon-red" },
     { label: "Max Drawdown", value: `${(maxDD * 100).toFixed(1)}%`, color: maxDD < 0.05 ? "text-neon-green" : maxDD < 0.15 ? "text-neon-yellow" : "text-neon-red" },
@@ -87,6 +79,11 @@ export function PerformanceDashboard({ trades, pnl, equity, startCash }: Props) 
   return (
     <div className="glass animate-fadeIn rounded-md p-4 text-xs">
       <div className="mb-3 text-[9px] uppercase tracking-[0.2em] text-white/30">Performance Dashboard</div>
+      {trades.length === 0 && (
+        <div className="mb-3 rounded border border-white/5 bg-white/[0.02] px-3 py-2 text-[10px] text-white/40">
+          Trade to generate more performance data.
+        </div>
+      )}
 
       {/* Equity Curve */}
       <div className="mb-3">
