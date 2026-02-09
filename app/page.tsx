@@ -62,6 +62,8 @@ export default function Home() {
   const [inviteName, setInviteName] = useState("");
   const [joinToken, setJoinToken] = useState("");
   const [chatMessage, setChatMessage] = useState("");
+  const [firmError, setFirmError] = useState<string | null>(null);
+  const [firmBusy, setFirmBusy] = useState(false);
   const [globalTape, setGlobalTape] = useState<TradeRow[]>([]);
   const newsDelayRef = useRef(6000);
   const startCashRef = useRef(BASE_START_CASH);
@@ -379,12 +381,26 @@ export default function Home() {
   }
 
   async function createFirm(name: string) {
-    await fetchJson("/api/firms/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name })
-    });
-    await loadFirm();
+    setFirmError(null);
+    const trimmed = name.trim();
+    if (trimmed.length < 3 || trimmed.length > 20) {
+      setFirmError("Firm name must be 3-20 chars.");
+      return;
+    }
+    try {
+      setFirmBusy(true);
+      await fetchJson("/api/firms/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed })
+      });
+      setFirmName("");
+      await loadFirm();
+    } catch (e) {
+      setFirmError(e instanceof Error ? e.message : "Create firm failed.");
+    } finally {
+      setFirmBusy(false);
+    }
   }
 
   async function inviteFirm(username: string) {
@@ -850,8 +866,19 @@ export default function Home() {
               <div className="space-y-2 text-xs">
                 <div className="flex gap-2">
                   <input className="w-full rounded-md bg-white/5 p-2" placeholder="Firm name" value={firmName} onChange={(e) => setFirmName(e.target.value)} />
-                  <button className="rounded-md bg-neon-cyan px-2 text-black" onClick={() => createFirm(firmName)}>Create</button>
+                  <button
+                    className="rounded-md bg-neon-cyan px-2 text-black disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => createFirm(firmName)}
+                    disabled={firmBusy}
+                  >
+                    {firmBusy ? "Creating..." : "Create"}
+                  </button>
                 </div>
+                {firmError && (
+                  <div className="rounded-md bg-neon-red/10 px-2 py-1 text-[10px] text-neon-red">
+                    {firmError}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <input className="w-full rounded-md bg-white/5 p-2" placeholder="Invite token" value={joinToken} onChange={(e) => setJoinToken(e.target.value)} />
                   <button className="rounded-md bg-white/10 px-2" onClick={() => joinFirm(joinToken)}>Join</button>
