@@ -2,6 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/src/server/db";
 import { createSession, hashPassword } from "@/src/server/auth";
 
+function getSessionCookieOptions(req: NextRequest, expiresAt: Date) {
+  const origin = req.headers.get("origin");
+  const requestOrigin = req.nextUrl.origin;
+  const crossSite = !!origin && origin !== requestOrigin;
+  return {
+    httpOnly: true,
+    sameSite: crossSite ? "none" : "lax",
+    secure: crossSite || process.env.NODE_ENV === "production",
+    path: "/",
+    expires: expiresAt
+  } as const;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json();
@@ -29,12 +42,7 @@ export async function POST(req: NextRequest) {
     });
     const session = await createSession(user.id);
     const res = NextResponse.json({ ok: true, username: user.username });
-    res.cookies.set("ps_session", session.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      expires: session.expiresAt
-    });
+    res.cookies.set("ps_session", session.token, getSessionCookieOptions(req, session.expiresAt));
     return res;
   } catch (error) {
     console.error("register failed", error);
