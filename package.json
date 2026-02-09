@@ -5,11 +5,11 @@
   "scripts": {
     "dev": "node server.js",
     "build": "next build",
-    "start": "node server.js",
+    "start": "prisma db push && node server.js",
     "lint": "next lint",
     "prisma": "prisma",
     "db:push": "prisma db push",
-    "postinstall": "prisma generate && prisma db push"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
