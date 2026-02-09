@@ -8,3 +8,5 @@ out/
 *.sqlite*
 *.db*
 .DS_Store
+.env
+.env.local

@@ -37,6 +37,7 @@ export type MarketTick = {
   liquidity: number;
   orderBook: OrderBook;
   bar: Bar;
+  bars?: Bar[];
   online: { wallSt: number; retail: number };
   news?: NewsItem;
 };

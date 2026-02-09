@@ -7,7 +7,7 @@ export type TickRow = { id?: number; symbol: string; t: number; price: number };
 export type OrderBookRow = { id?: number; symbol: string; t: number; bids: string; asks: string };
 export type TradeRow = { id?: number; symbol: string; t: number; side: string; size: number; price: number };
 export type PositionRow = { id?: number; symbol: string; size: number; avgPrice: number };
-export type NewsRow = { id?: number; t: number; headline: string; sentiment: number; impact: number };
+export type NewsRow = { id?: string; t: number; headline: string; sentiment: number; impact: number };
 export type LeaderboardRun = { id?: number; t: number; pnl: number; trades: number };
 
 class MarketDB extends Dexie {

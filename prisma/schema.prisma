@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String         @id @default(cuid())
+  username   String         @unique
+  passHash   String
+  createdAt  DateTime       @default(now())
+  stats      PlayerStats?
+  sessions   Session[]
+  upgrades   UserUpgrade[]
+  firmMember FirmMember?
+  runs       LeaderboardRun[]
+  firmChat   FirmChat[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PlayerStats {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  cashoutBalance  Float    @default(0)
+  totalPnl        Float    @default(0)
+  level           Int      @default(1)
+  reputation      Float    @default(0)
+  xp              Float    @default(0)
+  botCapacity     Int      @default(0)
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UpgradeDef {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  category    String
+  title       String
+  description String
+  baseCost    Float
+  costScale   Float
+  userUpgrades UserUpgrade[]
+}
+
+model UserUpgrade {
+  id          String   @id @default(cuid())
+  userId      String
+  upgradeId   String
+  level       Int      @default(0)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  upgrade     UpgradeDef @relation(fields: [upgradeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, upgradeId])
+}
+
+model Firm {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  createdAt DateTime      @default(now())
+  founderId String
+  reputation Float        @default(0)
+  members   FirmMember[]
+  invites   FirmInvite[]
+  chat      FirmChat[]
+  leaderboard FirmLeaderboard[]
+}
+
+model FirmMember {
+  id      String @id @default(cuid())
+  firmId  String
+  userId  String @unique
+  role    String
+  firm    Firm   @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([firmId, userId])
+}
+
+model FirmInvite {
+  id          String   @id @default(cuid())
+  firmId      String
+  invitedName String
+  invitedById String
+  token       String   @unique
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  firm        Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+}
+
+model FirmChat {
+  id        String   @id @default(cuid())
+  firmId    String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+  firm      Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Season {
+  id        String   @id @default(cuid())
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  runs      LeaderboardRun[]
+  firms     FirmLeaderboard[]
+}
+
+model LeaderboardRun {
+  id        String   @id @default(cuid())
+  userId    String
+  seasonId  String
+  pnl       Float
+  riskScore Float
+  streak    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  season    Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+}
+
+model FirmLeaderboard {
+  id          String   @id @default(cuid())
+  firmId      String
+  seasonId    String
+  pnl         Float
+  efficiency  Float
+  consistency Float
+  firm        Firm     @relation(fields: [firmId], references: [id], onDelete: Cascade)
+  season      Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([firmId, seasonId])
+}

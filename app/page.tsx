@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChartCanvas } from "../src/components/ChartCanvas";
 import { OrderBook } from "../src/components/OrderBook";
 import { TradePanel } from "../src/components/TradePanel";
 import { TradeTape } from "../src/components/TradeTape";
 import { NewsFeed } from "../src/components/NewsFeed";
-import { createMarketWorker } from "../src/engine/workerClient";
-import type { Bar, MarketTick, OrderBook as Book, NewsItem } from "../src/engine/types";
-import { calcFillPrice } from "../src/engine/execution";
+import { getSocket } from "../src/engine/socketClient";
+import type { Bar, MarketTick, OrderBook as Book } from "../src/engine/types";
 import { db, type TradeRow, type NewsRow, type LeaderboardRun } from "../src/db/db";
 
 const START_CASH = 100000;
+
+type AuthUser = { id: string; username: string };
+type PlayerStats = { cashoutBalance: number; totalPnl: number; level: number; reputation: number; xp: number };
+type UpgradeDef = { id: string; key: string; category: string; title: string; description: string; baseCost: number; costScale: number };
+type UserUpgrade = { id: string; upgradeId: string; level: number; upgrade: UpgradeDef };
+type FirmMember = { firmId: string; role: string; firm: { name: string } };
+type ChatMessage = { id: string; user: string; message: string; t: string };
 
 export default function Home() {
   const [bars, setBars] = useState<Bar[]>([]);
@@ -24,6 +30,26 @@ export default function Home() {
   const [news, setNews] = useState<NewsRow[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRun[]>([]);
   const [mobileTab, setMobileTab] = useState<"trade" | "news">("trade");
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [upgradeDefs, setUpgradeDefs] = useState<UpgradeDef[]>([]);
+  const [userUpgrades, setUserUpgrades] = useState<UserUpgrade[]>([]);
+  const [firmMember, setFirmMember] = useState<FirmMember | null>(null);
+  const [chat, setChat] = useState<ChatMessage[]>([]);
+  const [soloLb, setSoloLb] = useState<{ username: string; pnl: number; riskScore: number; streak: number }[]>([]);
+  const [firmLb, setFirmLb] = useState<{ firm: string; pnl: number; efficiency: number; consistency: number }[]>([]);
+  const [wsOnline, setWsOnline] = useState<number | null>(null);
+  const [loginUser, setLoginUser] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [regUser, setRegUser] = useState("");
+  const [regPass, setRegPass] = useState("");
+  const [firmName, setFirmName] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [joinToken, setJoinToken] = useState("");
+  const [chatMessage, setChatMessage] = useState("");
+  const [globalTape, setGlobalTape] = useState<TradeRow[]>([]);
+  const newsDelayRef = useRef(6000);
+  const [panelTab, setPanelTab] = useState<"account" | "upgrades" | "firms" | "leaderboards">("account");
 
   const orderBook: Book = tick?.orderBook || {
     bids: [],
@@ -38,46 +64,70 @@ export default function Home() {
   const ask = orderBook.asks[0]?.price || (tick?.price || 0) + 0.05;
 
   useEffect(() => {
-    const worker = createMarketWorker();
-    const off = worker.onMessage(async (msg) => {
-      if (msg.type === "tick") {
-        setTick(msg.payload);
-        setBars((prev) => {
-          const next = [...prev, msg.payload.bar].slice(-120);
-          return next;
-        });
-        if (msg.payload.news) {
-          const n = msg.payload.news;
+    const socket = getSocket();
+    const onTick = async (payload: MarketTick) => {
+      setTick(payload);
+      setBars(payload.bars || []);
+      if (payload.news) {
+        const n = payload.news;
+        setTimeout(async () => {
           setNews((prev) => [{ id: n.id, t: n.t, headline: n.headline, sentiment: n.sentiment, impact: n.impact }, ...prev].slice(0, 20));
           await db.news.add({ t: n.t, headline: n.headline, sentiment: n.sentiment, impact: n.impact });
-        }
-        await db.ticks.add({ symbol, t: msg.payload.t, price: msg.payload.price });
-        await db.orderbook.add({
-          symbol,
-          t: msg.payload.t,
-          bids: JSON.stringify(msg.payload.orderBook.bids),
-          asks: JSON.stringify(msg.payload.orderBook.asks)
-        });
+        }, newsDelayRef.current);
       }
-      if (msg.type === "bar") {
-        await db.bars.add({
-          symbol,
-          t: msg.payload.t,
-          o: msg.payload.o,
-          h: msg.payload.h,
-          l: msg.payload.l,
-          c: msg.payload.c
-        });
+      await db.ticks.add({ symbol, t: payload.t, price: payload.price });
+      await db.orderbook.add({
+        symbol,
+        t: payload.t,
+        bids: JSON.stringify(payload.orderBook.bids),
+        asks: JSON.stringify(payload.orderBook.asks)
+      });
+    };
+    socket.on("market:tick", onTick);
+    socket.on("market:snapshot", onTick);
+    socket.on("trade:fill", (data) => {
+      const signed = data.side === "buy" ? data.size : -data.size;
+      const newSize = position.size + signed;
+      let newAvg = position.avgPrice;
+      if (newSize === 0) {
+        newAvg = 0;
+      } else if (position.size === 0 || Math.sign(position.size) === Math.sign(newSize)) {
+        const totalCost = position.avgPrice * position.size + data.fill * signed;
+        newAvg = totalCost / newSize;
       }
-      if (msg.type === "news") {
-        const n = msg.payload;
-        setNews((prev) => [{ id: n.id, t: n.t, headline: n.headline, sentiment: n.sentiment, impact: n.impact }, ...prev].slice(0, 20));
-        await db.news.add({ t: n.t, headline: n.headline, sentiment: n.sentiment, impact: n.impact });
+      setPosition({ size: newSize, avgPrice: newAvg });
+      setCash((c) => c - data.fill * signed);
+      const trade: TradeRow = {
+        symbol,
+        t: Date.now(),
+        side: data.side,
+        size: data.size,
+        price: data.fill
+      };
+      setTrades((prev) => [trade, ...prev].slice(0, 30));
+      db.trades.add(trade);
+    });
+    socket.on("trade:tape", (data) => {
+      const trade: TradeRow = {
+        symbol,
+        t: data.t || Date.now(),
+        side: data.side,
+        size: data.size,
+        price: data.price
+      };
+      setGlobalTape((prev) => [trade, ...prev].slice(0, 40));
+    });
+    socket.on("trade:reject", (data) => {
+      if (data?.reason === "size_limit") {
+        alert(`Trade rejected: max size ${data.maxSize}`);
       }
     });
     return () => {
-      off();
-      worker.terminate();
+      socket.off("market:tick", onTick);
+      socket.off("market:snapshot", onTick);
+      socket.off("trade:fill");
+      socket.off("trade:tape");
+      socket.off("trade:reject");
     };
   }, [symbol]);
 
@@ -85,47 +135,218 @@ export default function Home() {
     db.leaderboard_runs.orderBy("t").reverse().limit(10).toArray().then(setLeaderboard);
   }, []);
 
-  const handleTrade = (side: "buy" | "sell") => {
-    if (!tick) return;
-    const fill = calcFillPrice({
-      mid: tick.price,
-      spread: tick.spread,
-      size: qty,
-      liquidity: tick.liquidity,
-      volatility: tick.volState === "high" ? 1.8 : tick.volState === "low" ? 0.6 : 1,
-      side
+  useEffect(() => {
+    loadAuth();
+    loadLeaderboards();
+  }, []);
+
+  useEffect(() => {
+    const socket = getSocket();
+    socket.on("presence:update", (data) => {
+      setWsOnline(data.online || 0);
     });
-    const signed = side === "buy" ? qty : -qty;
-    const newSize = position.size + signed;
-    let newAvg = position.avgPrice;
-    if (newSize === 0) {
-      newAvg = 0;
-    } else if (position.size === 0 || Math.sign(position.size) === Math.sign(newSize)) {
-      const totalCost = position.avgPrice * position.size + fill * signed;
-      newAvg = totalCost / newSize;
-    }
-    setPosition({ size: newSize, avgPrice: newAvg });
-    setCash((c) => c - fill * signed);
-    const trade: TradeRow = {
-      symbol,
-      t: Date.now(),
-      side,
-      size: qty,
-      price: fill
+    socket.on("firm:chat", (payload) => {
+      if (!firmMember || payload.firmId !== firmMember.firmId) return;
+      setChat((prev) => [
+        { id: payload.id, user: payload.user, message: payload.message, t: payload.t },
+        ...prev
+      ].slice(0, 50));
+    });
+    return () => {
+      socket.off("presence:update");
+      socket.off("firm:chat");
     };
-    setTrades((prev) => [trade, ...prev].slice(0, 30));
-    db.trades.add(trade);
+  }, [firmMember]);
+
+  useEffect(() => {
+    if (!firmMember) return;
+    const t = setInterval(() => loadChat(), 5000);
+    return () => clearInterval(t);
+  }, [firmMember]);
+
+  useEffect(() => {
+    const level = getUpgradeLevel("info_news_speed");
+    newsDelayRef.current = Math.max(0, 6000 - level * 1000);
+  }, [userUpgrades]);
+
+  async function fetchJson(url: string, opts?: RequestInit) {
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  async function loadAuth() {
+    try {
+      const data = await fetchJson("/api/auth/me");
+      setAuthUser(data.user || null);
+      setStats(data.stats || null);
+      setUserUpgrades(data.upgrades || []);
+      if (data.user) {
+        await loadProgression();
+        await loadFirm();
+      }
+    } catch (e) {
+      setAuthUser(null);
+    }
+  }
+
+  async function loadProgression() {
+    try {
+      const data = await fetchJson("/api/progression/status");
+      setStats(data.stats);
+      setUpgradeDefs(data.defs || []);
+      setUserUpgrades(data.upgrades || []);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  async function loadFirm() {
+    try {
+      const data = await fetchJson("/api/firms/me");
+      setFirmMember(data.member || null);
+      if (data.member) await loadChat();
+    } catch (e) {
+      setFirmMember(null);
+    }
+  }
+
+  async function loadChat() {
+    try {
+      const data = await fetchJson("/api/firms/chat");
+      setChat(data);
+    } catch (e) {
+      setChat([]);
+    }
+  }
+
+  async function loadLeaderboards() {
+    try {
+      const solo = await fetchJson("/api/leaderboards/solo");
+      const firms = await fetchJson("/api/leaderboards/firms");
+      setSoloLb(solo || []);
+      setFirmLb(firms || []);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  const handleTrade = (side: "buy" | "sell") => {
+    const socket = getSocket();
+    socket.emit("trade:submit", { side, size: qty, symbol });
   };
+
+  async function register(username: string, password: string) {
+    await fetchJson("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    await loadAuth();
+  }
+
+  async function login(username: string, password: string) {
+    await fetchJson("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+    await loadAuth();
+  }
+
+  async function logout() {
+    await fetchJson("/api/auth/logout", { method: "POST" });
+    setAuthUser(null);
+    setStats(null);
+    setUserUpgrades([]);
+  }
+
+  async function purchaseUpgrade(key: string) {
+    await fetchJson("/api/progression/upgrade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key })
+    });
+    await loadProgression();
+  }
+
+  async function createFirm(name: string) {
+    await fetchJson("/api/firms/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name })
+    });
+    await loadFirm();
+  }
+
+  async function inviteFirm(username: string) {
+    return fetchJson("/api/firms/invite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ invitedName: username })
+    });
+  }
+
+  async function joinFirm(token: string) {
+    await fetchJson("/api/firms/join", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token })
+    });
+    await loadFirm();
+  }
+
+  async function leaveFirm() {
+    await fetchJson("/api/firms/leave", { method: "POST" });
+    await loadFirm();
+  }
+
+  async function sendChat(message: string) {
+    await fetchJson("/api/firms/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message })
+    });
+    await loadChat();
+  }
+
+  function upgradeCost(def: UpgradeDef, level: number) {
+    return Math.round(def.baseCost * Math.pow(def.costScale, level));
+  }
+
+  function getUpgradeLevel(key: string) {
+    const def = upgradeDefs.find((d) => d.key === key);
+    if (!def) return 0;
+    const owned = userUpgrades.find((u) => u.upgradeId === def.id);
+    return owned?.level || 0;
+  }
 
   const onCashout = () => {
     db.leaderboard_runs.add({ t: Date.now(), pnl, trades: trades.length });
     db.leaderboard_runs.orderBy("t").reverse().limit(10).toArray().then(setLeaderboard);
+    if (authUser) {
+      fetch("/api/leaderboards/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pnl, trades: trades.length, riskScore: Math.abs(pnl) / Math.max(1, trades.length), streak: trades.length })
+      })
+        .then(() => {
+          loadAuth();
+          loadLeaderboards();
+        })
+        .catch(() => {});
+    }
     setCash(START_CASH);
     setPosition({ size: 0, avgPrice: 0 });
     setTrades([]);
   };
 
   const online = tick?.online || { wallSt: 0, retail: 0 };
+  const retailCount = wsOnline ?? online.retail;
+  const sentiment = news[0]?.sentiment ?? 0;
+  const showIndicators = getUpgradeLevel("chart_indicators") > 0;
+  const showBotAlerts = getUpgradeLevel("bot_alerts") > 0;
+  const botSignal = tick ? (tick.velocity >= 0 ? "BUY BIAS" : "SELL BIAS") : "--";
 
   const symbols = useMemo(() => ["NQ", "ES", "RTY"], []);
 
@@ -138,8 +359,13 @@ export default function Home() {
         </div>
         <div className="glass flex items-center gap-4 rounded-full px-4 py-2 text-xs">
           <div>WallSt: <span className="text-neon-cyan">{online.wallSt}</span></div>
-          <div>Retail: <span className="text-neon-green">{online.retail}</span></div>
-          <div>Vol: <span className="text-white/80">{tick?.volState || "mid"}</span></div>
+          <div>Retail: <span className="text-neon-green">{retailCount}</span></div>
+          {getUpgradeLevel("info_vol_forecast") > 0 && (
+            <div>Vol: <span className="text-white/80">{tick?.volState || "mid"}</span></div>
+          )}
+          {getUpgradeLevel("info_sentiment") > 0 && (
+            <div>Sent: <span className={sentiment >= 0 ? "text-neon-green" : "text-neon-red"}>{sentiment.toFixed(2)}</span></div>
+          )}
         </div>
       </div>
 
@@ -154,11 +380,17 @@ export default function Home() {
             <span>Spread {tick?.spread.toFixed(3) || "--"}</span>
           </div>
           <div className="flex-1">
-            <ChartCanvas bars={bars} price={tick?.price || 0} />
+            <ChartCanvas bars={bars} price={tick?.price || 0} showSMA={showIndicators} />
           </div>
         </div>
 
         <div className="hidden md:flex md:flex-col md:gap-3">
+          {showBotAlerts && (
+            <div className="glass rounded-xl p-3 text-xs">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-white/50">Bot Alert</div>
+              <div className="mt-1 text-neon-cyan">{botSignal}</div>
+            </div>
+          )}
           <TradePanel
             symbol={symbol}
             symbols={symbols}
@@ -174,7 +406,7 @@ export default function Home() {
             onCashout={onCashout}
             onSymbol={setSymbol}
           />
-          <TradeTape trades={trades} />
+          <TradeTape trades={globalTape.length ? globalTape : trades} />
           <NewsFeed news={news} />
         </div>
       </div>
@@ -200,6 +432,11 @@ export default function Home() {
           </div>
           {mobileTab === "trade" ? (
             <div className="space-y-3">
+              {showBotAlerts && (
+                <div className="rounded-lg bg-white/5 px-3 py-2 text-xs text-neon-cyan">
+                  Bot Alert: {botSignal}
+                </div>
+              )}
               <TradePanel
                 symbol={symbol}
                 symbols={symbols}
@@ -215,7 +452,7 @@ export default function Home() {
                 onCashout={onCashout}
                 onSymbol={setSymbol}
               />
-              <TradeTape trades={trades} />
+              <TradeTape trades={globalTape.length ? globalTape : trades} />
             </div>
           ) : (
             <NewsFeed news={news} />
@@ -223,25 +460,155 @@ export default function Home() {
         </div>
       </div>
 
-      <div id="leaderboard" className="mt-6 glass rounded-xl p-4">
-        <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-white/50">
-          Local Leaderboard
+      <div className="mt-6 glass rounded-xl p-4">
+        <div className="mb-3 flex flex-wrap gap-2">
+          {(["account","upgrades","firms","leaderboards"] as const).map((tab) => (
+            <button
+              key={tab}
+              className={`rounded-full px-3 py-1 text-xs ${panelTab === tab ? "bg-neon-cyan text-black" : "bg-white/10 text-white/70"}`}
+              onClick={() => setPanelTab(tab)}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
         </div>
-        <div className="grid gap-2 text-xs">
-          {leaderboard.length === 0 ? (
-            <div className="text-white/40">No runs yet.</div>
-          ) : (
-            leaderboard.map((run) => (
-              <div key={run.id} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2">
-                <span>{new Date(run.t).toLocaleTimeString()}</span>
-                <span className={run.pnl >= 0 ? "text-neon-green" : "text-neon-red"}>
-                  {run.pnl >= 0 ? "+" : ""}${run.pnl.toFixed(2)}
-                </span>
-                <span className="text-white/50">{run.trades} trades</span>
+
+        {panelTab === "account" && (
+          <div className="space-y-2 text-xs">
+            {authUser ? (
+              <div className="space-y-2 text-xs">
+                <div className="text-white/80">Signed in as <span className="text-neon-cyan">{authUser.username}</span></div>
+                <div>Level: <span className="text-neon-green">{stats?.level ?? 1}</span></div>
+                <div>Cashout Balance: <span className="text-white/80">${stats?.cashoutBalance?.toFixed(2) ?? "0.00"}</span></div>
+                <button className="rounded-md bg-white/10 px-3 py-2 text-xs" onClick={logout}>Logout</button>
               </div>
-            ))
-          )}
-        </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <div className="text-[10px] text-white/50">Register</div>
+                  <input className="mt-1 w-full rounded-md bg-white/5 p-2" placeholder="Username" value={regUser} onChange={(e) => setRegUser(e.target.value)} />
+                  <input className="mt-1 w-full rounded-md bg-white/5 p-2" type="password" placeholder="Password" value={regPass} onChange={(e) => setRegPass(e.target.value)} />
+                  <button className="mt-2 w-full rounded-md bg-neon-cyan px-3 py-2 text-black" onClick={() => register(regUser, regPass)}>Register</button>
+                </div>
+                <div>
+                  <div className="text-[10px] text-white/50">Login</div>
+                  <input className="mt-1 w-full rounded-md bg-white/5 p-2" placeholder="Username" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} />
+                  <input className="mt-1 w-full rounded-md bg-white/5 p-2" type="password" placeholder="Password" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} />
+                  <button className="mt-2 w-full rounded-md bg-white/20 px-3 py-2" onClick={() => login(loginUser, loginPass)}>Login</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {panelTab === "upgrades" && (
+          <div className="space-y-2 text-xs">
+            {authUser ? (
+              <div className="grid gap-2 md:grid-cols-2">
+                {upgradeDefs.map((def) => {
+                  const owned = userUpgrades.find((u) => u.upgradeId === def.id);
+                  const level = owned?.level || 0;
+                  const cost = upgradeCost(def, level);
+                  return (
+                    <div key={def.id} className="rounded-lg border border-white/10 bg-white/5 p-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-white/80">{def.title}</div>
+                          <div className="text-[10px] text-white/40">{def.category}</div>
+                        </div>
+                        <div className="text-[10px] text-white/60">Lv {level}</div>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-white/60">${cost}</span>
+                        <button className="rounded-md bg-white/10 px-2 py-1" onClick={() => purchaseUpgrade(def.key)}>Upgrade</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-white/40 text-xs">Login to unlock upgrades.</div>
+            )}
+          </div>
+        )}
+
+        {panelTab === "firms" && (
+          <div className="space-y-2 text-xs">
+            {!authUser ? (
+              <div className="text-white/40 text-xs">Login to manage firms.</div>
+            ) : firmMember ? (
+              <div className="space-y-2 text-xs">
+                <div>Firm: <span className="text-neon-cyan">{firmMember.firm.name}</span> ({firmMember.role})</div>
+                <div className="flex gap-2">
+                  <input className="w-full rounded-md bg-white/5 p-2" placeholder="Invite username" value={inviteName} onChange={(e) => setInviteName(e.target.value)} />
+                  <button className="rounded-md bg-white/10 px-2" onClick={() => inviteFirm(inviteName)}>Invite</button>
+                </div>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {chat.map((m) => (
+                    <div key={m.id} className="rounded bg-white/5 px-2 py-1">
+                      <span className="text-neon-green">{m.user}</span>: {m.message}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input className="w-full rounded-md bg-white/5 p-2" placeholder="Message" value={chatMessage} onChange={(e) => setChatMessage(e.target.value)} />
+                  <button className="rounded-md bg-neon-cyan px-2 text-black" onClick={() => { sendChat(chatMessage); setChatMessage(""); }}>Send</button>
+                </div>
+                <button className="rounded-md bg-white/10 px-3 py-2" onClick={leaveFirm}>Leave firm</button>
+              </div>
+            ) : (
+              <div className="space-y-2 text-xs">
+                <div className="flex gap-2">
+                  <input className="w-full rounded-md bg-white/5 p-2" placeholder="Firm name" value={firmName} onChange={(e) => setFirmName(e.target.value)} />
+                  <button className="rounded-md bg-neon-cyan px-2 text-black" onClick={() => createFirm(firmName)}>Create</button>
+                </div>
+                <div className="flex gap-2">
+                  <input className="w-full rounded-md bg-white/5 p-2" placeholder="Invite token" value={joinToken} onChange={(e) => setJoinToken(e.target.value)} />
+                  <button className="rounded-md bg-white/10 px-2" onClick={() => joinFirm(joinToken)}>Join</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {panelTab === "leaderboards" && (
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-white/50">Solo Leaderboard</div>
+              <div className="space-y-2 text-xs">
+                {soloLb.length === 0 ? (
+                  <div className="text-white/40">No entries yet.</div>
+                ) : (
+                  soloLb.map((row, idx) => (
+                    <div key={`${row.username}-${idx}`} className="flex justify-between rounded bg-white/5 px-2 py-1">
+                      <span>{row.username}</span>
+                      <span className={row.pnl >= 0 ? "text-neon-green" : "text-neon-red"}>
+                        {row.pnl >= 0 ? "+" : ""}${row.pnl.toFixed(2)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            <div>
+              <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-white/50">Firm Leaderboard</div>
+              <div className="space-y-2 text-xs">
+                {firmLb.length === 0 ? (
+                  <div className="text-white/40">No entries yet.</div>
+                ) : (
+                  firmLb.map((row, idx) => (
+                    <div key={`${row.firm}-${idx}`} className="flex justify-between rounded bg-white/5 px-2 py-1">
+                      <span>{row.firm}</span>
+                      <span className={row.pnl >= 0 ? "text-neon-green" : "text-neon-red"}>
+                        {row.pnl >= 0 ? "+" : ""}${row.pnl.toFixed(2)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

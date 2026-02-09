@@ -1,0 +1,39 @@
+import { NextResponse } from "next/server";
+import { getUserFromSession } from "@/src/server/auth";
+import { prisma } from "@/src/server/db";
+import { ensureUpgradeDefs, upgradeCost } from "@/src/server/progression";
+
+export async function POST(req: Request) {
+  const user = await getUserFromSession();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { key } = await req.json();
+  if (!key) return NextResponse.json({ error: "Missing upgrade key" }, { status: 400 });
+  await ensureUpgradeDefs();
+  const def = await prisma.upgradeDef.findUnique({ where: { key } });
+  if (!def) return NextResponse.json({ error: "Upgrade not found" }, { status: 404 });
+  const stats = await prisma.playerStats.findUnique({ where: { userId: user.id } });
+  if (!stats) return NextResponse.json({ error: "Stats missing" }, { status: 400 });
+  const existing = await prisma.userUpgrade.findUnique({
+    where: { userId_upgradeId: { userId: user.id, upgradeId: def.id } }
+  });
+  const level = existing?.level || 0;
+  const cost = upgradeCost(def.baseCost, def.costScale, level);
+  if (stats.cashoutBalance < cost) {
+    return NextResponse.json({ error: "Insufficient balance", cost }, { status: 400 });
+  }
+  await prisma.$transaction([
+    prisma.playerStats.update({
+      where: { userId: user.id },
+      data: { cashoutBalance: stats.cashoutBalance - cost }
+    }),
+    existing
+      ? prisma.userUpgrade.update({
+          where: { id: existing.id },
+          data: { level: existing.level + 1 }
+        })
+      : prisma.userUpgrade.create({
+          data: { userId: user.id, upgradeId: def.id, level: 1 }
+        })
+  ]);
+  return NextResponse.json({ ok: true });
+}

@@ -1,15 +1,30 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Bar } from "../engine/types";
 
 type Props = {
   bars: Bar[];
   price: number;
+  showSMA?: boolean;
 };
 
-export function ChartCanvas({ bars, price }: Props) {
+export function ChartCanvas({ bars, price, showSMA }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const parent = canvas.parentElement;
+    if (!parent) return;
+    const ro = new ResizeObserver(() => {
+      setSize({ w: parent.clientWidth, h: parent.clientHeight });
+    });
+    ro.observe(parent);
+    setSize({ w: parent.clientWidth, h: parent.clientHeight });
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -17,8 +32,9 @@ export function ChartCanvas({ bars, price }: Props) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
+    const w = size.w;
+    const h = size.h;
+    if (!w || !h) return;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
@@ -27,7 +43,13 @@ export function ChartCanvas({ bars, price }: Props) {
     ctx.fillStyle = "#0a0a12";
     ctx.fillRect(0, 0, w, h);
 
-    if (!bars.length) return;
+    if (!bars.length) {
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("Waiting for market...", w / 2, h / 2);
+      return;
+    }
 
     const maxBars = 80;
     const slice = bars.slice(-maxBars);
@@ -67,6 +89,29 @@ export function ChartCanvas({ bars, price }: Props) {
       ctx.fillRect(x - bw / 2, top, bw, Math.max(1, bottom - top));
     });
 
+    if (showSMA) {
+      ctx.strokeStyle = "rgba(91,141,239,0.9)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      let first = true;
+      const period = 20;
+      for (let i = 0; i < slice.length; i++) {
+        if (i < period - 1) continue;
+        let sum = 0;
+        for (let j = 0; j < period; j++) sum += slice[i - j].c;
+        const sma = sum / period;
+        const x = pad.l + (maxBars - slice.length + i + 0.5) * gap;
+        const y = toY(sma);
+        if (first) {
+          ctx.moveTo(x, y);
+          first = false;
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      if (!first) ctx.stroke();
+    }
+
     const py = toY(price);
     ctx.strokeStyle = "rgba(34,211,238,0.7)";
     ctx.setLineDash([4, 4]);
@@ -81,7 +126,7 @@ export function ChartCanvas({ bars, price }: Props) {
     ctx.font = "bold 10px ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.textAlign = "center";
     ctx.fillText(`$${price.toFixed(2)}`, w - pad.r / 2, py + 4);
-  }, [bars, price]);
+  }, [bars, price, showSMA, size]);
 
   return <canvas ref={ref} className="h-full w-full" />;
 }
