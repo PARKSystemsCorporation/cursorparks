@@ -865,9 +865,17 @@ export default function HomeClient() {
   }, []);
 
   // ── Daily challenges ──
-  const buyCount = trades.filter((t) => t.side === "buy").length;
-  const sellCount = trades.length - buyCount;
-  const dailyChallenges = useMemo(() => makeDailyChallenges(trades.length, pnl, buyCount, sellCount), [trades.length, pnl, buyCount, sellCount]);
+  const { buyCount, sellCount } = useMemo(() => {
+    let buys = 0;
+    for (const t of trades) {
+      if (t.side === "buy") buys += 1;
+    }
+    return { buyCount: buys, sellCount: trades.length - buys };
+  }, [trades]);
+  const dailyChallenges = useMemo(
+    () => makeDailyChallenges(trades.length, pnl, buyCount, sellCount),
+    [trades.length, pnl, buyCount, sellCount]
+  );
 
   const tapeTrades = globalTape.length ? globalTape : trades;
   const tradePanelProps = {
