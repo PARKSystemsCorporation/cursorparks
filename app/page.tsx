@@ -43,6 +43,8 @@ export default function Home() {
   const [loginPass, setLoginPass] = useState("");
   const [regUser, setRegUser] = useState("");
   const [regPass, setRegPass] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authBusy, setAuthBusy] = useState<"register" | "login" | null>(null);
   const [firmName, setFirmName] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [joinToken, setJoinToken] = useState("");
@@ -170,8 +172,14 @@ export default function Home() {
   }, [userUpgrades]);
 
   async function fetchJson(url: string, opts?: RequestInit) {
-    const res = await fetch(url, opts);
-    if (!res.ok) throw new Error(await res.text());
+    const res = await fetch(url, {
+      credentials: "include",
+      ...opts
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || `Request failed (${res.status})`);
+    }
     return res.json();
   }
 
@@ -237,21 +245,52 @@ export default function Home() {
   };
 
   async function register(username: string, password: string) {
-    await fetchJson("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    });
-    await loadAuth();
+    setAuthError(null);
+    const name = username.trim();
+    if (name.length < 3 || name.length > 12) {
+      setAuthError("Username must be 3-12 chars.");
+      return;
+    }
+    if (password.length < 6) {
+      setAuthError("Password must be at least 6 chars.");
+      return;
+    }
+    try {
+      setAuthBusy("register");
+      await fetchJson("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: name, password })
+      });
+      await loadAuth();
+      setRegPass("");
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : "Registration failed.");
+    } finally {
+      setAuthBusy(null);
+    }
   }
 
   async function login(username: string, password: string) {
-    await fetchJson("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    });
-    await loadAuth();
+    setAuthError(null);
+    if (!username.trim() || !password) {
+      setAuthError("Enter username and password.");
+      return;
+    }
+    try {
+      setAuthBusy("login");
+      await fetchJson("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: username.trim(), password })
+      });
+      await loadAuth();
+      setLoginPass("");
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : "Login failed.");
+    } finally {
+      setAuthBusy(null);
+    }
   }
 
   async function logout() {
@@ -488,14 +527,31 @@ export default function Home() {
                   <div className="text-[10px] text-white/50">Register</div>
                   <input className="mt-1 w-full rounded-md bg-white/5 p-2" placeholder="Username" value={regUser} onChange={(e) => setRegUser(e.target.value)} />
                   <input className="mt-1 w-full rounded-md bg-white/5 p-2" type="password" placeholder="Password" value={regPass} onChange={(e) => setRegPass(e.target.value)} />
-                  <button className="mt-2 w-full rounded-md bg-neon-cyan px-3 py-2 text-black" onClick={() => register(regUser, regPass)}>Register</button>
+                  <button
+                    className="mt-2 w-full rounded-md bg-neon-cyan px-3 py-2 text-black disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => register(regUser, regPass)}
+                    disabled={authBusy === "register"}
+                  >
+                    {authBusy === "register" ? "Registering..." : "Register"}
+                  </button>
                 </div>
                 <div>
                   <div className="text-[10px] text-white/50">Login</div>
                   <input className="mt-1 w-full rounded-md bg-white/5 p-2" placeholder="Username" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} />
                   <input className="mt-1 w-full rounded-md bg-white/5 p-2" type="password" placeholder="Password" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} />
-                  <button className="mt-2 w-full rounded-md bg-white/20 px-3 py-2" onClick={() => login(loginUser, loginPass)}>Login</button>
+                  <button
+                    className="mt-2 w-full rounded-md bg-white/20 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={() => login(loginUser, loginPass)}
+                    disabled={authBusy === "login"}
+                  >
+                    {authBusy === "login" ? "Logging in..." : "Login"}
+                  </button>
                 </div>
+                {authError && (
+                  <div className="md:col-span-2 rounded-md bg-neon-red/10 px-3 py-2 text-xs text-neon-red">
+                    {authError}
+                  </div>
+                )}
               </div>
             )}
           </div>
