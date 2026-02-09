@@ -12,11 +12,11 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^7.3.0",
+    "@prisma/client": "^6.19.2",
     "bcryptjs": "^3.0.3",
     "dexie": "^4.0.8",
     "next": "^15.2.3",
-    "prisma": "^7.3.0",
+    "prisma": "^6.19.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "socket.io": "^4.8.3",
