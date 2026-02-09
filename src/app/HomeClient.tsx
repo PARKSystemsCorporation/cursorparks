@@ -1150,7 +1150,7 @@ export default function HomeClient() {
               <span className="text-[10px] uppercase tracking-[0.35em] text-white/70">PARKSYSTEMS</span>
               <div className="pulse-dot" />
             </div>
-            <div className="text-sm font-bold text-white">World Market Simulator</div>
+            <div className="text-sm font-bold text-white">The Trading Whale</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
