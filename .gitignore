@@ -1,8 +1,10 @@
 node_modules/
-leaderboard.db
+.next/
+out/
+.vercel/
 .cursor/
-.env
-*.db-journal
-*.db-shm
-*.db-wal
 .wrangler/
+*.log
+*.sqlite*
+*.db*
+.DS_Store
