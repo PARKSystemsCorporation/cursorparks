@@ -11,7 +11,8 @@ export async function GET() {
       take: 50,
       include: { user: true }
     });
-    return NextResponse.json(rows.map((r: { user: { username: string }; pnl: number; riskScore: number; streak: number }) => ({
+    type SoloLbRow = { user: { username: string }; pnl: number; riskScore: number; streak: number };
+    return NextResponse.json((rows as SoloLbRow[]).map((r) => ({
       username: r.user.username,
       pnl: r.pnl,
       riskScore: r.riskScore,

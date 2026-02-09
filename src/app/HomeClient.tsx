@@ -450,6 +450,15 @@ export default function HomeClient() {
     return () => clearInterval(interval);
   }, [authUser, statsLastUpdatedAt]);
 
+  const refreshProgression = useCallback(async () => {
+    if (!authUser || progressionRefreshInFlight.current) return null;
+    progressionRefreshInFlight.current = true;
+    try {
+      return await loadProgression();
+    } finally {
+      progressionRefreshInFlight.current = false;
+    }
+  }, [authUser, loadProgression]);
   useEffect(() => {
     if (!authUser) return;
     const socket = getSocket();
@@ -505,15 +514,15 @@ export default function HomeClient() {
     if (qty > maxOrderSize) setQty(Math.max(1, Math.floor(maxOrderSize)));
   }, [qty, maxOrderSize]);
 
-  const submitTrade = (side: "buy" | "sell", size: number) => {
+  const submitTrade = useCallback((side: "buy" | "sell", size: number) => {
     if (!size || !Number.isFinite(size)) return;
     const socket = getSocket();
     socket.emit("trade:submit", { side, size, symbol });
-  };
+  }, [symbol]);
 
-  const handleTrade = (side: "buy" | "sell") => {
+  const handleTrade = useCallback((side: "buy" | "sell") => {
     submitTrade(side, qty);
-  };
+  }, [submitTrade, qty]);
 
   async function register(username: string, password: string) {
     setAuthError(null);
@@ -753,7 +762,7 @@ export default function HomeClient() {
     if (position.size === 0) return;
     const side = position.size > 0 ? "sell" : "buy";
     submitTrade(side, Math.abs(position.size));
-  }, [position.size]);
+  }, [position.size, submitTrade]);
 
   // ── Tutorial check (show on first visit) ──
   useEffect(() => {
@@ -843,8 +852,7 @@ export default function HomeClient() {
         return o;
       })
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally only re-run on price/order changes
-  }, [currentPrice, advancedOrders]);
+  }, [currentPrice, advancedOrders, addToast, submitTrade]);
 
   const submitAdvancedOrder = useCallback((order: Omit<AdvancedOrder, "id" | "status" | "createdAt">) => {
     const id = `order-${++_orderId.current}-${Date.now()}`;

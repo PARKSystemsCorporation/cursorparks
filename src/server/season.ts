@@ -1,6 +1,7 @@
+import type { Season } from "@prisma/client";
 import { prisma } from "./db";
 
-let _cachedSeason: { data: { id: string; name: string; startsAt: Date; endsAt: Date }; expiresAt: number } | null = null;
+let _cachedSeason: { data: Season; expiresAt: number } | null = null;
 
 export async function ensureCurrentSeason() {
   if (_cachedSeason && _cachedSeason.expiresAt > Date.now()) return _cachedSeason.data;

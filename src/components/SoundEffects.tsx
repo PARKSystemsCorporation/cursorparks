@@ -5,7 +5,6 @@ import { useCallback, useRef } from "react";
 type Props = {
   enabled: boolean;
   onToggle: () => void;
-  volume?: number;
 };
 
 // Generate sounds using Web Audio API (no external files needed)

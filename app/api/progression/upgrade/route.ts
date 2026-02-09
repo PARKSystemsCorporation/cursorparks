@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getUserFromSession } from "@/src/server/auth";
 import { prisma } from "@/src/server/db";
-import { getIO } from "@/src/server/socket";
 import { ensureUpgradeDefs, upgradeCost } from "@/src/server/progression";
 
 export async function POST(req: Request) {
@@ -19,7 +18,8 @@ export async function POST(req: Request) {
       where: { userId: user.id },
       include: { upgrade: true }
     });
-    const levelByKey = new Map<string, number>(ownedUpgrades.map((u: { upgrade: { key: string }; level: number }) => [u.upgrade.key, u.level]));
+    type OwnedUpgrade = { upgrade: { key: string }; level: number };
+    const levelByKey = new Map<string, number>((ownedUpgrades as OwnedUpgrade[]).map((u) => [u.upgrade.key, u.level]));
     const getLevel = (upgradeKey: string): number => levelByKey.get(upgradeKey) || 0;
     const existing = await prisma.userUpgrade.findUnique({
       where: { userId_upgradeId: { userId: user.id, upgradeId: def.id } }
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     if (stats.cashoutBalance < cost) {
       return NextResponse.json({ error: "Insufficient balance", cost }, { status: 400 });
     }
-    const [updatedStats] = await prisma.$transaction([
+    await prisma.$transaction([
       prisma.playerStats.update({
         where: { userId: user.id },
         data: { cashoutBalance: stats.cashoutBalance - cost }
@@ -62,11 +62,6 @@ export async function POST(req: Request) {
             data: { userId: user.id, upgradeId: def.id, level: 1 }
           })
     ]);
-    const io = getIO();
-    if (io) {
-      const target = io.to ? io.to(`user:${user.id}`) : io;
-      target.emit("player:stats", { userId: user.id, stats: updatedStats });
-    }
     return NextResponse.json({ ok: true });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Internal error" }, { status: 500 });

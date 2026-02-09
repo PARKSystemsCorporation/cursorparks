@@ -15,8 +15,9 @@ export async function GET() {
       take: 50,
       include: { user: true }
     });
+    type FirmChatRow = { id: string; message: string; createdAt: Date; user: { username: string } };
     return NextResponse.json(
-      messages.map((m: { id: string; user: { username: string }; message: string; createdAt: Date }) => ({
+      (messages as FirmChatRow[]).map((m) => ({
         id: m.id,
         user: m.user.username,
         message: m.message,
