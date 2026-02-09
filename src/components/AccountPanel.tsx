@@ -165,28 +165,28 @@ export function AccountPanel({
     return (
       <div className="space-y-4">
         <div className="text-center">
-          <div className="text-[9px] uppercase tracking-[0.4em] text-white/20">
+          <div className="text-[9px] uppercase tracking-[0.4em] text-white/70">
             Access Terminal
           </div>
           <div className="mt-1 font-mono text-sm font-bold text-white">PARKSYSTEMS</div>
-          <div className="mt-1.5 text-[10px] text-white/25">
+          <div className="mt-1.5 text-[10px] text-white/70">
             Create an account to unlock the skill tree, upgrades, firms, and leaderboards.
           </div>
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded border border-white/5 bg-white/[0.02] p-3">
-            <div className="text-[9px] uppercase tracking-[0.15em] text-white/25">
+            <div className="text-[9px] uppercase tracking-[0.15em] text-white/70">
               New Trader
             </div>
             <input
-              className="mt-2 w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none placeholder:text-white/15 focus:bg-white/[0.07]"
+              className="mt-2 w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none placeholder:text-white/50 focus:bg-white/[0.07]"
               placeholder="Username"
               value={regUser}
               onChange={(e) => setRegUser(e.target.value)}
             />
             <input
-              className="mt-1.5 w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none placeholder:text-white/15 focus:bg-white/[0.07]"
+              className="mt-1.5 w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none placeholder:text-white/50 focus:bg-white/[0.07]"
               type="password"
               placeholder="Password"
               value={regPass}
@@ -201,24 +201,24 @@ export function AccountPanel({
             </button>
           </div>
           <div className="rounded border border-white/5 bg-white/[0.02] p-3">
-            <div className="text-[9px] uppercase tracking-[0.15em] text-white/25">
+            <div className="text-[9px] uppercase tracking-[0.15em] text-white/70">
               Returning Trader
             </div>
             <input
-              className="mt-2 w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none placeholder:text-white/15 focus:bg-white/[0.07]"
+              className="mt-2 w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none placeholder:text-white/50 focus:bg-white/[0.07]"
               placeholder="Username"
               value={loginUser}
               onChange={(e) => setLoginUser(e.target.value)}
             />
             <input
-              className="mt-1.5 w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none placeholder:text-white/15 focus:bg-white/[0.07]"
+              className="mt-1.5 w-full rounded bg-white/5 px-3 py-2 text-xs text-white outline-none placeholder:text-white/50 focus:bg-white/[0.07]"
               type="password"
               placeholder="Password"
               value={loginPass}
               onChange={(e) => setLoginPass(e.target.value)}
             />
             <button
-              className="mt-2.5 w-full rounded bg-white/10 py-2 text-[11px] font-medium text-white/60 transition-all duration-200 hover:bg-white/15 hover:text-white/80 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+              className="mt-2.5 w-full rounded bg-white/10 py-2 text-[11px] font-medium text-white/80 transition-all duration-200 hover:bg-white/15 hover:text-white hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
               onClick={() => onLogin(loginUser, loginPass)}
               disabled={authBusy === "login"}
             >
@@ -262,25 +262,25 @@ export function AccountPanel({
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-0.5 font-mono text-[10px]">
             <span>
-              <span className="text-white/20">LVL </span>
-              <span className="text-white/50">{serverLevel}</span>
+              <span className="text-white/70">LVL </span>
+              <span className="text-white/80">{serverLevel}</span>
             </span>
             <span>
-              <span className="text-white/20">REP </span>
-              <span className="text-white/50">{reputation}</span>
+              <span className="text-white/70">REP </span>
+              <span className="text-white/80">{reputation}</span>
             </span>
             <span>
-              <span className="text-white/20">XP </span>
-              <span className="text-white/50">{xp}</span>
+              <span className="text-white/70">XP </span>
+              <span className="text-white/80">{xp}</span>
             </span>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-0.5 font-mono text-[10px]">
             <span>
-              <span className="text-white/20">BALANCE </span>
+              <span className="text-white/70">BALANCE </span>
               <span className="text-neon-green">${cashoutBal.toFixed(2)}</span>
             </span>
             <span>
-              <span className="text-white/20">ALL-TIME </span>
+              <span className="text-white/70">ALL-TIME </span>
               <span className={totalPnl >= 0 ? "text-neon-green" : "text-neon-red"}>
                 {totalPnl >= 0 ? "+" : ""}${totalPnl.toFixed(2)}
               </span>
@@ -289,7 +289,7 @@ export function AccountPanel({
         </div>
         <button
           onClick={onLogout}
-          className="rounded border border-white/10 px-2.5 py-1 text-[10px] text-white/25 transition-all duration-200 hover:text-white/40 hover:bg-white/5 hover:scale-105 active:scale-95"
+          className="rounded border border-white/10 px-2.5 py-1 text-[10px] text-white/70 transition-all duration-200 hover:text-white hover:bg-white/5 hover:scale-105 active:scale-95"
         >
           Logout
         </button>
@@ -297,7 +297,7 @@ export function AccountPanel({
 
       {/* ── Session Stats ── */}
       <div>
-        <div className="mb-1.5 text-[9px] uppercase tracking-[0.2em] text-white/20">
+        <div className="mb-1.5 text-[9px] uppercase tracking-[0.2em] text-white/70">
           Current Session
         </div>
         <div className="grid grid-cols-4 gap-1.5">
@@ -307,15 +307,15 @@ export function AccountPanel({
               value: `${pnl >= 0 ? "+" : ""}$${pnl.toFixed(0)}`,
               c: pnl >= 0 ? "text-neon-green" : "text-neon-red",
             },
-            { label: "Trades", value: `${tradeCount}`, c: "text-white/60" },
-            { label: "Cash", value: `$${cash.toFixed(0)}`, c: "text-white/60" },
-            { label: "Max Lot", value: `${Math.floor(maxOrderSize)}`, c: "text-white/60" },
+            { label: "Trades", value: `${tradeCount}`, c: "text-white/80" },
+            { label: "Cash", value: `$${cash.toFixed(0)}`, c: "text-white/80" },
+            { label: "Max Lot", value: `${Math.floor(maxOrderSize)}`, c: "text-white/80" },
           ].map((s) => (
             <div
               key={s.label}
               className="rounded border border-white/5 bg-white/[0.02] p-2 text-center"
             >
-              <div className="text-[8px] uppercase text-white/15">{s.label}</div>
+              <div className="text-[8px] uppercase text-white/60">{s.label}</div>
               <div className={`font-mono text-[12px] font-semibold ${s.c}`}>{s.value}</div>
             </div>
           ))}
@@ -324,7 +324,7 @@ export function AccountPanel({
 
       {/* ── Rank Progression ── */}
       <div>
-        <div className="mb-1.5 text-[9px] uppercase tracking-[0.2em] text-white/20">
+        <div className="mb-1.5 text-[9px] uppercase tracking-[0.2em] text-white/70">
           Rank Progression
         </div>
         <div className="space-y-0.5">
@@ -350,8 +350,8 @@ export function AccountPanel({
                     current
                       ? "text-neon-cyan"
                       : achieved
-                        ? "text-neon-green/60"
-                        : "text-white/10"
+                        ? "text-neon-green/80"
+                        : "text-white/40"
                   }`}
                 >
                   {achieved ? "■" : current ? "◆" : "○"}
@@ -362,24 +362,24 @@ export function AccountPanel({
                     current
                       ? "font-semibold text-neon-cyan"
                       : achieved
-                        ? "text-white/40"
-                        : "text-white/15"
+                        ? "text-white/70"
+                        : "text-white/50"
                   }`}
                 >
                   {r.name.length > 8 ? r.name.slice(0, 8) + "." : r.name}
                 </span>
                 {/* Requirement */}
-                <span className="w-10 font-mono text-[9px] text-white/12">
+                <span className="w-10 font-mono text-[9px] text-white/60">
                   {minLabel}
                 </span>
                 {/* Perk or mystery */}
                 <span
                   className={`flex-1 text-[9px] ${
                     current
-                      ? "text-neon-cyan/50"
+                      ? "text-neon-cyan/70"
                       : achieved
-                        ? "text-white/20"
-                        : "text-white/8"
+                        ? "text-white/60"
+                        : "text-white/40"
                   }`}
                 >
                   {perkRevealed ? RANK_PERKS[i] : locked ? "??? Unlock to reveal" : "???"}
@@ -392,8 +392,8 @@ export function AccountPanel({
         {rank.nextMin !== null && (
             <div className="mt-2 px-3">
             <div className="flex items-center justify-between font-mono text-[9px]">
-              <span className="text-white/15">{rank.name}</span>
-              <span className="text-white/15">
+              <span className="text-white/70">{rank.name}</span>
+              <span className="text-white/70">
                 ${rank.nextMin.toLocaleString()} to next
               </span>
             </div>
@@ -410,7 +410,7 @@ export function AccountPanel({
       {/* ── Skill Tree ── */}
       {upgradeDefs.length > 0 && (
         <div>
-          <div className="mb-1.5 text-[9px] uppercase tracking-[0.2em] text-white/20">
+          <div className="mb-1.5 text-[9px] uppercase tracking-[0.2em] text-white/70">
             Skill Tree
           </div>
           <div className="grid gap-3 md:grid-cols-2">
@@ -429,7 +429,7 @@ export function AccountPanel({
                     >
                       {branch.name}
                     </span>
-                    <span className="text-[9px] text-white/12">{branch.desc}</span>
+                    <span className="text-[9px] text-white/60">{branch.desc}</span>
                   </div>
                   {/* Nodes */}
                   <div className="space-y-0">
@@ -449,7 +449,7 @@ export function AccountPanel({
                           {ni > 0 && (
                             <div
                               className={`ml-[11px] h-2.5 border-l ${
-                                isLocked ? "border-white/5" : "border-white/10"
+                                isLocked ? "border-white/20" : "border-white/30"
                               }`}
                             />
                           )}
@@ -484,10 +484,10 @@ export function AccountPanel({
                                     isMaxed
                                       ? `font-semibold ${c.text}`
                                       : isOwned
-                                        ? "text-white/60"
+                                        ? "text-white/80"
                                         : isAvailable
-                                          ? "text-white/40"
-                                          : "text-white/15"
+                                          ? "text-white/70"
+                                          : "text-white/50"
                                   }`}
                                 >
                                   {def?.title ?? key}
@@ -500,7 +500,7 @@ export function AccountPanel({
                               </div>
                               {/* Level */}
                               {!isLocked && (
-                                <span className="font-mono text-[9px] text-white/15">
+                                <span className="font-mono text-[9px] text-white/70">
                                   {lvl}
                                   {def?.maxLevel ? `/${def.maxLevel}` : ""}
                                 </span>
@@ -509,15 +509,15 @@ export function AccountPanel({
                             {/* Description or mystery */}
                             <div className="mt-0.5 text-[9px]">
                               {isOwned || isMaxed ? (
-                                <span className="text-white/20">
+                                <span className="text-white/70">
                                   {def?.description ?? ""}
                                 </span>
                               ) : isAvailable ? (
-                                <span className="text-white/15">
+                                <span className="text-white/60">
                                   {def?.description ?? "Ready to unlock"}
                                 </span>
                               ) : (
-                                <span className="text-white/8">
+                                <span className="text-white/40">
                                   {def?.requiresKey
                                     ? "Requires further advancement"
                                     : "??? Locked"}
@@ -530,7 +530,7 @@ export function AccountPanel({
                                 className={`mt-1.5 rounded px-2 py-1 text-[9px] font-semibold transition-all duration-200 ${
                                   isAvailable
                                     ? `${c.bg} ${c.text} border ${c.border} hover:bg-white/[0.06] hover:scale-105 active:scale-95`
-                                    : "border border-white/5 bg-white/[0.03] text-white/30 hover:bg-white/[0.05] hover:scale-105 active:scale-95"
+                                    : "border border-white/5 bg-white/[0.03] text-white/70 hover:bg-white/[0.05] hover:scale-105 active:scale-95"
                                 }`}
                                 onClick={() => onPurchaseUpgrade(key)}
                               >

@@ -31,8 +31,6 @@ const qtyOptions = [1, 10, 100, 1000, 10000];
 
 export function TradePanel({
   symbol,
-  symbols,
-  onSymbol,
   pnl,
   cash,
   equity,
@@ -51,10 +49,6 @@ export function TradePanel({
   onRug,
   canRug
 }: Props) {
-  // #region agent log
-  fetch("http://127.0.0.1:7244/ingest/9cadf662-a77d-47c8-b723-9085e4a436d8",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({runId:"pre-fix",hypothesisId:"H1",location:"src/components/TradePanel.tsx:33",message:"TradePanel entry props",data:{symbol,symbolsCount:symbols?.length ?? 0,hasOnSymbol:typeof onSymbol === "function"},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-
   const unrealizedPnl =
     position.size !== 0 ? position.size * (currentPrice - position.avgPrice) : 0;
   const baseMin = rank.min === -Infinity ? 0 : rank.min;
@@ -84,16 +78,13 @@ export function TradePanel({
     }
     prevPnlRef.current = pnl;
   }, [pnl]);
-  // #region agent log
-  fetch("http://127.0.0.1:7244/ingest/9cadf662-a77d-47c8-b723-9085e4a436d8",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({runId:"pre-fix",hypothesisId:"H2",location:"src/components/TradePanel.tsx:43",message:"TradePanel derived stats",data:{unrealizedPnl,progressToNext,positionSize:position.size},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
 
   return (
     <div className="glass flex flex-col gap-2.5 rounded-md p-3">
       {/* ── PnL + Rank ── */}
       <div className="text-center">
         <div className="mb-1 flex items-center justify-center gap-2">
-          <span className="text-[9px] uppercase tracking-[0.15em] text-white/30">Session</span>
+          <span className="text-[9px] uppercase tracking-[0.15em] text-white/70">Session</span>
           <span className="rounded border border-neon-cyan/20 bg-neon-cyan/5 px-1.5 py-0.5 text-[9px] font-semibold text-neon-cyan">
             {rank.name}
           </span>
@@ -113,7 +104,7 @@ export function TradePanel({
                 style={{ width: `${progressToNext * 100}%` }}
               />
             </div>
-            <div className="mt-0.5 text-[9px] text-white/20">
+            <div className="mt-0.5 text-[9px] text-white/70">
               ${rank.nextMin.toLocaleString()} to next rank
             </div>
           </div>
@@ -123,7 +114,7 @@ export function TradePanel({
       {/* ── Stats ── */}
       <div className="grid grid-cols-3 gap-1.5">
         <div className="rounded border border-white/5 bg-white/[0.02] p-1.5 transition-all duration-200 hover:bg-white/[0.03]">
-          <div className="text-[9px] text-white/30">Cash</div>
+          <div className="text-[9px] text-white/70">Cash</div>
           <div className={`number-animate font-mono text-[12px] font-semibold transition-colors duration-200 ${
             animatedCash.isAnimating ? "updating" : ""
           }`}>
@@ -131,7 +122,7 @@ export function TradePanel({
           </div>
         </div>
         <div className="rounded border border-white/5 bg-white/[0.02] p-1.5 transition-all duration-200 hover:bg-white/[0.03]">
-          <div className="text-[9px] text-white/30">Equity</div>
+          <div className="text-[9px] text-white/70">Equity</div>
           <div className={`number-animate font-mono text-[12px] font-semibold transition-colors duration-200 ${
             animatedEquity.isAnimating ? "updating" : ""
           }`}>
@@ -139,7 +130,7 @@ export function TradePanel({
           </div>
         </div>
         <div className="rounded border border-white/5 bg-white/[0.02] p-1.5 transition-all duration-200 hover:bg-white/[0.03]">
-          <div className="text-[9px] text-white/30">Trades</div>
+          <div className="text-[9px] text-white/70">Trades</div>
           <div className="font-mono text-[12px] font-semibold">{tradeCount}</div>
         </div>
       </div>
@@ -160,27 +151,21 @@ export function TradePanel({
               {animatedUnrealizedPnl.displayValue}
             </span>
           </div>
-          <div className="mt-0.5 text-[9px] text-white/20">
+          <div className="mt-0.5 text-[9px] text-white/70">
             avg {position.avgPrice.toFixed(2)} &rarr; <span className="number-animate">{animatedCurrentPrice.displayValue}</span>
           </div>
         </div>
       )}
-      {/* #region agent log */}
-      {(() => {
-        fetch("http://127.0.0.1:7244/ingest/9cadf662-a77d-47c8-b723-9085e4a436d8",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({runId:"pre-fix",hypothesisId:"H3",location:"src/components/TradePanel.tsx:121",message:"TradePanel position branch",data:{showPosition:position.size !== 0},timestamp:Date.now()})}).catch(()=>{});
-        return null;
-      })()}
-      {/* #endregion */}
 
       {/* ── Ticker ── */}
       <div className="rounded border border-white/5 bg-white/[0.02] p-2">
-        <div className="text-[9px] uppercase tracking-[0.15em] text-white/30">Ticker</div>
+        <div className="text-[9px] uppercase tracking-[0.15em] text-white/70">Ticker</div>
         <div className="mt-1 flex items-center justify-between gap-2 rounded bg-white/5 px-2 py-1">
           <div className="flex items-center gap-2">
-            <span className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white/90">
+            <span className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-white">
               {symbol}
             </span>
-            <span className="text-[11px] text-white/70">PARKSystems Corporation</span>
+            <span className="text-[11px] text-white/90">PARKSystems Corporation</span>
           </div>
           <span className={`number-animate font-mono text-[11px] text-neon-cyan transition-colors duration-200 ${
             animatedCurrentPrice.isAnimating ? "updating" : ""
@@ -200,14 +185,14 @@ export function TradePanel({
             className={`rounded py-1.5 text-[11px] font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-30 ${
               qty === q
                 ? "bg-white/15 text-white scale-105 shadow-lg"
-                : "bg-white/[0.03] text-white/35 hover:bg-white/[0.06] hover:text-white/50 hover:scale-105 active:scale-95"
+                : "bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white/90 hover:scale-105 active:scale-95"
             }`}
           >
             {q >= 1000 ? `${q / 1000}K` : q}
           </button>
         ))}
       </div>
-      <div className="text-center text-[9px] text-white/20">
+      <div className="text-center text-[9px] text-white/70">
         Max {Math.max(10, Math.floor(maxQty))}
       </div>
 
@@ -249,7 +234,7 @@ export function TradePanel({
       </button>
       <button
         onClick={onCashout}
-        className="rounded border border-white/10 py-2 text-[10px] uppercase tracking-[0.15em] text-white/40 transition-all duration-200 hover:border-white/20 hover:text-white/60 hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98]"
+        className="rounded border border-white/10 py-2 text-[10px] uppercase tracking-[0.15em] text-white/70 transition-all duration-200 hover:border-white/20 hover:text-white hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98]"
       >
         Cash Out &middot; End Session
       </button>

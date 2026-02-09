@@ -7,6 +7,23 @@ import { TradePanel } from "../src/components/TradePanel";
 import { TradeTape } from "../src/components/TradeTape";
 import { NewsFeed } from "../src/components/NewsFeed";
 import { AccountPanel } from "../src/components/AccountPanel";
+import { ToastContainer, useToasts } from "../src/components/ToastNotificationSystem";
+import { TradeStatisticsPanel } from "../src/components/TradeStatisticsPanel";
+import { KeyboardShortcuts } from "../src/components/KeyboardShortcuts";
+import { StreakIndicator } from "../src/components/StreakIndicator";
+import { PriceAlerts, type PriceAlert } from "../src/components/PriceAlerts";
+import { TradeHistoryViewer } from "../src/components/TradeHistoryViewer";
+import { PerformanceDashboard } from "../src/components/PerformanceDashboard";
+import { VolumeProfile } from "../src/components/VolumeProfile";
+import { AchievementTracker, AchievementGallery, type Achievement, type AchievementContext } from "../src/components/AchievementSystem";
+import { DailyChallenges, makeDailyChallenges } from "../src/components/DailyChallenges";
+import { RealTimeLeaderboard } from "../src/components/RealTimeLeaderboard";
+import { SoundToggle, useSoundEffects } from "../src/components/SoundEffects";
+import { MarketDepthViz } from "../src/components/MarketDepthViz";
+import { TutorialOverlay } from "../src/components/TutorialSystem";
+import { SocialFeed, type SocialEvent } from "../src/components/SocialFeed";
+import { AdvancedOrders, type AdvancedOrder } from "../src/components/AdvancedOrders";
+import { TradeReplay } from "../src/components/TradeReplay";
 import { getSocket } from "../src/engine/socketClient";
 import type { Bar, MarketTick, OrderBook as Book } from "../src/engine/types";
 import { db, type TradeRow, type NewsRow } from "../src/db/db";
@@ -70,13 +87,31 @@ export default function Home() {
   const [globalTape, setGlobalTape] = useState<TradeRow[]>([]);
   const newsDelayRef = useRef(6000);
   const startCashRef = useRef(BASE_START_CASH);
-  const [panelTab, setPanelTab] = useState<"account" | "upgrades" | "firms" | "leaderboards">("account");
+  const [panelTab, setPanelTab] = useState<"account" | "upgrades" | "firms" | "leaderboards" | "performance" | "achievements" | "challenges" | "social">("account");
   const [leftPanelTab, setLeftPanelTab] = useState<"dom" | "live">("dom");
   const [tradeFlash, setTradeFlash] = useState<"buy" | "sell" | null>(null);
   const [showCashoutConfirm, setShowCashoutConfirm] = useState(false);
   const [ready, setReady] = useState(false);
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickCounter = useRef(0);
+
+  // ── New feature state ──
+  const { toasts, addToast, dismissToast } = useToasts();
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const sounds = useSoundEffects(soundEnabled);
+  const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
+  const [showTradeHistory, setShowTradeHistory] = useState(false);
+  const [showReplay, setShowReplay] = useState(false);
+  const [unlockedAchievements, setUnlockedAchievements] = useState<Set<string>>(new Set());
+  const [socialEvents, setSocialEvents] = useState<SocialEvent[]>([]);
+  const [advancedOrders, setAdvancedOrders] = useState<AdvancedOrder[]>([]);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const prevRankRef = useRef(1);
+  const [winStreak, setWinStreak] = useState(0);
+  const [lossStreak, setLossStreak] = useState(0);
+  const [maxPnl, setMaxPnl] = useState(0);
+  const [cashouts, setCashouts] = useState(0);
+  let _orderId = useRef(0);
 
   const orderBook: Book = tick?.orderBook || {
     bids: [],
@@ -183,6 +218,9 @@ export default function Home() {
       };
       setTrades((prev) => [trade, ...prev].slice(0, 30));
       db.trades.add(trade);
+      // Toast + Sound
+      addToast("trade", `${data.side.toUpperCase()} FILLED`, `${data.size} @ $${data.fill.toFixed(2)}`, data.side);
+      if (data.side === "buy") sounds.playBuy(); else sounds.playSell();
     });
     socket.on("trade:tape", (data) => {
       const trade: TradeRow = {
@@ -196,7 +234,8 @@ export default function Home() {
     });
     socket.on("trade:reject", (data) => {
       if (data?.reason === "size_limit") {
-        alert(`Trade rejected: max size ${data.maxSize}`);
+        addToast("error", "TRADE REJECTED", `Max size ${data.maxSize}`);
+        sounds.playError();
       }
     });
     return () => {
@@ -507,22 +546,22 @@ export default function Home() {
       <div key={def.key} className={`rounded-xl border border-white/10 p-3 ${locked ? "bg-white/5" : "bg-white/10"}`}>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-white/90">{def.title}</div>
-            <div className="text-[10px] text-white/40">{def.description}</div>
+            <div className="text-white">{def.title}</div>
+            <div className="text-[10px] text-white/70">{def.description}</div>
           </div>
-          <div className="text-[10px] text-white/60">
+          <div className="text-[10px] text-white/70">
             Lv {level}{def.maxLevel ? `/${def.maxLevel}` : ""}
           </div>
         </div>
         {reqs.length > 0 && (
-          <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-white/40">
+          <div className="mt-2 text-[10px] uppercase tracking-[0.18em] text-white/70">
             Requires {reqs.map((r) => `${upgradeLabel(r.key)} ${r.level}`).join(" + ")}
           </div>
         )}
         <div className="mt-3 flex items-center justify-between">
-          <span className="text-white/70">{maxed ? "MAX" : `$${cost}`}</span>
+          <span className="text-white/90">{maxed ? "MAX" : `$${cost}`}</span>
           <button
-            className="rounded-md bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-white/70 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-md bg-white/10 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-white/90 disabled:cursor-not-allowed disabled:opacity-40"
             disabled={!canBuy}
             onClick={() => purchaseUpgrade(def.key)}
           >
@@ -553,9 +592,12 @@ export default function Home() {
         setAuthError(e instanceof Error ? e.message : "Cashout failed.");
       }
     }
+    addToast("info", "SESSION ENDED", `Final PnL: ${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)} (${trades.length} trades)`);
+    setCashouts((c) => c + 1);
     setCash(startCash);
     setPosition({ size: 0, avgPrice: 0 });
     setTrades([]);
+    setAdvancedOrders([]);
     setShowCashoutConfirm(false);
   };
 
@@ -581,17 +623,124 @@ export default function Home() {
   }, [hasMultiTf, timeframeMs]);
 
   const canRug = position.size !== 0;
-  const onRug = () => {
-    if (!canRug) return;
+  const onRug = useCallback(() => {
+    if (position.size === 0) return;
     const side = position.size > 0 ? "sell" : "buy";
     submitTrade(side, Math.abs(position.size));
-  };
+  }, [position.size]);
+
+  // ── Tutorial check (show on first visit) ──
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem("ps_tutorial_done");
+      if (!seen) setShowTutorial(true);
+    } catch { /* ignore */ }
+  }, []);
+
+  const completeTutorial = useCallback(() => {
+    setShowTutorial(false);
+    try { localStorage.setItem("ps_tutorial_done", "1"); } catch { /* ignore */ }
+  }, []);
+
+  // ── Track max PnL ──
+  useEffect(() => {
+    if (pnl > maxPnl) setMaxPnl(pnl);
+  }, [pnl, maxPnl]);
+
+  // ── Rank-up detection ──
+  useEffect(() => {
+    if (rank.level > prevRankRef.current) {
+      addToast("rankup", "RANK UP!", `You are now ${rank.name}`);
+      sounds.playRankUp();
+    }
+    prevRankRef.current = rank.level;
+  }, [rank.level, rank.name]);
+
+  // ── Price alert handlers ──
+  const addPriceAlert = useCallback((price: number, direction: "above" | "below") => {
+    const id = `alert-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    setPriceAlerts((prev) => [...prev, { id, price, direction, triggered: false }]);
+    addToast("info", "Alert Set", `${direction === "above" ? "Above" : "Below"} $${price.toFixed(2)}`);
+  }, [addToast]);
+
+  const removePriceAlert = useCallback((id: string) => {
+    setPriceAlerts((prev) => prev.filter((a) => a.id !== id));
+  }, []);
+
+  const triggerPriceAlert = useCallback((alert: PriceAlert) => {
+    setPriceAlerts((prev) => prev.map((a) => a.id === alert.id ? { ...a, triggered: true } : a));
+    addToast("alert", "PRICE ALERT", `Price crossed $${alert.price.toFixed(2)} (${alert.direction})`);
+    sounds.playAlert();
+  }, [addToast, sounds]);
+
+  // ── Achievement handler ──
+  const achievementContext: AchievementContext = useMemo(() => ({
+    tradeCount: trades.length,
+    pnl,
+    winStreak,
+    lossStreak,
+    maxPnl,
+    totalVolume: trades.reduce((s, t) => s + t.size * t.price, 0),
+    rank: rank.level,
+    cashouts,
+  }), [trades.length, pnl, winStreak, lossStreak, maxPnl, rank.level, cashouts]);
+
+  const onAchievementUnlock = useCallback((ach: Achievement) => {
+    setUnlockedAchievements((prev) => new Set([...prev, ach.id]));
+    addToast("achievement", "ACHIEVEMENT UNLOCKED", ach.title);
+    sounds.playAchievement();
+  }, [addToast, sounds]);
+
+  // ── Advanced order processing ──
+  useEffect(() => {
+    if (!currentPrice || advancedOrders.length === 0) return;
+    setAdvancedOrders((prev) =>
+      prev.map((o) => {
+        if (o.status !== "pending") return o;
+        let shouldFill = false;
+        if (o.type === "limit") {
+          if (o.side === "buy" && currentPrice <= o.price) shouldFill = true;
+          if (o.side === "sell" && currentPrice >= o.price) shouldFill = true;
+        } else if (o.type === "stop") {
+          if (o.side === "buy" && currentPrice >= o.price) shouldFill = true;
+          if (o.side === "sell" && currentPrice <= o.price) shouldFill = true;
+        } else if (o.type === "trailing_stop" && o.trailingPct) {
+          const trail = o.price * (o.trailingPct / 100);
+          if (o.side === "sell" && currentPrice <= o.price - trail) shouldFill = true;
+          if (o.side === "buy" && currentPrice >= o.price + trail) shouldFill = true;
+        }
+        if (shouldFill) {
+          submitTrade(o.side, o.size);
+          addToast("trade", "ORDER FILLED", `${o.type.toUpperCase()} ${o.side.toUpperCase()} ${o.size} @ $${currentPrice.toFixed(2)}`, o.side);
+          return { ...o, status: "filled" as const };
+        }
+        return o;
+      })
+    );
+  }, [currentPrice, advancedOrders]);
+
+  const submitAdvancedOrder = useCallback((order: Omit<AdvancedOrder, "id" | "status" | "createdAt">) => {
+    const id = `order-${++_orderId.current}-${Date.now()}`;
+    setAdvancedOrders((prev) => [...prev, { ...order, id, status: "pending", createdAt: Date.now() }]);
+    addToast("info", "ORDER PLACED", `${order.type.toUpperCase()} ${order.side.toUpperCase()} ${order.size} @ $${order.price.toFixed(2)}`);
+  }, [addToast]);
+
+  const cancelAdvancedOrder = useCallback((id: string) => {
+    setAdvancedOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: "cancelled" as const } : o));
+  }, []);
+
+  // ── Daily challenges ──
+  const buyCount = trades.filter((t) => t.side === "buy").length;
+  const sellCount = trades.length - buyCount;
+  const dailyChallenges = useMemo(() => makeDailyChallenges(trades.length, pnl, buyCount, sellCount), [trades.length, pnl, buyCount, sellCount]);
+
+  const qtyOptions = useMemo(() => [1, 10, 100, 1000, 10000], []);
 
   if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg-void">
         <div className="animate-fadeIn text-center">
-          <div className="text-[10px] uppercase tracking-[0.5em] text-white/30">Connecting to</div>
+          <div className="text-[10px] uppercase tracking-[0.5em] text-white/70">Connecting to</div>
           <div className="mt-1 text-xl font-bold tracking-wider text-white transition-all duration-300">PARKSYSTEMS</div>
           <div className="mx-auto mt-4 h-px w-12 bg-neon-cyan/30 load-pulse rounded-full" />
         </div>
@@ -605,37 +754,39 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.35em] text-white/35">PARKSYSTEMS</span>
+              <span className="text-[10px] uppercase tracking-[0.35em] text-white/70">PARKSYSTEMS</span>
               <div className="pulse-dot" />
             </div>
             <div className="text-sm font-bold text-white">World Market Simulator</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <SoundToggle enabled={soundEnabled} onToggle={() => setSoundEnabled(!soundEnabled)} />
+          <StreakIndicator trades={trades} currentPrice={currentPrice} />
           <div className="rounded border border-neon-cyan/20 bg-neon-cyan/5 px-2.5 py-1 text-[10px] font-semibold text-neon-cyan">
             LVL {rank.level} &middot; {rank.name}
           </div>
           <div className="glass flex items-center gap-2.5 rounded px-3 py-1.5 font-mono text-[10px]">
-            <span className="text-white/30">WS</span>
+            <span className="text-white/70">WS</span>
             <span className="text-neon-cyan">{online.wallSt}</span>
-            <span className="text-white/15">|</span>
-            <span className="text-white/30">RT</span>
+            <span className="text-white/40">|</span>
+            <span className="text-white/70">RT</span>
             <span className="text-neon-green">{retailCount}</span>
-            <span className="text-white/15">|</span>
-            <span className="text-white/30">VISITS</span>
+            <span className="text-white/40">|</span>
+            <span className="text-white/70">VISITS</span>
             <span className="text-neon-cyan">{totalVisitors ?? 0}</span>
             {getLevelByKey("info_vol_forecast") > 0 && (
               <>
-                <span className="text-white/15">|</span>
-                <span className="text-white/30">VOL</span>
-                <span className={`font-semibold ${tick?.volState === "high" ? "text-neon-red" : tick?.volState === "low" ? "text-neon-blue" : "text-white/60"}`}>
+                <span className="text-white/40">|</span>
+                <span className="text-white/70">VOL</span>
+                <span className={`font-semibold ${tick?.volState === "high" ? "text-neon-red" : tick?.volState === "low" ? "text-neon-blue" : "text-white/80"}`}>
                   {(tick?.volState || "mid").toUpperCase()}
                 </span>
               </>
             )}
             {getLevelByKey("info_sentiment") > 0 && (
               <>
-                <span className="text-white/15">|</span>
+                <span className="text-white/40">|</span>
                 <span className={sentiment >= 0 ? "text-neon-green" : "text-neon-red"}>{sentiment.toFixed(2)}</span>
               </>
             )}
@@ -646,11 +797,11 @@ export default function Home() {
       {position.size !== 0 && (
         <div className="animate-fadeIn mb-3 flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-4 py-2 font-mono text-[11px] transition-all duration-200 hover:bg-white/[0.03]">
           <div className="flex items-center gap-4">
-            <span className="text-white/30">POS</span>
+            <span className="text-white/70">POS</span>
             <span className={`transition-colors duration-200 ${position.size > 0 ? "text-neon-green" : "text-neon-red"}`}>
               {position.size > 0 ? "LONG" : "SHORT"} {Math.abs(position.size)}
             </span>
-            <span className="text-white/25">@ {position.avgPrice.toFixed(2)}</span>
+            <span className="text-white/70">@ {position.avgPrice.toFixed(2)}</span>
           </div>
           <div className={`font-semibold transition-colors duration-200 ${unrealizedPnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
             {unrealizedPnl >= 0 ? "+" : ""}{unrealizedPnl.toFixed(2)} unrealized
@@ -660,12 +811,12 @@ export default function Home() {
 
       <div className="grid gap-3 md:grid-cols-[220px_1fr_300px]">
         <div className="hidden md:block">
-            <div className="mb-2 flex items-center gap-1 rounded-md border border-white/5 bg-white/[0.02] p-1 text-[10px] uppercase tracking-[0.15em] text-white/40">
+            <div className="mb-2 flex items-center gap-1 rounded-md border border-white/5 bg-white/[0.02] p-1 text-[10px] uppercase tracking-[0.15em] text-white/70">
             <button
               className={`rounded px-2.5 py-1 transition-all duration-200 ${
                 leftPanelTab === "dom" 
                   ? "bg-white/10 text-white scale-105" 
-                  : "text-white/45 hover:text-white/60 hover:bg-white/5"
+                  : "text-white/70 hover:text-white/90 hover:bg-white/5"
               }`}
               onClick={() => setLeftPanelTab("dom")}
             >
@@ -675,7 +826,7 @@ export default function Home() {
               className={`rounded px-2.5 py-1 transition-all duration-200 ${
                 leftPanelTab === "live" 
                   ? "bg-white/10 text-white scale-105" 
-                  : "text-white/45 hover:text-white/60 hover:bg-white/5"
+                  : "text-white/70 hover:text-white/90 hover:bg-white/5"
               }`}
               onClick={() => setLeftPanelTab("live")}
             >
@@ -683,23 +834,33 @@ export default function Home() {
             </button>
           </div>
           {leftPanelTab === "dom" ? (
-            <OrderBook book={orderBook} />
+            <>
+              <OrderBook book={orderBook} />
+              <div className="mt-2">
+                <MarketDepthViz book={orderBook} currentPrice={currentPrice} />
+              </div>
+            </>
           ) : (
-            <TradeTape
-              trades={globalTape}
-              title="Live Traders"
-              emptyLabel="No live trades."
-              showCount={false}
-              showStats={true}
-              statsLabel="Live Metrics"
-            />
+            <>
+              <TradeTape
+                trades={globalTape}
+                title="Live Traders"
+                emptyLabel="No live trades."
+                showCount={false}
+                showStats={true}
+                statsLabel="Live Metrics"
+              />
+              <div className="mt-2">
+                <VolumeProfile trades={trades} globalTape={globalTape} currentPrice={currentPrice} />
+              </div>
+            </>
           )}
         </div>
 
         <div className="glass flex h-[520px] flex-col rounded-md p-3 md:h-[640px]">
-          <div className="mb-2 flex items-center justify-between font-mono text-[11px] text-white/40">
+          <div className="mb-2 flex items-center justify-between font-mono text-[11px] text-white/70">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-white/70">{symbol}</span>
+              <span className="font-semibold text-white/90">{symbol}</span>
               <span className="text-neon-cyan transition-colors duration-200">${currentPrice.toFixed(2)}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -710,7 +871,7 @@ export default function Home() {
                     className={`rounded px-2 py-0.5 text-[10px] transition-all duration-200 ${
                       timeframeMs === opt.value 
                         ? "bg-white/10 text-white scale-105" 
-                        : "text-white/35 hover:text-white/50 hover:bg-white/[0.03]"
+                        : "text-white/70 hover:text-white/90 hover:bg-white/[0.03]"
                     }`}
                     onClick={() => setTimeframeMs(opt.value)}
                   >
@@ -729,7 +890,7 @@ export default function Home() {
         <div className="hidden md:flex md:flex-col md:gap-3">
           {showBotAlerts && (
             <div className="glass rounded-xl p-3 text-xs transition-all duration-200 hover:bg-white/[0.02]">
-              <div className="text-[10px] uppercase tracking-[0.2em] text-white/50">Bot Alert</div>
+              <div className="text-[10px] uppercase tracking-[0.2em] text-white/70">Bot Alert</div>
               <div className="mt-1 text-neon-cyan transition-colors duration-200">{botSignal}</div>
             </div>
           )}
@@ -754,10 +915,25 @@ export default function Home() {
             canRug={canRug}
           />
           <TradeTape trades={globalTape.length ? globalTape : trades} />
+          <TradeStatisticsPanel trades={trades} pnl={pnl} equity={equity} startCash={startCash} />
+          <PriceAlerts
+            currentPrice={currentPrice}
+            alerts={priceAlerts}
+            onAdd={addPriceAlert}
+            onRemove={removePriceAlert}
+            onTrigger={triggerPriceAlert}
+          />
+          <AdvancedOrders
+            orders={advancedOrders.filter((o) => o.status !== "cancelled")}
+            currentPrice={currentPrice}
+            onSubmit={submitAdvancedOrder}
+            onCancel={cancelAdvancedOrder}
+            maxQty={maxOrderSize}
+          />
           {hasNews ? (
             <NewsFeed news={news} />
           ) : (
-            <div className="glass rounded-md p-3 text-xs text-white/30">
+            <div className="glass rounded-md p-3 text-xs text-white/70">
               Unlock INFO Rank 1 to access the macro news feed.
             </div>
           )}
@@ -768,7 +944,7 @@ export default function Home() {
         <div className="fixed bottom-0 left-0 right-0 z-40 rounded-t-xl border-t border-white/5 bg-bg-panel px-4 py-3 shadow-glass">
           <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-white/35">Trade Desk</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/70">Trade Desk</span>
               <span className="rounded border border-neon-cyan/20 bg-neon-cyan/5 px-1.5 py-0.5 text-[9px] font-semibold text-neon-cyan">{rank.name}</span>
             </div>
             <div className="flex gap-1">
@@ -776,7 +952,7 @@ export default function Home() {
                 className={`rounded px-2.5 py-1 text-[10px] font-medium transition-all duration-200 ${
                   mobileTab === "trade" 
                     ? "bg-white/10 text-white scale-105" 
-                    : "text-white/35 hover:text-white/50 hover:bg-white/5"
+                    : "text-white/70 hover:text-white/90 hover:bg-white/5"
                 }`}
                 onClick={() => setMobileTab("trade")}
               >
@@ -786,7 +962,7 @@ export default function Home() {
                 className={`rounded px-2.5 py-1 text-[10px] font-medium transition-all duration-200 ${
                   mobileTab === "news" 
                     ? "bg-white/10 text-white scale-105" 
-                    : "text-white/35 hover:text-white/50 hover:bg-white/5"
+                    : "text-white/70 hover:text-white/90 hover:bg-white/5"
                 }`}
                 onClick={() => setMobileTab("news")}
               >
@@ -827,7 +1003,7 @@ export default function Home() {
             hasNews ? (
               <NewsFeed news={news} />
             ) : (
-              <div className="rounded-lg bg-white/5 px-3 py-2 text-xs text-white/50">
+              <div className="rounded-lg bg-white/5 px-3 py-2 text-xs text-white/70">
                 Unlock INFO Rank 1 to access the macro news feed.
               </div>
             )
@@ -837,13 +1013,13 @@ export default function Home() {
 
       <div className="mt-6 glass rounded-xl p-4">
         <div className="mb-3 flex flex-wrap gap-2">
-          {(["account","upgrades","firms","leaderboards"] as const).map((tab) => (
+          {(["account","upgrades","firms","leaderboards","performance","achievements","challenges","social"] as const).map((tab) => (
             <button
               key={tab}
               className={`rounded-full px-3 py-1 text-xs transition-all duration-200 ${
                 panelTab === tab 
                   ? "bg-neon-cyan text-black scale-105 shadow-glow-cyan" 
-                  : "bg-white/10 text-white/70 hover:bg-white/15 hover:text-white/90 hover:scale-105"
+                  : "bg-white/10 text-white hover:bg-white/15 hover:text-white hover:scale-105"
               }`}
               onClick={() => setPanelTab(tab)}
             >
@@ -877,7 +1053,7 @@ export default function Home() {
         {panelTab === "upgrades" && (
           <div className="space-y-4 text-xs">
             {!authUser && (
-              <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/50">
+              <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/80">
                 Login to unlock upgrades and progression.
               </div>
             )}
@@ -894,10 +1070,10 @@ export default function Home() {
                 return (
                   <div key={key} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                     <div className="flex items-center justify-between">
-                      <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">
+                      <div className="text-[10px] uppercase tracking-[0.3em] text-white/70">
                         {key === "attr_lots" ? "LOTS" : key === "attr_balance" ? "BALANCE" : "INFO"}
                       </div>
-                      <div className="text-[10px] text-white/40">
+                      <div className="text-[10px] text-white/70">
                         Lv {level}{def.maxLevel ? `/${def.maxLevel}` : ""}
                       </div>
                     </div>
@@ -906,13 +1082,13 @@ export default function Home() {
                       {key === "attr_balance" && `$${startCash.toFixed(0)}`}
                       {key === "attr_info" && `Rank ${infoLevel}`}
                     </div>
-                    <div className="mt-1 text-[10px] text-white/40">
+                    <div className="mt-1 text-[10px] text-white/70">
                       {key === "attr_lots" && `Next: ${Math.floor(nextMax)}`}
                       {key === "attr_balance" && `Next: $${nextCash.toFixed(0)}`}
                       {key === "attr_info" && "Unlocks intel + chart + bots"}
                     </div>
                     <div className="mt-3 flex items-center justify-between">
-                      <span className="text-white/70">{maxed ? "MAX" : `$${cost}`}</span>
+                      <span className="text-white/90">{maxed ? "MAX" : `$${cost}`}</span>
                       <button
                         className="rounded-md bg-neon-cyan px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-black disabled:cursor-not-allowed disabled:opacity-40"
                         disabled={!canBuy || maxed}
@@ -928,19 +1104,19 @@ export default function Home() {
 
             <div className="grid gap-3 md:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">Indicators + Drawing</div>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-white/70">Indicators + Drawing</div>
                 <div className="mt-3 space-y-2">
                   {CHART_KEYS.map((key) => renderUpgradeCard(defByKey.get(key)))}
                 </div>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">Bots</div>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-white/70">Bots</div>
                 <div className="mt-3 space-y-2">
                   {BOT_KEYS.map((key) => renderUpgradeCard(defByKey.get(key)))}
                 </div>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-2">
-                <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">Intel Modules</div>
+                <div className="text-[10px] uppercase tracking-[0.3em] text-white/70">Intel Modules</div>
                 <div className="mt-3 grid gap-2 md:grid-cols-3">
                   {INTEL_KEYS.map((key) => renderUpgradeCard(defByKey.get(key)))}
                 </div>
@@ -952,7 +1128,7 @@ export default function Home() {
         {panelTab === "firms" && (
           <div className="space-y-2 text-xs">
             {!authUser ? (
-              <div className="text-white/40 text-xs">Login to manage firms.</div>
+              <div className="text-white/70 text-xs">Login to manage firms.</div>
             ) : firmMember ? (
               <div className="space-y-2 text-xs">
                 <div>Firm: <span className="text-neon-cyan">{firmMember.firm.name}</span> ({firmMember.role})</div>
@@ -1000,49 +1176,40 @@ export default function Home() {
         )}
 
         {panelTab === "leaderboards" && (
+          <RealTimeLeaderboard soloLb={soloLb} firmLb={firmLb} currentUser={authUser?.username} userPnl={pnl} />
+        )}
+
+        {panelTab === "performance" && (
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-white/50">Solo Leaderboard</div>
-              <div className="space-y-2 text-xs">
-                {soloLb.length === 0 ? (
-                  <div className="text-white/40">No entries yet.</div>
-                ) : (
-                  soloLb.map((row, idx) => (
-                    <div 
-                      key={`${row.username}-${idx}`} 
-                      className="flex justify-between rounded bg-white/5 px-2 py-1 transition-all duration-200 hover:bg-white/10 hover:scale-[1.02]"
-                    >
-                      <span>{row.username}</span>
-                      <span className={`transition-colors duration-200 ${row.pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
-                        {row.pnl >= 0 ? "+" : ""}${row.pnl.toFixed(2)}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-            <div>
-              <div className="mb-2 text-[10px] uppercase tracking-[0.2em] text-white/50">Firm Leaderboard</div>
-              <div className="space-y-2 text-xs">
-                {firmLb.length === 0 ? (
-                  <div className="text-white/40">No entries yet.</div>
-                ) : (
-                  firmLb.map((row, idx) => (
-                    <div 
-                      key={`${row.firm}-${idx}`} 
-                      className="flex justify-between rounded bg-white/5 px-2 py-1 transition-all duration-200 hover:bg-white/10 hover:scale-[1.02]"
-                    >
-                      <span>{row.firm}</span>
-                      <span className={`transition-colors duration-200 ${row.pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
-                        {row.pnl >= 0 ? "+" : ""}${row.pnl.toFixed(2)}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            <PerformanceDashboard trades={trades} pnl={pnl} equity={equity} startCash={startCash} cash={cash} />
+            <VolumeProfile trades={trades} globalTape={globalTape} currentPrice={currentPrice} />
           </div>
         )}
+
+        {panelTab === "achievements" && (
+          <AchievementGallery unlockedIds={unlockedAchievements} />
+        )}
+
+        {panelTab === "challenges" && (
+          <DailyChallenges challenges={dailyChallenges} />
+        )}
+
+        {panelTab === "social" && (
+          <SocialFeed events={socialEvents} globalTape={globalTape} currentUser={authUser?.username} />
+        )}
+      </div>
+
+      {/* ── Utility buttons ── */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        <button onClick={() => setShowTradeHistory(true)} className="rounded border border-white/10 px-3 py-1.5 text-[10px] text-white/30 transition-all duration-200 hover:bg-white/5 hover:text-white/50">
+          Trade History
+        </button>
+        <button onClick={() => setShowReplay(true)} className="rounded border border-white/10 px-3 py-1.5 text-[10px] text-white/30 transition-all duration-200 hover:bg-white/5 hover:text-white/50">
+          Replay
+        </button>
+        <button onClick={() => setShowTutorial(true)} className="rounded border border-white/10 px-3 py-1.5 text-[10px] text-white/30 transition-all duration-200 hover:bg-white/5 hover:text-white/50">
+          Tutorial
+        </button>
       </div>
 
       {showCashoutConfirm && (
@@ -1054,17 +1221,17 @@ export default function Home() {
             className="animate-modal-content glass mx-4 w-full max-w-xs rounded-md p-6 text-center shadow-2xl" 
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-[10px] uppercase tracking-[0.3em] text-white/35">End Session</div>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-white/70">End Session</div>
             <div className={`mt-2 font-mono text-3xl font-bold transition-colors duration-200 ${pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
               {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
             </div>
-            <div className="mt-1 text-[11px] text-white/30">
+            <div className="mt-1 text-[11px] text-white/70">
               {trades.length} trades &middot; {rank.name}
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
               <button 
                 onClick={() => setShowCashoutConfirm(false)} 
-                className="rounded border border-white/10 py-2.5 text-[11px] text-white/50 transition-all duration-200 hover:bg-white/5 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98]"
+                className="rounded border border-white/10 py-2.5 text-[11px] text-white/80 transition-all duration-200 hover:bg-white/5 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98]"
               >
                 Keep Trading
               </button>
@@ -1078,6 +1245,28 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* ── Global overlays ── */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+      <KeyboardShortcuts
+        onBuy={() => handleTrade("buy")}
+        onSell={() => handleTrade("sell")}
+        onRug={onRug}
+        onQty={setQty}
+        qtyOptions={qtyOptions}
+      />
+      <AchievementTracker
+        context={achievementContext}
+        unlockedIds={unlockedAchievements}
+        onUnlock={onAchievementUnlock}
+      />
+      {showTradeHistory && (
+        <TradeHistoryViewer trades={trades} onClose={() => setShowTradeHistory(false)} />
+      )}
+      {showReplay && (
+        <TradeReplay trades={trades} onClose={() => setShowReplay(false)} />
+      )}
+      <TutorialOverlay show={showTutorial} onComplete={completeTutorial} onDismiss={() => setShowTutorial(false)} />
     </div>
   );
 }

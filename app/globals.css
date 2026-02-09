@@ -17,7 +17,7 @@ body {
   height: 100%;
   background: #07070c;
   color: #e6e6f0;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 button {
@@ -302,6 +302,10 @@ select {
 
 .glow-pulse {
   animation: glowPulse 2s ease-in-out infinite;
+}
+
+.animate-pulseScale {
+  animation: pulseScale 1s ease-in-out infinite;
 }
 
 /* ── Order book depth bars ── */

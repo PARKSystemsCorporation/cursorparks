@@ -17,7 +17,7 @@ export function OrderBook({ book }: Props) {
 
   return (
     <div className="glass flex h-full flex-col rounded-md p-3 text-xs">
-      <div className="mb-2 flex justify-between text-[9px] uppercase tracking-[0.15em] text-white/30">
+      <div className="mb-2 flex justify-between text-[9px] uppercase tracking-[0.15em] text-white/70">
         <span>Size</span>
         <span>Price</span>
       </div>
@@ -39,8 +39,8 @@ export function OrderBook({ book }: Props) {
             </div>
           ))}
         <div className="my-1.5 border-y border-white/5 py-1.5 text-center text-[10px]">
-          <span className="text-white/25">SPREAD</span>{" "}
-          <span className="font-semibold text-white/50 transition-colors duration-200">{book.spread.toFixed(3)}</span>
+          <span className="text-white/70">SPREAD</span>{" "}
+          <span className="font-semibold text-white/90 transition-colors duration-200">{book.spread.toFixed(3)}</span>
         </div>
         {book.bids.map((b, idx) => (
           <div 
