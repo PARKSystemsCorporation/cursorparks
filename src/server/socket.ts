@@ -1,6 +1,6 @@
-let ioInstance = null;
+let ioInstance: { emit: (...args: any[]) => void } | null = null;
 
-export function setIO(io) {
+export function setIO(io: { emit: (...args: any[]) => void }) {
   ioInstance = io;
 }
 
