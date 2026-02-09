@@ -8,8 +8,8 @@ type Props = {
 
 export function MobileSheet({ children }: Props) {
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40">
-      <div className="rounded-t-2xl border-t border-white/5 bg-bg-panel/95 shadow-glass backdrop-blur">
+    <div className="lg:hidden w-full">
+      <div className="border-t border-white/5 bg-bg-panel/95 backdrop-blur">
         {children}
       </div>
     </div>

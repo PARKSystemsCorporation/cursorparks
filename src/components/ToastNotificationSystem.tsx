@@ -81,7 +81,7 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
 
 export function ToastContainer({ toasts, onDismiss }: Props) {
   return (
-    <div className="pointer-events-none fixed right-4 top-4 z-[100] flex w-72 flex-col gap-2">
+    <div className="pointer-events-none fixed left-4 top-4 z-[100] hidden w-72 flex-col gap-2 sm:flex">
       {toasts.slice(0, 5).map((t) => (
         <ToastItem key={t.id} toast={t} onDismiss={onDismiss} />
       ))}

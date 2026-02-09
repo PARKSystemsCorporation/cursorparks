@@ -71,8 +71,22 @@ app.prepare().then(() => {
     socket.emit("market:snapshot", engine.getSnapshot());
     io.emit("presence:update", { online: onlineCount, total: totalVisitors });
 
+    const assignUserRoom = (userId) => {
+      const previousUserId = socket.data.userId;
+      if (previousUserId && previousUserId !== userId) {
+        socket.leave(`user:${previousUserId}`);
+      }
+      socket.data.userId = userId || null;
+      if (userId) socket.join(`user:${userId}`);
+    };
+
     const user = await getUserFromCookie(socket.handshake.headers.cookie || "");
-    socket.data.userId = user?.id || null;
+    assignUserRoom(user?.id || null);
+
+    socket.on("session:refresh", async () => {
+      const refreshedUser = await getUserFromCookie(socket.handshake.headers.cookie || "");
+      assignUserRoom(refreshedUser?.id || null);
+    });
 
     socket.on("trade:submit", async (payload) => {
       const { side, size } = payload || {};

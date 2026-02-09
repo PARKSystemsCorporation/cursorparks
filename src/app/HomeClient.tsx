@@ -400,7 +400,8 @@ export default function HomeClient() {
   useEffect(() => {
     const socket = getSocket();
     const onStats = (payload: { userId?: string; stats?: PlayerStats }) => {
-      if (!payload?.userId || payload.userId !== authUser?.id) return;
+      if (!payload?.userId) return;
+      if (authUser?.id && payload.userId !== authUser.id) return;
       setStats(payload.stats || null);
       setStatsLastUpdatedAt(Date.now());
       setStatsStale(false);
@@ -523,6 +524,12 @@ export default function HomeClient() {
   const handleTrade = useCallback((side: "buy" | "sell") => {
     submitTrade(side, qty);
   }, [submitTrade, qty]);
+
+  const cycleLotSize = useCallback(() => {
+    const currentIndex = QTY_OPTIONS.indexOf(qty);
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % QTY_OPTIONS.length;
+    setQty(QTY_OPTIONS[nextIndex]);
+  }, [qty]);
 
   async function register(username: string, password: string) {
     setAuthError(null);
@@ -1325,6 +1332,37 @@ export default function HomeClient() {
                 <OrderBook book={orderBook} />
                 <div className="mt-2">
                   <MarketDepthViz book={orderBook} currentPrice={currentPrice} />
+                </div>
+                <div className="sticky bottom-0 z-10 mt-3 bg-bg-panel/95 pb-1 pt-2 backdrop-blur">
+                  <div className="relative">
+                    <button
+                      onClick={cycleLotSize}
+                      className="absolute -top-3 right-0 rounded border border-white/10 bg-white/5 px-2 py-1 text-[9px] uppercase tracking-[0.2em] text-white/70 hover:bg-white/10"
+                    >
+                      Lot {qty}
+                    </button>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => handleTrade("buy")}
+                        className="rounded bg-neon-green px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-black transition-all duration-200 hover:brightness-110"
+                      >
+                        Buy
+                      </button>
+                      <button
+                        onClick={onRug}
+                        disabled={position.size === 0}
+                        className="rounded border border-white/20 bg-white/5 px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-white/80 transition-all duration-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Flat
+                      </button>
+                      <button
+                        onClick={() => handleTrade("sell")}
+                        className="rounded bg-neon-red px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.2em] text-black transition-all duration-200 hover:brightness-110"
+                      >
+                        Sell
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
