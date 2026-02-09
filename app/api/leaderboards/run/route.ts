@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     if (!Number.isFinite(pnlNum)) return NextResponse.json({ error: "Invalid pnl" }, { status: 400 });
     const season = await ensureCurrentSeason();
     const member = await prisma.firmMember.findUnique({ where: { userId: user.id } });
-    const updatedStats = await prisma.$transaction(async (tx) => {
+    const { updatedStats, level } = await prisma.$transaction(async (tx) => {
       const stats =
         (await tx.playerStats.findUnique({ where: { userId: user.id } }))
         ?? (await tx.playerStats.create({ data: { userId: user.id } }));
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
           }
         });
       }
-      return updated;
+      return { updatedStats: updated, level };
     });
     const io = getIO();
     if (io) {

@@ -35,7 +35,8 @@ export async function getUserFromSession(token?: string | null) {
   let resolvedToken = token || null;
   if (!resolvedToken) {
     try {
-      resolvedToken = nextCookies().get("ps_session")?.value || null;
+      const cookieStore = await nextCookies();
+      resolvedToken = cookieStore.get("ps_session")?.value || null;
     } catch {
       resolvedToken = null;
     }
