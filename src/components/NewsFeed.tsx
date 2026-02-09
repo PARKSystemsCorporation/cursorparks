@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useRef } from "react";
 import type { NewsRow } from "../db/db";
 
 type Props = { news: NewsRow[] };
 
-export function NewsFeed({ news }: Props) {
+export const NewsFeed = memo(function NewsFeed({ news }: Props) {
   const prevNewsRef = useRef(news);
 
   useEffect(() => {
@@ -66,4 +66,4 @@ export function NewsFeed({ news }: Props) {
       </div>
     </div>
   );
-}
+});

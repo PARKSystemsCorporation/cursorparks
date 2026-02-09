@@ -117,11 +117,12 @@ export function ChartCanvas({ bars, price, showSMA, avgPrice }: Props) {
       ctx.beginPath();
       let first = true;
       const period = 20;
+      let smaSum = 0;
       for (let i = 0; i < slice.length; i++) {
+        smaSum += slice[i].c;
+        if (i >= period) smaSum -= slice[i - period].c;
         if (i < period - 1) continue;
-        let sum = 0;
-        for (let j = 0; j < period; j++) sum += slice[i - j].c;
-        const sma = sum / period;
+        const sma = smaSum / period;
         const x = pad.l + (maxBars - slice.length + i + 0.5) * gap;
         const y = toY(sma);
         if (first) {

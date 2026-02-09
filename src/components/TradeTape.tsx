@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import type { TradeRow } from "../db/db";
 
 type Props = {
@@ -13,7 +13,7 @@ type Props = {
   statsLabel?: string;
 };
 
-export function TradeTape({
+export const TradeTape = memo(function TradeTape({
   trades,
   title = "Tape",
   emptyLabel = "No fills.",
@@ -22,18 +22,23 @@ export function TradeTape({
   showStats = false,
   statsLabel = "Stats"
 }: Props) {
-  const totalTrades = trades.length;
-  const totalVolume = trades.reduce((sum, t) => sum + t.size, 0);
-  const buyVolume = trades.reduce((sum, t) => sum + (t.side === "buy" ? t.size : 0), 0);
-  const sellVolume = totalVolume - buyVolume;
-  const buyCount = trades.reduce((sum, t) => sum + (t.side === "buy" ? 1 : 0), 0);
-  const sellCount = totalTrades - buyCount;
-  const vwap = totalVolume > 0
-    ? trades.reduce((sum, t) => sum + t.price * t.size, 0) / totalVolume
-    : 0;
-  const lastPrice = trades[0]?.price ?? 0;
-  const lastSize = trades[0]?.size ?? 0;
-  const lastSide = trades[0]?.side ?? null;
+  const { totalTrades, totalVolume, buyVolume, sellVolume, buyCount, sellCount, vwap, lastPrice, lastSize, lastSide } = useMemo(() => {
+    const totalTrades = trades.length;
+    const totalVolume = trades.reduce((sum, t) => sum + t.size, 0);
+    const buyVolume = trades.reduce((sum, t) => sum + (t.side === "buy" ? t.size : 0), 0);
+    const sellVolume = totalVolume - buyVolume;
+    const buyCount = trades.reduce((sum, t) => sum + (t.side === "buy" ? 1 : 0), 0);
+    const sellCount = totalTrades - buyCount;
+    const vwap = totalVolume > 0
+      ? trades.reduce((sum, t) => sum + t.price * t.size, 0) / totalVolume
+      : 0;
+    return {
+      totalTrades, totalVolume, buyVolume, sellVolume, buyCount, sellCount, vwap,
+      lastPrice: trades[0]?.price ?? 0,
+      lastSize: trades[0]?.size ?? 0,
+      lastSide: (trades[0]?.side ?? null) as string | null,
+    };
+  }, [trades]);
   const prevTradesRef = useRef(trades);
 
   useEffect(() => {
@@ -97,4 +102,4 @@ export function TradeTape({
       </div>
     </div>
   );
-}
+});

@@ -25,6 +25,7 @@ app.prepare().then(() => {
   setIO(io);
 
   let onlineCount = 0;
+  let totalVisitors = 0;
   const engine = getEngine();
 
   engine.on("tick", (snapshot) => {
@@ -65,9 +66,10 @@ app.prepare().then(() => {
 
   io.on("connection", async (socket) => {
     onlineCount += 1;
+    totalVisitors += 1;
     engine.online.retail = onlineCount;
     socket.emit("market:snapshot", engine.getSnapshot());
-    io.emit("presence:update", { online: onlineCount });
+    io.emit("presence:update", { online: onlineCount, total: totalVisitors });
 
     const user = await getUserFromCookie(socket.handshake.headers.cookie || "");
     socket.data.userId = user?.id || null;
@@ -81,7 +83,7 @@ app.prepare().then(() => {
         return;
       }
       const res = engine.submitTrade({ side, size, slippageBoost: risk.slippageBoost });
-      const tape = engine.tradeTape[0];
+      const tape = engine.tradeTape[engine.tradeTape.length - 1];
       if (tape) io.emit("trade:tape", tape);
       socket.emit("trade:fill", { side, size, fill: res.fill, price: res.price });
     });
@@ -89,11 +91,23 @@ app.prepare().then(() => {
     socket.on("disconnect", () => {
       onlineCount = Math.max(0, onlineCount - 1);
       engine.online.retail = onlineCount;
-      io.emit("presence:update", { online: onlineCount });
+      io.emit("presence:update", { online: onlineCount, total: totalVisitors });
     });
   });
 
   server.listen(PORT, () => {
     console.log(`> Ready on http://localhost:${PORT}`);
   });
+
+  function shutdown() {
+    console.log("Shutting down...");
+    engine.stop();
+    io.close();
+    server.close(() => {
+      prisma.$disconnect().then(() => process.exit(0));
+    });
+    setTimeout(() => process.exit(1), 5000);
+  }
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 });

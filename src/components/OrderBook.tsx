@@ -6,7 +6,9 @@ import type { OrderBook } from "../engine/types";
 type Props = { book: OrderBook };
 
 export function OrderBook({ book }: Props) {
-  const maxSize = Math.max(...book.bids.map((b) => b.size), ...book.asks.map((a) => a.size), 1);
+  let maxSize = 1;
+  for (const b of book.bids) if (b.size > maxSize) maxSize = b.size;
+  for (const a of book.asks) if (a.size > maxSize) maxSize = a.size;
   const prevBookRef = useRef(book);
 
   useEffect(() => {

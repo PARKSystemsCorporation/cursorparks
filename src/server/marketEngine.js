@@ -20,7 +20,13 @@ class MarketEngine extends EventEmitter {
 
   start() {
     if (this._interval) return;
-    this._interval = setInterval(() => this.tick(), 200);
+    this._interval = setInterval(() => {
+      try { this.tick(); } catch (e) { console.error("[MarketEngine] tick error:", e); }
+    }, 200);
+  }
+
+  stop() {
+    if (this._interval) { clearInterval(this._interval); this._interval = null; }
   }
 
   tick() {
@@ -37,6 +43,7 @@ class MarketEngine extends EventEmitter {
 
     if (now - this.curBar.t >= 1000) {
       this.bars.push(this.curBar);
+      if (this.bars.length > 700) this.bars = this.bars.slice(-600);
       this.curBar = { t: now, o: this.price, h: this.price, l: this.price, c: this.price };
     } else {
       this.curBar.h = Math.max(this.curBar.h, this.price);
@@ -83,8 +90,8 @@ class MarketEngine extends EventEmitter {
     this.velocity += dir * Math.min(1.5, size / 1000) * 0.08;
     this.price = Math.max(1, this.price + dir * Math.min(1.8, size / 800) * 0.04);
     this.liquidityShock += Math.min(2, size / 800);
-    this.tradeTape.unshift({ t: Date.now(), side, size, price: fill });
-    if (this.tradeTape.length > 50) this.tradeTape.pop();
+    this.tradeTape.push({ t: Date.now(), side, size, price: fill });
+    if (this.tradeTape.length > 50) this.tradeTape = this.tradeTape.slice(-50);
     return { fill, price: this.price, velocity: this.velocity };
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { RANKS, type RankInfo } from "../engine/ranks";
 
 type UpgradeDef = {
@@ -137,7 +137,7 @@ export function AccountPanel({
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
 
-  const defsMap = new Map(upgradeDefs.map((d) => [d.key, d]));
+  const defsMap = useMemo(() => new Map(upgradeDefs.map((d) => [d.key, d])), [upgradeDefs]);
 
   function cost(def: UpgradeDef, level: number) {
     return Math.round(def.baseCost * Math.pow(def.costScale, level));

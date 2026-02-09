@@ -4,18 +4,22 @@ import { prisma } from "@/src/server/db";
 import { ensureUpgradeDefs } from "@/src/server/progression";
 
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get("ps_session")?.value;
-  const user = await getUserFromSession(token);
-  if (!user) return NextResponse.json({ user: null });
-  await ensureUpgradeDefs();
-  const stats = await prisma.playerStats.findUnique({ where: { userId: user.id } });
-  const upgrades = await prisma.userUpgrade.findMany({
-    where: { userId: user.id },
-    include: { upgrade: true }
-  });
-  return NextResponse.json({
-    user: { id: user.id, username: user.username },
-    stats,
-    upgrades
-  });
+  try {
+    const token = req.cookies.get("ps_session")?.value;
+    const user = await getUserFromSession(token);
+    if (!user) return NextResponse.json({ user: null });
+    await ensureUpgradeDefs();
+    const stats = await prisma.playerStats.findUnique({ where: { userId: user.id } });
+    const upgrades = await prisma.userUpgrade.findMany({
+      where: { userId: user.id },
+      include: { upgrade: true }
+    });
+    return NextResponse.json({
+      user: { id: user.id, username: user.username },
+      stats,
+      upgrades
+    });
+  } catch (e) {
+    return Response.json({ error: e instanceof Error ? e.message : "Internal error" }, { status: 500 });
+  }
 }

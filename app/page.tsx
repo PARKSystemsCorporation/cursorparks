@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChartCanvas } from "../src/components/ChartCanvas";
 import { OrderBook } from "../src/components/OrderBook";
 import { TradePanel } from "../src/components/TradePanel";
@@ -9,7 +9,7 @@ import { NewsFeed } from "../src/components/NewsFeed";
 import { AccountPanel } from "../src/components/AccountPanel";
 import { getSocket } from "../src/engine/socketClient";
 import type { Bar, MarketTick, OrderBook as Book } from "../src/engine/types";
-import { db, type TradeRow, type NewsRow, type LeaderboardRun } from "../src/db/db";
+import { db, type TradeRow, type NewsRow } from "../src/db/db";
 import { getRank } from "../src/engine/ranks";
 
 const BASE_START_CASH = 100000;
@@ -32,8 +32,12 @@ type UserUpgrade = { id: string; upgradeId: string; level: number; upgrade: Upgr
 type FirmMember = { firmId: string; role: string; firm: { name: string } };
 type ChatMessage = { id: string; user: string; message: string; t: string };
 
+const CORE_KEYS = ["attr_lots", "attr_balance", "attr_info"];
+const CHART_KEYS = ["chart_indicators", "chart_drawing", "chart_multi_tf"];
+const BOT_KEYS = ["bot_alerts", "bot_risk", "bot_scalper"];
+const INTEL_KEYS = ["info_news_speed", "info_sentiment", "info_vol_forecast"];
+
 export default function Home() {
-  const [bars, setBars] = useState<Bar[]>([]);
   const [tick, setTick] = useState<MarketTick | null>(null);
   const [position, setPosition] = useState({ size: 0, avgPrice: 0 });
   const [cash, setCash] = useState(BASE_START_CASH);
@@ -42,7 +46,6 @@ export default function Home() {
   const symbol = "PSC";
   const [trades, setTrades] = useState<TradeRow[]>([]);
   const [news, setNews] = useState<NewsRow[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardRun[]>([]);
   const [mobileTab, setMobileTab] = useState<"trade" | "news">("trade");
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [stats, setStats] = useState<PlayerStats | null>(null);
@@ -73,6 +76,7 @@ export default function Home() {
   const [showCashoutConfirm, setShowCashoutConfirm] = useState(false);
   const [ready, setReady] = useState(false);
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tickCounter = useRef(0);
 
   const orderBook: Book = tick?.orderBook || {
     bids: [],
@@ -81,12 +85,13 @@ export default function Home() {
     mid: tick?.price || 0
   };
 
+  const rawBars = tick?.bars || [];
   const displayBars = useMemo(() => {
-    if (!bars.length || timeframeMs <= 1000) return bars;
+    if (!rawBars.length || timeframeMs <= 1000) return rawBars;
     const out: Bar[] = [];
     let cur: Bar | null = null;
     let curBucket = 0;
-    for (const b of bars) {
+    for (const b of rawBars) {
       const bucket = Math.floor(b.t / timeframeMs) * timeframeMs;
       if (!cur || bucket !== curBucket) {
         if (cur) out.push(cur);
@@ -100,13 +105,13 @@ export default function Home() {
     }
     if (cur) out.push(cur);
     return out;
-  }, [bars, timeframeMs]);
+  }, [rawBars, timeframeMs]);
 
   const levelByKey = useMemo(() => {
     return new Map(userUpgrades.map((u) => [u.upgrade.key, u.level]));
   }, [userUpgrades]);
 
-  const getLevelByKey = (key: string) => levelByKey.get(key) || 0;
+  const getLevelByKey = useCallback((key: string) => levelByKey.get(key) || 0, [levelByKey]);
   const defByKey = useMemo(() => {
     return new Map(upgradeDefs.map((d) => [d.key, d]));
   }, [upgradeDefs]);
@@ -127,23 +132,25 @@ export default function Home() {
 
   useEffect(() => {
     const socket = getSocket();
-    const onTick = async (payload: MarketTick) => {
+    const onTick = (payload: MarketTick) => {
       setTick(payload);
-      setBars(payload.bars || []);
       if (payload.news && hasNews) {
         const n = payload.news;
-        setTimeout(async () => {
+        setTimeout(() => {
           setNews((prev) => [{ id: n.id, t: n.t, headline: n.headline, sentiment: n.sentiment, impact: n.impact }, ...prev].slice(0, 20));
-          await db.news.add({ t: n.t, headline: n.headline, sentiment: n.sentiment, impact: n.impact });
+          db.news.add({ t: n.t, headline: n.headline, sentiment: n.sentiment, impact: n.impact });
         }, newsDelayRef.current);
       }
-      await db.ticks.add({ symbol, t: payload.t, price: payload.price });
-      await db.orderbook.add({
-        symbol,
-        t: payload.t,
-        bids: JSON.stringify(payload.orderBook.bids),
-        asks: JSON.stringify(payload.orderBook.asks)
-      });
+      tickCounter.current += 1;
+      if (tickCounter.current % 5 === 0) {
+        db.ticks.add({ symbol, t: payload.t, price: payload.price });
+        db.orderbook.add({
+          symbol,
+          t: payload.t,
+          bids: JSON.stringify(payload.orderBook.bids),
+          asks: JSON.stringify(payload.orderBook.asks)
+        });
+      }
     };
     socket.on("market:tick", onTick);
     socket.on("market:snapshot", onTick);
@@ -202,10 +209,6 @@ export default function Home() {
   }, [symbol, hasNews]);
 
   useEffect(() => {
-    db.leaderboard_runs.orderBy("t").reverse().limit(10).toArray().then(setLeaderboard);
-  }, []);
-
-  useEffect(() => {
     loadAuth();
     loadLeaderboards();
   }, []);
@@ -236,7 +239,7 @@ export default function Home() {
   }, [firmMember]);
 
   useEffect(() => {
-    const level = getUpgradeLevel("info_news_speed");
+    const level = getLevelByKey("info_news_speed");
     newsDelayRef.current = Math.max(500, Math.round(6000 * Math.pow(0.9, level)));
   }, [userUpgrades]);
 
@@ -287,8 +290,7 @@ export default function Home() {
       setStats(data.stats || null);
       setUserUpgrades(data.upgrades || []);
       if (data.user) {
-        await loadProgression();
-        await loadFirm();
+        await Promise.all([loadProgression(), loadFirm()]);
       }
     } catch (e) {
       setAuthUser(null);
@@ -327,8 +329,10 @@ export default function Home() {
 
   async function loadLeaderboards() {
     try {
-      const solo = await fetchJson("/api/leaderboards/solo");
-      const firms = await fetchJson("/api/leaderboards/firms");
+      const [solo, firms] = await Promise.all([
+        fetchJson("/api/leaderboards/solo"),
+        fetchJson("/api/leaderboards/firms")
+      ]);
       setSoloLb(solo || []);
       setFirmLb(firms || []);
     } catch (e) {
@@ -467,10 +471,6 @@ export default function Home() {
     return Math.round(def.baseCost * Math.pow(def.costScale, level));
   }
 
-  function getUpgradeLevel(key: string) {
-    return getLevelByKey(key);
-  }
-
   function upgradeLabel(key: string) {
     if (key === "attr_lots") return "LOTS";
     if (key === "attr_balance") return "BALANCE";
@@ -535,7 +535,6 @@ export default function Home() {
 
   const onCashout = async () => {
     db.leaderboard_runs.add({ t: Date.now(), pnl, trades: trades.length });
-    db.leaderboard_runs.orderBy("t").reverse().limit(10).toArray().then(setLeaderboard);
     if (authUser) {
       try {
         await fetchJson("/api/leaderboards/run", {
@@ -563,29 +562,24 @@ export default function Home() {
   const online = tick?.online || { wallSt: 0, retail: 0 };
   const retailCount = wsOnline ?? online.retail;
   const sentiment = news[0]?.sentiment ?? 0;
-  const showIndicators = getUpgradeLevel("chart_indicators") > 0;
-  const showBotAlerts = getUpgradeLevel("bot_alerts") > 0;
-  const hasMultiTf = getUpgradeLevel("chart_multi_tf") > 0;
+  const showIndicators = getLevelByKey("chart_indicators") > 0;
+  const showBotAlerts = getLevelByKey("bot_alerts") > 0;
+  const hasMultiTf = getLevelByKey("chart_multi_tf") > 0;
   const botSignal = tick ? (tick.velocity >= 0 ? "BUY BIAS" : "SELL BIAS") : "--";
 
-  const timeframes = hasMultiTf
+  const timeframes = useMemo(() => hasMultiTf
     ? [
         { label: "Fast", value: 1000 },
         { label: "5s", value: 5000 },
         { label: "10s", value: 10000 }
       ]
-    : [{ label: "Fast", value: 1000 }];
+    : [{ label: "Fast", value: 1000 }],
+  [hasMultiTf]);
 
   useEffect(() => {
     if (!hasMultiTf && timeframeMs !== 1000) setTimeframeMs(1000);
   }, [hasMultiTf, timeframeMs]);
 
-  const coreKeys = ["attr_lots", "attr_balance", "attr_info"];
-  const chartKeys = ["chart_indicators", "chart_drawing", "chart_multi_tf"];
-  const botKeys = ["bot_alerts", "bot_risk", "bot_scalper"];
-  const intelKeys = ["info_news_speed", "info_sentiment", "info_vol_forecast"];
-
-  const totalVisitorCount = totalVisitors ?? 0;
   const canRug = position.size !== 0;
   const onRug = () => {
     if (!canRug) return;
@@ -629,8 +623,8 @@ export default function Home() {
             <span className="text-neon-green">{retailCount}</span>
             <span className="text-white/15">|</span>
             <span className="text-white/30">VISITS</span>
-            <span className="text-neon-cyan">{totalVisitorCount}</span>
-            {getUpgradeLevel("info_vol_forecast") > 0 && (
+            <span className="text-neon-cyan">{totalVisitors ?? 0}</span>
+            {getLevelByKey("info_vol_forecast") > 0 && (
               <>
                 <span className="text-white/15">|</span>
                 <span className="text-white/30">VOL</span>
@@ -639,7 +633,7 @@ export default function Home() {
                 </span>
               </>
             )}
-            {getUpgradeLevel("info_sentiment") > 0 && (
+            {getLevelByKey("info_sentiment") > 0 && (
               <>
                 <span className="text-white/15">|</span>
                 <span className={sentiment >= 0 ? "text-neon-green" : "text-neon-red"}>{sentiment.toFixed(2)}</span>
@@ -888,7 +882,7 @@ export default function Home() {
               </div>
             )}
             <div className="grid gap-3 md:grid-cols-3">
-              {coreKeys.map((key) => {
+              {CORE_KEYS.map((key) => {
                 const def = defByKey.get(key);
                 if (!def) return null;
                 const level = getLevelByKey(key);
@@ -936,19 +930,19 @@ export default function Home() {
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">Indicators + Drawing</div>
                 <div className="mt-3 space-y-2">
-                  {chartKeys.map((key) => renderUpgradeCard(defByKey.get(key)))}
+                  {CHART_KEYS.map((key) => renderUpgradeCard(defByKey.get(key)))}
                 </div>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">Bots</div>
                 <div className="mt-3 space-y-2">
-                  {botKeys.map((key) => renderUpgradeCard(defByKey.get(key)))}
+                  {BOT_KEYS.map((key) => renderUpgradeCard(defByKey.get(key)))}
                 </div>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4 md:col-span-2">
                 <div className="text-[10px] uppercase tracking-[0.3em] text-white/50">Intel Modules</div>
                 <div className="mt-3 grid gap-2 md:grid-cols-3">
-                  {intelKeys.map((key) => renderUpgradeCard(defByKey.get(key)))}
+                  {INTEL_KEYS.map((key) => renderUpgradeCard(defByKey.get(key)))}
                 </div>
               </div>
             </div>

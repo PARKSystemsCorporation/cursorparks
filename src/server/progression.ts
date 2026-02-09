@@ -127,7 +127,10 @@ export const UPGRADE_DEFS = [
   }
 ];
 
+let _upgradeDefsSeeded = false;
+
 export async function ensureUpgradeDefs() {
+  if (_upgradeDefsSeeded) return;
   for (const def of UPGRADE_DEFS) {
     await prisma.upgradeDef.upsert({
       where: { key: def.key },
@@ -154,6 +157,7 @@ export async function ensureUpgradeDefs() {
       }
     });
   }
+  _upgradeDefsSeeded = true;
 }
 
 export function upgradeCost(base: number, scale: number, level: number) {
