@@ -3,7 +3,6 @@ import "./globals.css";
 export const metadata = {
   title: "GARI.MMO",
   description: "Real-time MMO day-trading simulator",
-  themeColor: "#07070c",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -24,7 +23,8 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover"
+  viewportFit: "cover",
+  themeColor: "#07070c"
 };
 
 export default function RootLayout({

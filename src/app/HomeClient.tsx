@@ -26,12 +26,14 @@ import { AdvancedOrders, type AdvancedOrder } from "../components/AdvancedOrders
 import { TradeReplay } from "../components/TradeReplay";
 import { MobileSheet } from "../components/MobileSheet";
 import { MobileTabBar } from "../components/MobileTabBar";
+import { SystemMetricsPanel, type SystemMetrics } from "../components/SystemMetricsPanel";
 import { getSocket } from "../engine/socketClient";
 import type { Bar, MarketTick, OrderBook as Book } from "../engine/types";
 import { db, type TradeRow, type NewsRow } from "../db/db";
 import { getRank } from "../engine/ranks";
 
 const BASE_START_CASH = 100000;
+const QTY_OPTIONS = [1, 10, 100, 1000, 10000];
 
 type AuthUser = { id: string; username: string };
 type PlayerStats = { cashoutBalance: number; totalPnl: number; level: number; reputation: number; xp: number };
@@ -50,7 +52,7 @@ type UpgradeDef = {
 type UserUpgrade = { id: string; upgradeId: string; level: number; upgrade: UpgradeDef };
 type FirmMember = { firmId: string; role: string; firm: { name: string } };
 type ChatMessage = { id: string; user: string; message: string; t: string };
-type PanelTab = "account" | "upgrades" | "firms" | "leaderboards" | "performance" | "achievements" | "challenges" | "social";
+type PanelTab = "account" | "upgrades" | "firms" | "leaderboards" | "performance" | "achievements" | "challenges" | "social" | "system";
 type MobileTab = "trade" | "dom" | "tape" | "more";
 type MobileMoreTab = PanelTab | "news";
 
@@ -58,6 +60,24 @@ const CORE_KEYS = ["attr_lots", "attr_balance", "attr_info"];
 const CHART_KEYS = ["chart_indicators", "chart_drawing", "chart_multi_tf"];
 const BOT_KEYS = ["bot_alerts", "bot_risk", "bot_scalper"];
 const INTEL_KEYS = ["info_news_speed", "info_sentiment", "info_vol_forecast"];
+const PANEL_TABS: PanelTab[] = ["account", "upgrades", "firms", "leaderboards", "performance", "achievements", "challenges", "social", "system"];
+const MOBILE_TABS = [
+  { id: "trade", label: "Trade" },
+  { id: "dom", label: "DOM" },
+  { id: "tape", label: "Tape" },
+  { id: "more", label: "More" }
+] as const;
+const MOBILE_MORE_TABS = [
+  "account",
+  "upgrades",
+  "firms",
+  "leaderboards",
+  "performance",
+  "achievements",
+  "challenges",
+  "social",
+  "news"
+] as const;
 
 export default function HomeClient() {
   const [tick, setTick] = useState<MarketTick | null>(null);
@@ -73,6 +93,7 @@ export default function HomeClient() {
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [statsLastUpdatedAt, setStatsLastUpdatedAt] = useState<number | null>(null);
   const [statsStale, setStatsStale] = useState(false);
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetrics | null>(null);
   const [upgradeDefs, setUpgradeDefs] = useState<UpgradeDef[]>([]);
   const [userUpgrades, setUserUpgrades] = useState<UserUpgrade[]>([]);
   const [firmMember, setFirmMember] = useState<FirmMember | null>(null);
@@ -102,6 +123,9 @@ export default function HomeClient() {
   const [ready, setReady] = useState(false);
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickCounter = useRef(0);
+  const progressionRefreshInFlight = useRef(false);
+  const statsRefreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const statsBackoffMs = useRef(15000);
 
   // ── New feature state ──
   const { toasts, addToast, dismissToast } = useToasts();
@@ -280,6 +304,30 @@ export default function HomeClient() {
   }, [firmMember]);
 
   useEffect(() => {
+    const socket = getSocket();
+    const onStats = (payload: { userId?: string; stats?: PlayerStats }) => {
+      if (!payload?.userId || payload.userId !== authUser?.id) return;
+      setStats(payload.stats || null);
+      setStatsLastUpdatedAt(Date.now());
+      setStatsStale(false);
+    };
+    const onSystemMetrics = (payload: SystemMetrics) => {
+      setSystemMetrics(payload);
+    };
+    socket.on("player:stats", onStats);
+    socket.on("system:metrics", onSystemMetrics);
+    return () => {
+      socket.off("player:stats", onStats);
+      socket.off("system:metrics", onSystemMetrics);
+    };
+  }, [authUser]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    socket.emit("session:refresh");
+  }, [authUser]);
+
+  useEffect(() => {
     if (!firmMember) return;
     const t = setInterval(() => loadChat(), 5000);
     return () => clearInterval(t);
@@ -292,18 +340,67 @@ export default function HomeClient() {
 
   useEffect(() => {
     if (!authUser) {
-      setStatsLastUpdatedAt(null);
       setStatsStale(false);
       return;
     }
-    if (!statsLastUpdatedAt) {
-      setStatsLastUpdatedAt(Date.now());
-      setStatsStale(false);
-      return;
-    }
-    const ageMs = Date.now() - statsLastUpdatedAt;
-    setStatsStale(ageMs > 60000);
+    const check = () => {
+      if (!statsLastUpdatedAt) {
+        setStatsStale(true);
+        return;
+      }
+      const ageMs = Date.now() - statsLastUpdatedAt;
+      setStatsStale(ageMs > 45000);
+    };
+    check();
+    const interval = setInterval(check, 5000);
+    return () => clearInterval(interval);
   }, [authUser, statsLastUpdatedAt]);
+
+  const refreshProgression = useCallback(async () => {
+    if (!authUser || progressionRefreshInFlight.current) return null;
+    progressionRefreshInFlight.current = true;
+    try {
+      return await loadProgression();
+    } finally {
+      progressionRefreshInFlight.current = false;
+    }
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!authUser) return;
+    const socket = getSocket();
+    const schedule = (delay: number) => {
+      if (statsRefreshTimer.current) clearTimeout(statsRefreshTimer.current);
+      statsRefreshTimer.current = setTimeout(() => runRefresh(), delay);
+    };
+    const runRefresh = async () => {
+      if (document.visibilityState === "hidden") {
+        schedule(statsBackoffMs.current);
+        return;
+      }
+      const ok = await refreshProgression();
+      let next = statsBackoffMs.current;
+      if (ok === false) next = Math.min(120000, statsBackoffMs.current * 2);
+      if (ok === true) next = 15000;
+      statsBackoffMs.current = next;
+      schedule(next);
+    };
+    const onFocus = () => runRefresh();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") runRefresh();
+    };
+    const onConnect = () => runRefresh();
+    socket.on("connect", onConnect);
+    runRefresh();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      if (statsRefreshTimer.current) clearTimeout(statsRefreshTimer.current);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      socket.off("connect", onConnect);
+    };
+  }, [authUser, refreshProgression]);
 
   const lotsLevel = getLevelByKey("attr_lots");
   const balanceLevel = getLevelByKey("attr_balance");
@@ -369,8 +466,10 @@ export default function HomeClient() {
       setStatsStale(false);
       setUpgradeDefs(data.defs || []);
       setUserUpgrades(data.upgrades || []);
+      return true;
     } catch (e) {
       // ignore
+      return false;
     }
   }
 
@@ -762,7 +861,7 @@ export default function HomeClient() {
   const dailyChallenges = useMemo(() => makeDailyChallenges(trades.length, pnl, buyCount, sellCount), [trades.length, pnl, buyCount, sellCount]);
 
   const qtyOptions = useMemo(() => [1, 10, 100, 1000, 10000], []);
-  const panelTabs: PanelTab[] = ["account", "upgrades", "firms", "leaderboards", "performance", "achievements", "challenges", "social"];
+  const panelTabs: PanelTab[] = ["account", "upgrades", "firms", "leaderboards", "performance", "achievements", "challenges", "social", "system"];
   const mobileTabs = useMemo(() => ([
     { id: "trade", label: "Trade" },
     { id: "dom", label: "DOM" },
@@ -778,6 +877,7 @@ export default function HomeClient() {
     "achievements",
     "challenges",
     "social",
+    "system",
     "news"
   ] as const), []);
   const tapeTrades = globalTape.length ? globalTape : trades;
@@ -960,6 +1060,10 @@ export default function HomeClient() {
 
     if (tab === "leaderboards") {
       return <RealTimeLeaderboard soloLb={soloLb} firmLb={firmLb} currentUser={authUser?.username} userPnl={pnl} />;
+    }
+
+    if (tab === "system") {
+      return <SystemMetricsPanel metrics={systemMetrics} />;
     }
 
     if (tab === "performance") {
@@ -1242,7 +1346,7 @@ export default function HomeClient() {
             {mobileTab === "more" && (
               <>
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hidden">
-                  {mobileMoreTabs.map((tab) => {
+                  {MOBILE_MORE_TABS.map((tab) => {
                     const label = tab === "leaderboards" ? "Leaderboards" : tab.charAt(0).toUpperCase() + tab.slice(1);
                     return (
                       <button
@@ -1267,7 +1371,7 @@ export default function HomeClient() {
           </div>
         </div>
         <MobileTabBar
-          tabs={mobileTabs}
+          tabs={MOBILE_TABS}
           active={mobileTab}
           onChange={(id) => setMobileTab(id as MobileTab)}
         />
@@ -1275,7 +1379,7 @@ export default function HomeClient() {
 
       <div className="mt-6 glass rounded-xl p-4">
         <div className="mb-3 flex flex-wrap gap-2">
-          {panelTabs.map((tab) => (
+          {PANEL_TABS.map((tab) => (
             <button
               key={tab}
               className={`rounded-full px-3 py-1 text-xs transition-all duration-200 ${
@@ -1347,7 +1451,7 @@ export default function HomeClient() {
         onSell={() => handleTrade("sell")}
         onRug={onRug}
         onQty={setQty}
-        qtyOptions={qtyOptions}
+        qtyOptions={QTY_OPTIONS}
       />
       <AchievementTracker
         context={achievementContext}

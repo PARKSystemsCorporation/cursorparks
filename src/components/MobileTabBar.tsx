@@ -3,7 +3,7 @@
 type TabDef = { id: string; label: string; badge?: string };
 
 type Props = {
-  tabs: TabDef[];
+  tabs: ReadonlyArray<TabDef>;
   active: string;
   onChange: (id: string) => void;
 };
