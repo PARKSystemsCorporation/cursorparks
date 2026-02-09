@@ -15,7 +15,7 @@ export async function GET() {
     include: { user: true }
   });
   return NextResponse.json(
-    messages.map((m) => ({
+    messages.map((m: any) => ({
       id: m.id,
       user: m.user.username,
       message: m.message,

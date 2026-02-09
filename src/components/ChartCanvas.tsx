@@ -7,9 +7,10 @@ type Props = {
   bars: Bar[];
   price: number;
   showSMA?: boolean;
+  avgPrice?: number;
 };
 
-export function ChartCanvas({ bars, price, showSMA }: Props) {
+export function ChartCanvas({ bars, price, showSMA, avgPrice }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
 
@@ -89,6 +90,24 @@ export function ChartCanvas({ bars, price, showSMA }: Props) {
       ctx.fillRect(x - bw / 2, top, bw, Math.max(1, bottom - top));
     });
 
+    /* Position entry line */
+    if (avgPrice !== undefined && avgPrice > 0) {
+      const ay = toY(avgPrice);
+      if (ay >= -20 && ay <= h + 20) {
+        ctx.strokeStyle = "rgba(91,141,239,0.45)";
+        ctx.setLineDash([2, 6]);
+        ctx.beginPath();
+        ctx.moveTo(pad.l, ay);
+        ctx.lineTo(w - pad.r, ay);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#5b8def";
+        ctx.font = "bold 9px ui-monospace, SFMono-Regular, Menlo, monospace";
+        ctx.textAlign = "left";
+        ctx.fillText(`AVG ${avgPrice.toFixed(2)}`, pad.l + 4, ay - 4);
+      }
+    }
+
     if (showSMA) {
       ctx.strokeStyle = "rgba(91,141,239,0.9)";
       ctx.lineWidth = 1.2;
@@ -126,7 +145,7 @@ export function ChartCanvas({ bars, price, showSMA }: Props) {
     ctx.font = "bold 10px ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.textAlign = "center";
     ctx.fillText(`$${price.toFixed(2)}`, w - pad.r / 2, py + 4);
-  }, [bars, price, showSMA, size]);
+  }, [bars, price, showSMA, avgPrice, size]);
 
   return <canvas ref={ref} className="h-full w-full" />;
 }

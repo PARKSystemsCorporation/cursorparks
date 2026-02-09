@@ -9,6 +9,7 @@ import { NewsFeed } from "../src/components/NewsFeed";
 import { getSocket } from "../src/engine/socketClient";
 import type { Bar, MarketTick, OrderBook as Book } from "../src/engine/types";
 import { db, type TradeRow, type NewsRow, type LeaderboardRun } from "../src/db/db";
+import { getRank } from "../src/engine/ranks";
 
 const BASE_START_CASH = 100000;
 
@@ -68,6 +69,10 @@ export default function Home() {
   const newsDelayRef = useRef(6000);
   const startCashRef = useRef(BASE_START_CASH);
   const [panelTab, setPanelTab] = useState<"account" | "upgrades" | "firms" | "leaderboards">("account");
+  const [tradeFlash, setTradeFlash] = useState<"buy" | "sell" | null>(null);
+  const [showCashoutConfirm, setShowCashoutConfirm] = useState(false);
+  const [ready, setReady] = useState(false);
+  const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const orderBook: Book = tick?.orderBook || {
     bids: [],
@@ -107,10 +112,18 @@ export default function Home() {
   }, [upgradeDefs]);
   const hasNews = getLevelByKey("info_news_speed") > 0;
 
-  const equity = cash + position.size * (tick?.price || 0);
+  const currentPrice = tick?.price || 0;
+  const equity = cash + position.size * currentPrice;
   const pnl = equity - startCash;
-  const bid = orderBook.bids[0]?.price || (tick?.price || 0) - 0.05;
-  const ask = orderBook.asks[0]?.price || (tick?.price || 0) + 0.05;
+  const unrealizedPnl = position.size !== 0 ? position.size * (currentPrice - position.avgPrice) : 0;
+  const bid = orderBook.bids[0]?.price ?? currentPrice - 0.05;
+  const ask = orderBook.asks[0]?.price ?? currentPrice + 0.05;
+  const rank = getRank(Math.max(0, pnl));
+
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 800);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const socket = getSocket();
@@ -146,6 +159,12 @@ export default function Home() {
       }
       setPosition({ size: newSize, avgPrice: newAvg });
       setCash((c) => c - data.fill * signed);
+      if (flashTimeout.current) clearTimeout(flashTimeout.current);
+      setTradeFlash(null);
+      requestAnimationFrame(() => {
+        setTradeFlash(data.side);
+        flashTimeout.current = setTimeout(() => setTradeFlash(null), 400);
+      });
       const trade: TradeRow = {
         symbol,
         t: Date.now(),
@@ -528,6 +547,7 @@ export default function Home() {
     setCash(startCash);
     setPosition({ size: 0, avgPrice: 0 });
     setTrades([]);
+    setShowCashoutConfirm(false);
   };
 
   const online = tick?.online || { wallSt: 0, retail: 0 };
@@ -563,40 +583,91 @@ export default function Home() {
     submitTrade(side, Math.abs(position.size));
   };
 
-  return (
-    <div className="min-h-screen bg-bg-void px-4 py-4 md:px-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div className="text-xs uppercase tracking-[0.35em] text-white/50">GARI.MMO</div>
-          <div className="text-lg font-bold text-white">World Market Simulator</div>
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-bg-void">
+        <div className="text-center">
+          <div className="text-[10px] uppercase tracking-[0.5em] text-white/30">Connecting to</div>
+          <div className="mt-1 text-xl font-bold tracking-wider text-white">PARKSYSTEMS</div>
+          <div className="mx-auto mt-4 h-px w-12 bg-neon-cyan/30 load-pulse" />
         </div>
-        <div className="glass flex items-center gap-4 rounded-full px-4 py-2 text-xs">
-          <div>WallSt: <span className="text-neon-cyan">{online.wallSt}</span></div>
-          <div>Retail: <span className="text-neon-green">{retailCount}</span></div>
-          {getUpgradeLevel("info_vol_forecast") > 0 && (
-            <div>Vol: <span className="text-white/80">{tick?.volState || "mid"}</span></div>
-          )}
-          {getUpgradeLevel("info_sentiment") > 0 && (
-            <div>Sent: <span className={sentiment >= 0 ? "text-neon-green" : "text-neon-red"}>{sentiment.toFixed(2)}</span></div>
-          )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`min-h-screen bg-bg-void px-4 py-3 md:px-6 ${tradeFlash === "buy" ? "animate-flash-green" : tradeFlash === "sell" ? "animate-flash-red" : ""}`}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.35em] text-white/35">PARKSYSTEMS</span>
+              <div className="pulse-dot" />
+            </div>
+            <div className="text-sm font-bold text-white">World Market Simulator</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="rounded border border-neon-cyan/20 bg-neon-cyan/5 px-2.5 py-1 text-[10px] font-semibold text-neon-cyan">
+            LVL {rank.level} &middot; {rank.name}
+          </div>
+          <div className="glass flex items-center gap-2.5 rounded px-3 py-1.5 font-mono text-[10px]">
+            <span className="text-white/30">WS</span>
+            <span className="text-neon-cyan">{online.wallSt}</span>
+            <span className="text-white/15">|</span>
+            <span className="text-white/30">RT</span>
+            <span className="text-neon-green">{retailCount}</span>
+            {getUpgradeLevel("info_vol_forecast") > 0 && (
+              <>
+                <span className="text-white/15">|</span>
+                <span className="text-white/30">VOL</span>
+                <span className={`font-semibold ${tick?.volState === "high" ? "text-neon-red" : tick?.volState === "low" ? "text-neon-blue" : "text-white/60"}`}>
+                  {(tick?.volState || "mid").toUpperCase()}
+                </span>
+              </>
+            )}
+            {getUpgradeLevel("info_sentiment") > 0 && (
+              <>
+                <span className="text-white/15">|</span>
+                <span className={sentiment >= 0 ? "text-neon-green" : "text-neon-red"}>{sentiment.toFixed(2)}</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[220px_1fr_300px]">
+      {position.size !== 0 && (
+        <div className="animate-fadeIn mb-3 flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-4 py-2 font-mono text-[11px]">
+          <div className="flex items-center gap-4">
+            <span className="text-white/30">POS</span>
+            <span className={position.size > 0 ? "text-neon-green" : "text-neon-red"}>
+              {position.size > 0 ? "LONG" : "SHORT"} {Math.abs(position.size)}
+            </span>
+            <span className="text-white/25">@ {position.avgPrice.toFixed(2)}</span>
+          </div>
+          <div className={`font-semibold ${unrealizedPnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
+            {unrealizedPnl >= 0 ? "+" : ""}{unrealizedPnl.toFixed(2)} unrealized
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-3 md:grid-cols-[220px_1fr_300px]">
         <div className="hidden md:block">
           <OrderBook book={orderBook} />
         </div>
 
-        <div className="glass flex h-[520px] flex-col rounded-xl p-3 md:h-[640px]">
-          <div className="mb-2 flex items-center justify-between text-xs text-white/60">
-            <span>{symbol} · ${tick?.price.toFixed(2) || "--"}</span>
+        <div className="glass flex h-[520px] flex-col rounded-md p-3 md:h-[640px]">
+          <div className="mb-2 flex items-center justify-between font-mono text-[11px] text-white/40">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.18em] text-white/40">Candle View</span>
-              <div className="flex rounded-full bg-white/5 p-1">
+              <span className="font-semibold text-white/70">{symbol}</span>
+              <span className="text-neon-cyan">${currentPrice.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex rounded bg-white/5 p-0.5">
                 {timeframes.map((opt) => (
                   <button
                     key={opt.value}
-                    className={`rounded-full px-2 py-1 text-[10px] ${timeframeMs === opt.value ? "bg-neon-cyan text-black" : "text-white/60"}`}
+                    className={`rounded px-2 py-0.5 text-[10px] ${timeframeMs === opt.value ? "bg-white/10 text-white" : "text-white/35"}`}
                     onClick={() => setTimeframeMs(opt.value)}
                   >
                     {opt.label}
@@ -604,10 +675,10 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            <span>Spread {tick?.spread.toFixed(3) || "--"}</span>
+            <span>SPR {tick?.spread.toFixed(3) || "--"}</span>
           </div>
           <div className="flex-1">
-            <ChartCanvas bars={displayBars} price={tick?.price || 0} showSMA={showIndicators} />
+            <ChartCanvas bars={displayBars} price={currentPrice} showSMA={showIndicators} avgPrice={position.size !== 0 ? position.avgPrice : undefined} />
           </div>
         </div>
 
@@ -628,10 +699,14 @@ export default function Home() {
             ask={ask}
             qty={qty}
             maxQty={maxOrderSize}
+            position={position}
+            currentPrice={currentPrice}
+            rank={rank}
+            tradeCount={trades.length}
             onQty={setQty}
             onBuy={() => handleTrade("buy")}
             onSell={() => handleTrade("sell")}
-            onCashout={onCashout}
+            onCashout={() => setShowCashoutConfirm(true)}
             onRug={onRug}
             canRug={canRug}
             onSymbol={setSymbol}
@@ -640,7 +715,7 @@ export default function Home() {
           {hasNews ? (
             <NewsFeed news={news} />
           ) : (
-            <div className="glass rounded-xl p-3 text-xs text-white/50">
+            <div className="glass rounded-md p-3 text-xs text-white/30">
               Unlock INFO Rank 1 to access the macro news feed.
             </div>
           )}
@@ -648,18 +723,21 @@ export default function Home() {
       </div>
 
       <div className="md:hidden">
-        <div className="fixed bottom-0 left-0 right-0 z-40 rounded-t-2xl bg-bg-panel px-4 py-3 shadow-glass">
+        <div className="fixed bottom-0 left-0 right-0 z-40 rounded-t-xl border-t border-white/5 bg-bg-panel px-4 py-3 shadow-glass">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-xs uppercase tracking-[0.2em] text-white/50">Trade Desk</div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/35">Trade Desk</span>
+              <span className="rounded border border-neon-cyan/20 bg-neon-cyan/5 px-1.5 py-0.5 text-[9px] font-semibold text-neon-cyan">{rank.name}</span>
+            </div>
+            <div className="flex gap-1">
               <button
-                className={`rounded-full px-3 py-1 text-xs ${mobileTab === "trade" ? "bg-neon-cyan text-black" : "bg-white/10 text-white/70"}`}
+                className={`rounded px-2.5 py-1 text-[10px] font-medium ${mobileTab === "trade" ? "bg-white/10 text-white" : "text-white/35"}`}
                 onClick={() => setMobileTab("trade")}
               >
                 Trade
               </button>
               <button
-                className={`rounded-full px-3 py-1 text-xs ${mobileTab === "news" ? "bg-neon-cyan text-black" : "bg-white/10 text-white/70"}`}
+                className={`rounded px-2.5 py-1 text-[10px] font-medium ${mobileTab === "news" ? "bg-white/10 text-white" : "text-white/35"}`}
                 onClick={() => setMobileTab("news")}
               >
                 News
@@ -669,7 +747,7 @@ export default function Home() {
           {mobileTab === "trade" ? (
             <div className="space-y-3">
               {showBotAlerts && (
-                <div className="rounded-lg bg-white/5 px-3 py-2 text-xs text-neon-cyan">
+                <div className="rounded bg-white/5 px-3 py-2 text-xs text-neon-cyan">
                   Bot Alert: {botSignal}
                 </div>
               )}
@@ -683,10 +761,14 @@ export default function Home() {
                 ask={ask}
                 qty={qty}
                 maxQty={maxOrderSize}
+                position={position}
+                currentPrice={currentPrice}
+                rank={rank}
+                tradeCount={trades.length}
                 onQty={setQty}
                 onBuy={() => handleTrade("buy")}
                 onSell={() => handleTrade("sell")}
-                onCashout={onCashout}
+                onCashout={() => setShowCashoutConfirm(true)}
                 onRug={onRug}
                 canRug={canRug}
                 onSymbol={setSymbol}
@@ -927,6 +1009,28 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {showCashoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowCashoutConfirm(false)}>
+          <div className="glass mx-4 w-full max-w-xs rounded-md p-6 text-center" onClick={(e) => e.stopPropagation()}>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-white/35">End Session</div>
+            <div className={`mt-2 font-mono text-3xl font-bold ${pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
+              {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
+            </div>
+            <div className="mt-1 text-[11px] text-white/30">
+              {trades.length} trades &middot; {rank.name}
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button onClick={() => setShowCashoutConfirm(false)} className="rounded border border-white/10 py-2.5 text-[11px] text-white/50 hover:bg-white/5">
+                Keep Trading
+              </button>
+              <button onClick={onCashout} className="rounded bg-neon-cyan py-2.5 text-[11px] font-semibold text-black hover:bg-neon-cyan/90">
+                Cash Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

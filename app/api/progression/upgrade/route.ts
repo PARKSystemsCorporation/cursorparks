@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     where: { userId: user.id },
     include: { upgrade: true }
   });
-  const levelByKey = new Map(ownedUpgrades.map((u) => [u.upgrade.key, u.level]));
-  const getLevel = (upgradeKey: string) => levelByKey.get(upgradeKey) || 0;
+  const levelByKey = new Map<string, number>(ownedUpgrades.map((u: any) => [u.upgrade.key, u.level]));
+  const getLevel = (upgradeKey: string): number => levelByKey.get(upgradeKey) || 0;
   const existing = await prisma.userUpgrade.findUnique({
     where: { userId_upgradeId: { userId: user.id, upgradeId: def.id } }
   });

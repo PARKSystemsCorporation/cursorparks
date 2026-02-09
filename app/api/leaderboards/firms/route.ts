@@ -10,7 +10,7 @@ export async function GET() {
     take: 50,
     include: { firm: true }
   });
-  return NextResponse.json(rows.map((r) => ({
+  return NextResponse.json(rows.map((r: any) => ({
     firm: r.firm.name,
     pnl: r.pnl,
     efficiency: r.efficiency,

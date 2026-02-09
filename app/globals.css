@@ -22,18 +22,104 @@ body {
 
 button {
   outline: none;
+  cursor: pointer;
 }
 
+select {
+  cursor: pointer;
+}
+
+/* ── Glass ── */
 .glass {
-  background: rgba(18, 18, 28, 0.7);
-  border: 1px solid rgba(120, 120, 160, 0.2);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(10px);
+  background: rgba(14, 14, 22, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
 }
 
+/* ── Scrollbar ── */
 .scrollbar-hidden {
   scrollbar-width: none;
 }
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
+}
+
+/* ── Keyframes ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+@keyframes flashGreen {
+  0% { box-shadow: inset 0 0 80px rgba(0, 255, 157, 0.1); }
+  100% { box-shadow: inset 0 0 0 transparent; }
+}
+
+@keyframes flashRed {
+  0% { box-shadow: inset 0 0 80px rgba(255, 51, 85, 0.1); }
+  100% { box-shadow: inset 0 0 0 transparent; }
+}
+
+@keyframes loadPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* ── Utility classes ── */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.2s ease-out;
+}
+
+.animate-flash-green {
+  animation: flashGreen 0.4s ease-out;
+}
+
+.animate-flash-red {
+  animation: flashRed 0.4s ease-out;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00ff9d;
+  animation: pulseGlow 1.5s ease-in-out infinite;
+}
+
+.load-pulse {
+  animation: loadPulse 1.2s ease-in-out infinite;
+}
+
+/* ── Order book depth bars ── */
+.depth-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  opacity: 0.08;
+}
+
+/* ── Button feedback ── */
+button:active {
+  transform: scale(0.97);
+}
+
+button,
+a,
+select {
+  transition: all 0.12s ease;
 }

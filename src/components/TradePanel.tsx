@@ -1,5 +1,7 @@
 "use client";
 
+import type { RankInfo } from "../engine/ranks";
+
 type Props = {
   symbol: string;
   symbols: string[];
@@ -10,6 +12,10 @@ type Props = {
   ask: number;
   qty: number;
   maxQty: number;
+  position: { size: number; avgPrice: number };
+  currentPrice: number;
+  rank: RankInfo;
+  tradeCount: number;
   onQty: (q: number) => void;
   onBuy: () => void;
   onSell: () => void;
@@ -31,6 +37,10 @@ export function TradePanel({
   ask,
   qty,
   maxQty,
+  position,
+  currentPrice,
+  rank,
+  tradeCount,
   onQty,
   onBuy,
   onSell,
@@ -39,43 +49,85 @@ export function TradePanel({
   canRug,
   onSymbol
 }: Props) {
+  const unrealizedPnl =
+    position.size !== 0 ? position.size * (currentPrice - position.avgPrice) : 0;
+  const baseMin = rank.min === -Infinity ? 0 : rank.min;
+  const progressToNext =
+    rank.nextMin !== null
+      ? Math.min(1, Math.max(0, (pnl - baseMin) / (rank.nextMin - baseMin)))
+      : 1;
+
   return (
-    <div className="glass flex h-full flex-col gap-3 rounded-xl p-4">
+    <div className="glass flex flex-col gap-2.5 rounded-md p-3">
+      {/* ── PnL + Rank ── */}
       <div className="text-center">
-        <div className="text-[10px] uppercase tracking-[0.2em] text-white/50">
-          Session PnL
+        <div className="mb-1 flex items-center justify-center gap-2">
+          <span className="text-[9px] uppercase tracking-[0.15em] text-white/30">Session</span>
+          <span className="rounded border border-neon-cyan/20 bg-neon-cyan/5 px-1.5 py-0.5 text-[9px] font-semibold text-neon-cyan">
+            {rank.name}
+          </span>
         </div>
-        <div className={`text-3xl font-bold ${pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
+        <div
+          className={`font-mono text-2xl font-bold ${pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}
+        >
           {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
         </div>
+        {rank.nextMin !== null && (
+          <div className="mx-auto mt-1.5 w-full">
+            <div className="h-px w-full bg-white/10">
+              <div
+                className="h-full bg-neon-cyan/30 transition-all duration-300"
+                style={{ width: `${progressToNext * 100}%` }}
+              />
+            </div>
+            <div className="mt-0.5 text-[9px] text-white/20">
+              ${rank.nextMin.toLocaleString()} to next rank
+            </div>
+          </div>
+        )}
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg border border-white/10 bg-white/5 p-2">
-          <div className="text-[10px] text-white/50">Cash</div>
-          <div className="text-sm font-semibold">${cash.toFixed(2)}</div>
+
+      {/* ── Stats ── */}
+      <div className="grid grid-cols-3 gap-1.5">
+        <div className="rounded border border-white/5 bg-white/[0.02] p-1.5">
+          <div className="text-[9px] text-white/30">Cash</div>
+          <div className="font-mono text-[12px] font-semibold">${cash.toFixed(0)}</div>
         </div>
-        <div className="rounded-lg border border-white/10 bg-white/5 p-2">
-          <div className="text-[10px] text-white/50">Equity</div>
-          <div className="text-sm font-semibold">${equity.toFixed(2)}</div>
+        <div className="rounded border border-white/5 bg-white/[0.02] p-1.5">
+          <div className="text-[9px] text-white/30">Equity</div>
+          <div className="font-mono text-[12px] font-semibold">${equity.toFixed(0)}</div>
+        </div>
+        <div className="rounded border border-white/5 bg-white/[0.02] p-1.5">
+          <div className="text-[9px] text-white/30">Trades</div>
+          <div className="font-mono text-[12px] font-semibold">{tradeCount}</div>
         </div>
       </div>
-      <button
-        onClick={onCashout}
-        className="rounded-lg bg-white/10 py-2 text-xs uppercase tracking-[0.2em] text-white/80 hover:bg-white/20"
-      >
-        Cash Out
-      </button>
-      <button
-        onClick={onRug}
-        disabled={!canRug}
-        className="rounded-lg bg-neon-red/20 py-2 text-xs uppercase tracking-[0.2em] text-neon-red hover:bg-neon-red/30 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        RUG (Flatten)
-      </button>
-      <div className="rounded-lg border border-white/10 bg-white/5 p-2">
-        <div className="text-[10px] uppercase tracking-[0.2em] text-white/50">Ticker</div>
+
+      {/* ── Open Position ── */}
+      {position.size !== 0 && (
+        <div className="animate-fadeIn rounded border border-white/5 bg-white/[0.02] p-2 font-mono text-[11px]">
+          <div className="flex items-center justify-between">
+            <span className={position.size > 0 ? "text-neon-green" : "text-neon-red"}>
+              {position.size > 0 ? "LONG" : "SHORT"} {Math.abs(position.size)}
+            </span>
+            <span
+              className={`font-semibold ${unrealizedPnl >= 0 ? "text-neon-green" : "text-neon-red"}`}
+            >
+              {unrealizedPnl >= 0 ? "+" : ""}
+              {unrealizedPnl.toFixed(2)}
+            </span>
+          </div>
+          <div className="mt-0.5 text-[9px] text-white/20">
+            avg {position.avgPrice.toFixed(2)} &rarr; {currentPrice.toFixed(2)}
+          </div>
+        </div>
+      )}
+
+      {/* ── Ticker ── */}
+      <div className="rounded border border-white/5 bg-white/[0.02] p-2">
+        <div className="text-[9px] uppercase tracking-[0.15em] text-white/30">Ticker</div>
         <select
-          className="mt-1 w-full rounded-md bg-transparent text-sm outline-none"
+          className="mt-0.5 w-full bg-transparent font-mono text-sm text-white outline-none"
           value={symbol}
           onChange={(e) => onSymbol(e.target.value)}
         >
@@ -86,40 +138,58 @@ export function TradePanel({
           ))}
         </select>
       </div>
-      <div className="grid grid-cols-5 gap-2">
+
+      {/* ── Qty ── */}
+      <div className="grid grid-cols-5 gap-1">
         {qtyOptions.map((q) => (
           <button
             key={q}
             onClick={() => onQty(q)}
             disabled={q > maxQty}
-            className={`rounded-md py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40 ${
-              qty === q ? "bg-neon-cyan text-black" : "bg-white/10 text-white/70"
+            className={`rounded py-1.5 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-30 ${
+              qty === q
+                ? "bg-white/15 text-white"
+                : "bg-white/[0.03] text-white/35 hover:bg-white/[0.06] hover:text-white/50"
             }`}
           >
             {q >= 1000 ? `${q / 1000}K` : q}
           </button>
         ))}
       </div>
-      <div className="text-center text-[10px] uppercase tracking-[0.18em] text-white/40">
-        Max size {Math.max(10, Math.floor(maxQty))}
+      <div className="text-center text-[9px] text-white/20">
+        Max {Math.max(10, Math.floor(maxQty))}
       </div>
+
+      {/* ── Buy / Sell ── */}
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onBuy}
-          className="rounded-lg bg-neon-green py-3 text-sm font-bold text-black"
+          className="rounded bg-neon-green py-2.5 text-sm font-bold text-black hover:shadow-glow-green"
         >
           BUY {ask.toFixed(2)}
         </button>
         <button
           onClick={onSell}
-          className="rounded-lg bg-neon-red py-3 text-sm font-bold text-black"
+          className="rounded bg-neon-red py-2.5 text-sm font-bold text-black hover:shadow-glow-red"
         >
           SELL {bid.toFixed(2)}
         </button>
       </div>
-      <a href="#leaderboard" className="text-center text-[11px] text-white/60 hover:text-white">
-        View leaderboard
-      </a>
+
+      {/* ── RUG + Cash Out ── */}
+      <button
+        onClick={onRug}
+        disabled={!canRug}
+        className="rounded border border-neon-red/20 bg-neon-red/5 py-1.5 text-[10px] uppercase tracking-[0.15em] text-neon-red hover:bg-neon-red/10 disabled:cursor-not-allowed disabled:opacity-30"
+      >
+        RUG (Flatten)
+      </button>
+      <button
+        onClick={onCashout}
+        className="rounded border border-white/10 py-2 text-[10px] uppercase tracking-[0.15em] text-white/40 hover:border-white/20 hover:text-white/60"
+      >
+        Cash Out &middot; End Session
+      </button>
     </div>
   );
 }

@@ -1,0 +1,13 @@
+UX overhaul: rank system, trade flash, position tracking, cashout confirm
+
+- Add 8-tier rank progression (Intern to Legend) with live progress bar
+- Add trade execution flash (green/red inset glow on buy/sell)
+- Add position bar with live unrealized PnL and chart entry line
+- Add cashout confirmation modal to prevent accidental session resets
+- Add branded loading screen on boot
+- Overhaul order book with depth bars showing relative liquidity
+- Replace raw news numbers with BULL/BEAR/FLAT badges and HIGH IMPACT labels
+- Add timestamps and slide-in animation to trade tape
+- Overhaul leaderboard with rank numbers, medals, and rank badges
+- Extract rank logic into shared engine/ranks.ts module
+- Tighten visual design: flat neon on black, no gradients, monospace data
