@@ -707,23 +707,28 @@ export default function HomeClient() {
 
   const onCashout = async () => {
     db.leaderboard_runs.add({ t: Date.now(), pnl, trades: trades.length });
-    if (authUser) {
-      try {
-        await fetchJson("/api/leaderboards/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pnl,
-            trades: trades.length,
-            riskScore: Math.abs(pnl) / Math.max(1, trades.length),
-            streak: trades.length
-          })
-        });
-        loadAuth();
-        loadLeaderboards();
-      } catch (err) {
-        setAuthError(err instanceof Error ? err.message : "Cashout failed.");
-      }
+    if (!authUser) {
+      setAuthError("Login required to save cashouts.");
+      addToast("error", "LOGIN REQUIRED", "Sign in to persist your PnL.");
+      return;
+    }
+    try {
+      await fetchJson("/api/leaderboards/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pnl,
+          trades: trades.length,
+          riskScore: Math.abs(pnl) / Math.max(1, trades.length),
+          streak: trades.length
+        })
+      });
+      await loadAuth();
+      await loadLeaderboards();
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Cashout failed.");
+      addToast("error", "CASHOUT FAILED", "PnL not saved. Try again.");
+      return;
     }
     addToast("info", "SESSION ENDED", `Final PnL: ${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)} (${trades.length} trades)`);
     setCashouts((c) => c + 1);

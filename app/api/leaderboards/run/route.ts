@@ -11,18 +11,20 @@ export async function POST(req: Request) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { pnl, riskScore = 0, streak = 0 } = await req.json();
     const pnlNum = Number(pnl || 0);
+    if (!Number.isFinite(pnlNum)) return NextResponse.json({ error: "Invalid pnl" }, { status: 400 });
     const season = await ensureCurrentSeason();
-    const stats = await prisma.playerStats.findUnique({ where: { userId: user.id } });
-    if (!stats) return NextResponse.json({ error: "Stats missing" }, { status: 400 });
-    const totalPnl = stats.totalPnl + pnlNum;
-    const { level, xp } = computeLevel(totalPnl);
     const member = await prisma.firmMember.findUnique({ where: { userId: user.id } });
+    const updatedStats = await prisma.$transaction(async (tx) => {
+      const stats =
+        (await tx.playerStats.findUnique({ where: { userId: user.id } }))
+        ?? (await tx.playerStats.create({ data: { userId: user.id } }));
+      const totalPnl = stats.totalPnl + pnlNum;
+      const { level, xp } = computeLevel(totalPnl);
 
-    const [, updatedStats] = await prisma.$transaction([
-      prisma.leaderboardRun.create({
+      await tx.leaderboardRun.create({
         data: { userId: user.id, seasonId: season.id, pnl: pnlNum, riskScore, streak }
-      }),
-      prisma.playerStats.update({
+      });
+      const updated = await tx.playerStats.update({
         where: { userId: user.id },
         data: {
           cashoutBalance: stats.cashoutBalance + pnlNum,
@@ -30,21 +32,20 @@ export async function POST(req: Request) {
           level,
           xp
         }
-      }),
-      ...(member
-        ? [
-            prisma.firmLeaderboard.upsert({
-              where: { firmId_seasonId: { firmId: member.firmId, seasonId: season.id } },
-              create: { firmId: member.firmId, seasonId: season.id, pnl: pnlNum, efficiency: pnlNum, consistency: streak },
-              update: {
-                pnl: { increment: pnlNum },
-                efficiency: { increment: pnlNum * 0.5 },
-                consistency: { increment: streak }
-              }
-            })
-          ]
-        : [])
-    ]);
+      });
+      if (member) {
+        await tx.firmLeaderboard.upsert({
+          where: { firmId_seasonId: { firmId: member.firmId, seasonId: season.id } },
+          create: { firmId: member.firmId, seasonId: season.id, pnl: pnlNum, efficiency: pnlNum, consistency: streak },
+          update: {
+            pnl: { increment: pnlNum },
+            efficiency: { increment: pnlNum * 0.5 },
+            consistency: { increment: streak }
+          }
+        });
+      }
+      return updated;
+    });
     const io = getIO();
     if (io) {
       const target = io.to ? io.to(`user:${user.id}`) : io;
