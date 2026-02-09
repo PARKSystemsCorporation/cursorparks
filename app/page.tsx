@@ -354,7 +354,7 @@ export default function Home() {
     <div className="min-h-screen bg-bg-void px-4 py-4 md:px-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="text-xs uppercase tracking-[0.35em] text-white/50">PARKSYSTEMS</div>
+          <div className="text-xs uppercase tracking-[0.35em] text-white/50">GARI.MMO</div>
           <div className="text-lg font-bold text-white">World Market Simulator</div>
         </div>
         <div className="glass flex items-center gap-4 rounded-full px-4 py-2 text-xs">

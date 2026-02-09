@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "PARKSYSTEMS — Day Trading MMO",
-  description: "Real-time local market simulator"
+  title: "GARI.MMO",
+  description: "Real-time MMO day-trading simulator"
 };
 
 export default function RootLayout({

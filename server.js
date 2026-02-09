@@ -18,7 +18,7 @@ app.prepare().then(() => {
     cors: { origin: "*" }
   });
 
-  const { setIO } = require("./src/server/socket");
+  const { setIO } = require("./src/server/socket.js");
   const crypto = require("crypto");
   const { prisma } = require("./src/server/db");
   const { getEngine } = require("./src/server/marketEngine");
