@@ -22,7 +22,7 @@ export const TradeTape = memo(function TradeTape({
   showStats = false,
   statsLabel = "Stats"
 }: Props) {
-  const { totalTrades, totalVolume, buyVolume, sellVolume, buyCount, sellCount, vwap, lastPrice, lastSize, lastSide } = useMemo(() => {
+  const { totalVolume, buyVolume, sellVolume, buyCount, sellCount, vwap, lastPrice, lastSize, lastSide } = useMemo(() => {
     const totalTrades = trades.length;
     const totalVolume = trades.reduce((sum, t) => sum + t.size, 0);
     const buyVolume = trades.reduce((sum, t) => sum + (t.side === "buy" ? t.size : 0), 0);

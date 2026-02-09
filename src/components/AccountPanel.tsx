@@ -25,12 +25,12 @@ type Props = {
     reputation: number;
     xp: number;
   } | null;
+  statsLastUpdatedAt: number | null;
+  statsStale: boolean;
   rank: RankInfo;
   pnl: number;
   tradeCount: number;
   cash: number;
-  equity: number;
-  startCash: number;
   maxOrderSize: number;
   upgradeDefs: UpgradeDef[];
   getLevelByKey: (key: string) => number;
@@ -116,12 +116,12 @@ const COLOR_MAP = {
 export function AccountPanel({
   authUser,
   stats,
+  statsLastUpdatedAt,
+  statsStale,
   rank,
   pnl,
   tradeCount,
   cash,
-  equity,
-  startCash,
   maxOrderSize,
   upgradeDefs,
   getLevelByKey,
@@ -241,6 +241,9 @@ export function AccountPanel({
   const cashoutBal = stats?.cashoutBalance ?? 0;
   const reputation = stats?.reputation ?? 0;
   const xp = stats?.xp ?? 0;
+  const lastSyncAgeSec = statsLastUpdatedAt ? Math.max(0, Math.floor((Date.now() - statsLastUpdatedAt) / 1000)) : null;
+  const lastSyncLabel = statsLastUpdatedAt ? `${lastSyncAgeSec}s ago` : "syncing";
+  const lastSyncExact = statsLastUpdatedAt ? new Date(statsLastUpdatedAt).toLocaleString() : "syncing";
   const baseMin = rank.min === -Infinity ? 0 : rank.min;
   const progressToNext =
     rank.nextMin !== null
@@ -259,6 +262,16 @@ export function AccountPanel({
             <span className="rounded border border-neon-cyan/20 bg-neon-cyan/5 px-2 py-0.5 text-[9px] font-semibold text-neon-cyan">
               LVL {rank.level} &middot; {rank.name}
             </span>
+            <span
+              className={`rounded border px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.2em] ${
+                statsStale
+                  ? "border-neon-red/30 bg-neon-red/10 text-neon-red"
+                  : "border-neon-green/30 bg-neon-green/10 text-neon-green"
+              }`}
+              title={`Last sync ${lastSyncExact}`}
+            >
+              {statsStale ? "Stats stale" : "Stats live"}
+            </span>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-0.5 font-mono text-[10px]">
             <span>
@@ -272,6 +285,12 @@ export function AccountPanel({
             <span>
               <span className="text-white/70">XP </span>
               <span className="text-white/80">{xp}</span>
+            </span>
+            <span>
+              <span className="text-white/70">SYNC </span>
+              <span className={statsStale ? "text-neon-red" : "text-white/80"} title={`Last sync ${lastSyncExact}`}>
+                {lastSyncLabel}
+              </span>
             </span>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-0.5 font-mono text-[10px]">

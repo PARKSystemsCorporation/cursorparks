@@ -18,8 +18,7 @@ type Props = {
 };
 
 export function generateSocialEvents(
-  globalTape: TradeRow[],
-  currentUser: string | null
+  globalTape: TradeRow[]
 ): SocialEvent[] {
   const events: SocialEvent[] = [];
   const names = ["TraderX", "WallSt_Alpha", "ShortyMcShort", "BullRunner", "DipBuyer", "MomoKing"];
@@ -47,7 +46,7 @@ export function SocialFeed({ events, globalTape, currentUser }: Props) {
 
   useEffect(() => {
     if (globalTape.length > prevTapeRef.current.length) {
-      const newEvents = generateSocialEvents(globalTape, currentUser ?? null);
+      const newEvents = generateSocialEvents(globalTape);
       if (newEvents.length > 0) {
         setSocialEvents((prev) => [...newEvents, ...prev].slice(0, 15));
       }

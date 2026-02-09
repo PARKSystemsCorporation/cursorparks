@@ -2,7 +2,6 @@ import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
 
-const SESSION_COOKIE = "ps_session";
 const SESSION_DAYS = 30;
 
 function getSessionSecret() {

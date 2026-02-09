@@ -5,11 +5,10 @@ import type { TradeRow } from "../db/db";
 type Props = {
   trades: TradeRow[];
   pnl: number;
-  equity: number;
   startCash: number;
 };
 
-export function TradeStatisticsPanel({ trades, pnl, equity, startCash }: Props) {
+export function TradeStatisticsPanel({ trades, pnl, startCash }: Props) {
   if (trades.length === 0) {
     return (
       <div className="glass animate-fadeIn rounded-md p-3 text-xs">

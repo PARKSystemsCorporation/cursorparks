@@ -136,7 +136,6 @@ export function ChartCanvas({ bars, price, showSMA, avgPrice }: Props) {
     }
 
     const py = toY(price);
-    const prevPy = prevPriceRef.current > 0 ? toY(prevPriceRef.current) : py;
     
     // Smooth price line transition
     const priceColor = priceDirection === "up" 

@@ -7,10 +7,9 @@ type Props = {
   pnl: number;
   equity: number;
   startCash: number;
-  cash: number;
 };
 
-export function PerformanceDashboard({ trades, pnl, equity, startCash, cash }: Props) {
+export function PerformanceDashboard({ trades, pnl, equity, startCash }: Props) {
   if (trades.length === 0) {
     return (
       <div className="glass animate-fadeIn rounded-md p-4 text-xs">

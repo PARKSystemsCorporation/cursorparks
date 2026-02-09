@@ -1,4 +1,7 @@
-type IOEmitter = { emit: (...args: any[]) => void };
+type IOEmitter = {
+  emit: (...args: unknown[]) => void;
+  to?: (room: string) => IOEmitter;
+};
 
 let ioInstance: IOEmitter | null = null;
 

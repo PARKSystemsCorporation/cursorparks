@@ -11,7 +11,7 @@ export async function GET() {
       take: 50,
       include: { firm: true }
     });
-    return NextResponse.json(rows.map((r: any) => ({
+    return NextResponse.json(rows.map((r: { firm: { name: string }; pnl: number; efficiency: number; consistency: number }) => ({
       firm: r.firm.name,
       pnl: r.pnl,
       efficiency: r.efficiency,

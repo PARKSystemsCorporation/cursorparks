@@ -31,7 +31,6 @@ class MarketEngine extends EventEmitter {
 
   tick() {
     const now = Date.now();
-    const dt = Math.max(1, now - this.lastTick);
     this.lastTick = now;
 
     this.spread = 0.08 + Math.abs(this.velocity) * 0.02;

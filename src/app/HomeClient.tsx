@@ -79,6 +79,27 @@ const MOBILE_MORE_TABS = [
   "news"
 ] as const;
 
+async function fetchJson(url: string, opts?: RequestInit) {
+  const res = await fetch(url, {
+    credentials: "include",
+    ...opts
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let message = text;
+    if (text) {
+      try {
+        const parsed = JSON.parse(text);
+        if (parsed?.error) message = String(parsed.error);
+      } catch {
+        // non-JSON error payload
+      }
+    }
+    throw new Error(message || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
 export default function HomeClient() {
   const [tick, setTick] = useState<MarketTick | null>(null);
   const [position, setPosition] = useState({ size: 0, avgPrice: 0 });
@@ -131,19 +152,20 @@ export default function HomeClient() {
   const { toasts, addToast, dismissToast } = useToasts();
   const [soundEnabled, setSoundEnabled] = useState(false);
   const sounds = useSoundEffects(soundEnabled);
+  const { playBuy, playSell, playRankUp, playAchievement, playAlert, playError } = sounds;
   const [priceAlerts, setPriceAlerts] = useState<PriceAlert[]>([]);
   const [showTradeHistory, setShowTradeHistory] = useState(false);
   const [showReplay, setShowReplay] = useState(false);
   const [unlockedAchievements, setUnlockedAchievements] = useState<Set<string>>(new Set());
-  const [socialEvents, setSocialEvents] = useState<SocialEvent[]>([]);
+  const [socialEvents] = useState<SocialEvent[]>([]);
   const [advancedOrders, setAdvancedOrders] = useState<AdvancedOrder[]>([]);
   const [showTutorial, setShowTutorial] = useState(false);
   const prevRankRef = useRef(1);
-  const [winStreak, setWinStreak] = useState(0);
-  const [lossStreak, setLossStreak] = useState(0);
+  const [winStreak] = useState(0);
+  const [lossStreak] = useState(0);
   const [maxPnl, setMaxPnl] = useState(0);
   const [cashouts, setCashouts] = useState(0);
-  let _orderId = useRef(0);
+  const _orderId = useRef(0);
 
   const orderBook: Book = tick?.orderBook || {
     bids: [],
@@ -152,8 +174,8 @@ export default function HomeClient() {
     mid: tick?.price || 0
   };
 
-  const rawBars = tick?.bars || [];
   const displayBars = useMemo(() => {
+    const rawBars = tick?.bars || [];
     if (!rawBars.length || timeframeMs <= 1000) return rawBars;
     const out: Bar[] = [];
     let cur: Bar | null = null;
@@ -172,7 +194,7 @@ export default function HomeClient() {
     }
     if (cur) out.push(cur);
     return out;
-  }, [rawBars, timeframeMs]);
+  }, [tick?.bars, timeframeMs]);
 
   const levelByKey = useMemo(() => {
     return new Map(userUpgrades.map((u) => [u.upgrade.key, u.level]));
@@ -252,7 +274,7 @@ export default function HomeClient() {
       db.trades.add(trade);
       // Toast + Sound
       addToast("trade", `${data.side.toUpperCase()} FILLED`, `${data.size} @ $${data.fill.toFixed(2)}`, data.side);
-      if (data.side === "buy") sounds.playBuy(); else sounds.playSell();
+      if (data.side === "buy") playBuy(); else playSell();
     });
     socket.on("trade:tape", (data) => {
       const trade: TradeRow = {
@@ -267,7 +289,7 @@ export default function HomeClient() {
     socket.on("trade:reject", (data) => {
       if (data?.reason === "size_limit") {
         addToast("error", "TRADE REJECTED", `Max size ${data.maxSize}`);
-        sounds.playError();
+        playError();
       }
     });
     return () => {
@@ -277,12 +299,84 @@ export default function HomeClient() {
       socket.off("trade:tape");
       socket.off("trade:reject");
     };
-  }, [symbol, hasNews]);
+  }, [symbol, hasNews, addToast, playBuy, playSell, playError]);
+
+  const loadProgression = useCallback(async () => {
+    try {
+      const data = await fetchJson("/api/progression/status");
+      setStats(data.stats);
+      setStatsLastUpdatedAt(Date.now());
+      setStatsStale(false);
+      setUpgradeDefs(data.defs || []);
+      setUserUpgrades(data.upgrades || []);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const loadChat = useCallback(async () => {
+    try {
+      const data = await fetchJson("/api/firms/chat");
+      setChat(data);
+    } catch {
+      setChat([]);
+    }
+  }, []);
+
+  const loadFirm = useCallback(async () => {
+    try {
+      const data = await fetchJson("/api/firms/me");
+      setFirmMember(data.member || null);
+      if (data.member) await loadChat();
+    } catch {
+      setFirmMember(null);
+    }
+  }, [loadChat]);
+
+  const loadLeaderboards = useCallback(async () => {
+    try {
+      const [solo, firms] = await Promise.all([
+        fetchJson("/api/leaderboards/solo"),
+        fetchJson("/api/leaderboards/firms")
+      ]);
+      setSoloLb(solo || []);
+      setFirmLb(firms || []);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const loadAuth = useCallback(async () => {
+    try {
+      const data = await fetchJson("/api/auth/me");
+      setAuthUser(data.user || null);
+      setStats(data.stats || null);
+      setStatsLastUpdatedAt(Date.now());
+      setStatsStale(false);
+      setUserUpgrades(data.upgrades || []);
+      if (data.user) {
+        await Promise.all([loadProgression(), loadFirm()]);
+      }
+    } catch {
+      setAuthUser(null);
+    }
+  }, [loadProgression, loadFirm]);
+
+  const refreshProgression = useCallback(async () => {
+    if (!authUser || progressionRefreshInFlight.current) return null;
+    progressionRefreshInFlight.current = true;
+    try {
+      return await loadProgression();
+    } finally {
+      progressionRefreshInFlight.current = false;
+    }
+  }, [authUser, loadProgression]);
 
   useEffect(() => {
     loadAuth();
     loadLeaderboards();
-  }, []);
+  }, [loadAuth, loadLeaderboards]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -331,12 +425,12 @@ export default function HomeClient() {
     if (!firmMember) return;
     const t = setInterval(() => loadChat(), 5000);
     return () => clearInterval(t);
-  }, [firmMember]);
+  }, [firmMember, loadChat]);
 
   useEffect(() => {
     const level = getLevelByKey("info_news_speed");
     newsDelayRef.current = Math.max(500, Math.round(6000 * Math.pow(0.9, level)));
-  }, [userUpgrades]);
+  }, [getLevelByKey]);
 
   useEffect(() => {
     if (!authUser) {
@@ -355,16 +449,6 @@ export default function HomeClient() {
     const interval = setInterval(check, 5000);
     return () => clearInterval(interval);
   }, [authUser, statsLastUpdatedAt]);
-
-  const refreshProgression = useCallback(async () => {
-    if (!authUser || progressionRefreshInFlight.current) return null;
-    progressionRefreshInFlight.current = true;
-    try {
-      return await loadProgression();
-    } finally {
-      progressionRefreshInFlight.current = false;
-    }
-  }, [authUser]);
 
   useEffect(() => {
     if (!authUser) return;
@@ -421,90 +505,6 @@ export default function HomeClient() {
     if (qty > maxOrderSize) setQty(Math.max(1, Math.floor(maxOrderSize)));
   }, [qty, maxOrderSize]);
 
-  async function fetchJson(url: string, opts?: RequestInit) {
-    const res = await fetch(url, {
-      credentials: "include",
-      ...opts
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      let message = text;
-      if (text) {
-        try {
-          const parsed = JSON.parse(text);
-          if (parsed?.error) message = String(parsed.error);
-        } catch {
-          // non-JSON error payload
-        }
-      }
-      throw new Error(message || `Request failed (${res.status})`);
-    }
-    return res.json();
-  }
-
-  async function loadAuth() {
-    try {
-      const data = await fetchJson("/api/auth/me");
-      setAuthUser(data.user || null);
-      setStats(data.stats || null);
-      setStatsLastUpdatedAt(Date.now());
-      setStatsStale(false);
-      setUserUpgrades(data.upgrades || []);
-      if (data.user) {
-        await Promise.all([loadProgression(), loadFirm()]);
-      }
-    } catch (e) {
-      setAuthUser(null);
-    }
-  }
-
-  async function loadProgression() {
-    try {
-      const data = await fetchJson("/api/progression/status");
-      setStats(data.stats);
-      setStatsLastUpdatedAt(Date.now());
-      setStatsStale(false);
-      setUpgradeDefs(data.defs || []);
-      setUserUpgrades(data.upgrades || []);
-      return true;
-    } catch (e) {
-      // ignore
-      return false;
-    }
-  }
-
-  async function loadFirm() {
-    try {
-      const data = await fetchJson("/api/firms/me");
-      setFirmMember(data.member || null);
-      if (data.member) await loadChat();
-    } catch (e) {
-      setFirmMember(null);
-    }
-  }
-
-  async function loadChat() {
-    try {
-      const data = await fetchJson("/api/firms/chat");
-      setChat(data);
-    } catch (e) {
-      setChat([]);
-    }
-  }
-
-  async function loadLeaderboards() {
-    try {
-      const [solo, firms] = await Promise.all([
-        fetchJson("/api/leaderboards/solo"),
-        fetchJson("/api/leaderboards/firms")
-      ]);
-      setSoloLb(solo || []);
-      setFirmLb(firms || []);
-    } catch (e) {
-      // ignore
-    }
-  }
-
   const submitTrade = (side: "buy" | "sell", size: number) => {
     if (!size || !Number.isFinite(size)) return;
     const socket = getSocket();
@@ -534,8 +534,8 @@ export default function HomeClient() {
         body: JSON.stringify({ username: name, password })
       });
       await loadAuth();
-    } catch (e) {
-      setAuthError(e instanceof Error ? e.message : "Registration failed.");
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Registration failed.");
     } finally {
       setAuthBusy(null);
     }
@@ -555,8 +555,8 @@ export default function HomeClient() {
         body: JSON.stringify({ username: username.trim(), password })
       });
       await loadAuth();
-    } catch (e) {
-      setAuthError(e instanceof Error ? e.message : "Login failed.");
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : "Login failed.");
     } finally {
       setAuthBusy(null);
     }
@@ -594,8 +594,8 @@ export default function HomeClient() {
       });
       setFirmName("");
       await loadFirm();
-    } catch (e) {
-      setFirmError(e instanceof Error ? e.message : "Create firm failed.");
+    } catch (err) {
+      setFirmError(err instanceof Error ? err.message : "Create firm failed.");
     } finally {
       setFirmBusy(false);
     }
@@ -714,8 +714,8 @@ export default function HomeClient() {
         });
         loadAuth();
         loadLeaderboards();
-      } catch (e) {
-        setAuthError(e instanceof Error ? e.message : "Cashout failed.");
+      } catch (err) {
+        setAuthError(err instanceof Error ? err.message : "Cashout failed.");
       }
     }
     addToast("info", "SESSION ENDED", `Final PnL: ${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)} (${trades.length} trades)`);
@@ -777,10 +777,10 @@ export default function HomeClient() {
   useEffect(() => {
     if (rank.level > prevRankRef.current) {
       addToast("rankup", "RANK UP!", `You are now ${rank.name}`);
-      sounds.playRankUp();
+      playRankUp();
     }
     prevRankRef.current = rank.level;
-  }, [rank.level, rank.name]);
+  }, [rank.level, rank.name, addToast, playRankUp]);
 
   // ── Price alert handlers ──
   const addPriceAlert = useCallback((price: number, direction: "above" | "below") => {
@@ -796,8 +796,8 @@ export default function HomeClient() {
   const triggerPriceAlert = useCallback((alert: PriceAlert) => {
     setPriceAlerts((prev) => prev.map((a) => a.id === alert.id ? { ...a, triggered: true } : a));
     addToast("alert", "PRICE ALERT", `Price crossed $${alert.price.toFixed(2)} (${alert.direction})`);
-    sounds.playAlert();
-  }, [addToast, sounds]);
+    playAlert();
+  }, [addToast, playAlert]);
 
   // ── Achievement handler ──
   const achievementContext: AchievementContext = useMemo(() => ({
@@ -809,13 +809,13 @@ export default function HomeClient() {
     totalVolume: trades.reduce((s, t) => s + t.size * t.price, 0),
     rank: rank.level,
     cashouts,
-  }), [trades.length, pnl, winStreak, lossStreak, maxPnl, rank.level, cashouts]);
+  }), [trades, pnl, winStreak, lossStreak, maxPnl, rank.level, cashouts]);
 
   const onAchievementUnlock = useCallback((ach: Achievement) => {
     setUnlockedAchievements((prev) => new Set([...prev, ach.id]));
     addToast("achievement", "ACHIEVEMENT UNLOCKED", ach.title);
-    sounds.playAchievement();
-  }, [addToast, sounds]);
+    playAchievement();
+  }, [addToast, playAchievement]);
 
   // ── Advanced order processing ──
   useEffect(() => {
@@ -843,6 +843,7 @@ export default function HomeClient() {
         return o;
       })
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally only re-run on price/order changes
   }, [currentPrice, advancedOrders]);
 
   const submitAdvancedOrder = useCallback((order: Omit<AdvancedOrder, "id" | "status" | "createdAt">) => {
@@ -860,26 +861,6 @@ export default function HomeClient() {
   const sellCount = trades.length - buyCount;
   const dailyChallenges = useMemo(() => makeDailyChallenges(trades.length, pnl, buyCount, sellCount), [trades.length, pnl, buyCount, sellCount]);
 
-  const qtyOptions = useMemo(() => [1, 10, 100, 1000, 10000], []);
-  const panelTabs: PanelTab[] = ["account", "upgrades", "firms", "leaderboards", "performance", "achievements", "challenges", "social", "system"];
-  const mobileTabs = useMemo(() => ([
-    { id: "trade", label: "Trade" },
-    { id: "dom", label: "DOM" },
-    { id: "tape", label: "Tape" },
-    { id: "more", label: "More" }
-  ] as const), []);
-  const mobileMoreTabs = useMemo(() => ([
-    "account",
-    "upgrades",
-    "firms",
-    "leaderboards",
-    "performance",
-    "achievements",
-    "challenges",
-    "social",
-    "system",
-    "news"
-  ] as const), []);
   const tapeTrades = globalTape.length ? globalTape : trades;
   const tradePanelProps = {
     symbol,
@@ -914,8 +895,6 @@ export default function HomeClient() {
           pnl={pnl}
           tradeCount={trades.length}
           cash={cash}
-          equity={equity}
-          startCash={startCash}
           maxOrderSize={maxOrderSize}
           upgradeDefs={upgradeDefs}
           getLevelByKey={getLevelByKey}
@@ -1069,7 +1048,7 @@ export default function HomeClient() {
     if (tab === "performance") {
       return (
         <div className="grid gap-4 md:grid-cols-2">
-          <PerformanceDashboard trades={trades} pnl={pnl} equity={equity} startCash={startCash} cash={cash} />
+          <PerformanceDashboard trades={trades} pnl={pnl} equity={equity} startCash={startCash} />
           <VolumeProfile trades={trades} globalTape={globalTape} currentPrice={currentPrice} />
         </div>
       );
@@ -1259,7 +1238,7 @@ export default function HomeClient() {
           )}
           <TradePanel {...tradePanelProps} />
           <TradeTape trades={tapeTrades} />
-          <TradeStatisticsPanel trades={trades} pnl={pnl} equity={equity} startCash={startCash} />
+          <TradeStatisticsPanel trades={trades} pnl={pnl} startCash={startCash} />
           <PriceAlerts
             currentPrice={currentPrice}
             alerts={priceAlerts}

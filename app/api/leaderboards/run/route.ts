@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserFromSession } from "@/src/server/auth";
 import { prisma } from "@/src/server/db";
+import { getIO } from "@/src/server/socket";
 import { computeLevel } from "@/src/server/progression";
 import { ensureCurrentSeason } from "@/src/server/season";
 
@@ -8,7 +9,7 @@ export async function POST(req: Request) {
   try {
     const user = await getUserFromSession();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const { pnl, trades, riskScore = 0, streak = 0 } = await req.json();
+    const { pnl, riskScore = 0, streak = 0 } = await req.json();
     const pnlNum = Number(pnl || 0);
     const season = await ensureCurrentSeason();
     const stats = await prisma.playerStats.findUnique({ where: { userId: user.id } });
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
     const { level, xp } = computeLevel(totalPnl);
     const member = await prisma.firmMember.findUnique({ where: { userId: user.id } });
 
-    await prisma.$transaction([
+    const [, updatedStats] = await prisma.$transaction([
       prisma.leaderboardRun.create({
         data: { userId: user.id, seasonId: season.id, pnl: pnlNum, riskScore, streak }
       }),
@@ -44,6 +45,11 @@ export async function POST(req: Request) {
           ]
         : [])
     ]);
+    const io = getIO();
+    if (io) {
+      const target = io.to ? io.to(`user:${user.id}`) : io;
+      target.emit("player:stats", { userId: user.id, stats: updatedStats });
+    }
     return NextResponse.json({ ok: true, level });
   } catch (e) {
     return Response.json({ error: e instanceof Error ? e.message : "Internal error" }, { status: 500 });

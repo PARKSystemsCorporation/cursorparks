@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 
 type Props = {
   enabled: boolean;
@@ -78,7 +78,7 @@ export function useSoundEffects(enabled: boolean, volume: number = 0.3) {
   return { playBuy, playSell, playRankUp, playAchievement, playAlert, playError };
 }
 
-export function SoundToggle({ enabled, onToggle, volume = 0.3 }: Props) {
+export function SoundToggle({ enabled, onToggle }: Props) {
   return (
     <button
       onClick={onToggle}
