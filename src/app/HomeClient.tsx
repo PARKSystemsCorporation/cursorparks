@@ -366,12 +366,24 @@ export default function HomeClient() {
 
   const loadPnlLogs = useCallback(async () => {
     try {
+      if (authUser) {
+        const data = await fetchJson("/api/leaderboards/runs");
+        const runs = Array.isArray(data?.runs) ? data.runs : [];
+        const mapped: LeaderboardRun[] = runs.map((r: { id: string; pnl: number; trades?: number; streak?: number; createdAt: string }) => ({
+          id: r.id,
+          pnl: Number(r.pnl || 0),
+          trades: Number(r.trades ?? r.streak ?? 0),
+          t: new Date(r.createdAt).getTime()
+        }));
+        setPnlLogs(mapped);
+        return;
+      }
       const runs = await db.leaderboard_runs.orderBy("t").reverse().limit(50).toArray();
       setPnlLogs(runs);
     } catch {
       // ignore
     }
-  }, []);
+  }, [authUser]);
 
   const refreshProgression = useCallback(async () => {
     if (!authUser || progressionRefreshInFlight.current) return null;
@@ -388,6 +400,10 @@ export default function HomeClient() {
     loadLeaderboards();
     loadPnlLogs();
   }, [loadAuth, loadLeaderboards, loadPnlLogs]);
+
+  useEffect(() => {
+    loadPnlLogs();
+  }, [authUser, loadPnlLogs]);
 
   useEffect(() => {
     const socket = getSocket();
@@ -737,8 +753,8 @@ export default function HomeClient() {
       await loadLeaderboards();
       const now = Date.now();
       const log: LeaderboardRun = { t: now, pnl, trades: trades.length };
-      const id = await db.leaderboard_runs.add(log);
-      setPnlLogs((prev) => [{ ...log, id }, ...prev].slice(0, 50));
+      await db.leaderboard_runs.add(log);
+      loadPnlLogs();
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : "Cashout failed.");
       addToast("error", "CASHOUT FAILED", "PnL not saved. Try again.");
