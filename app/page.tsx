@@ -103,6 +103,7 @@ export default function Home() {
   const defByKey = useMemo(() => {
     return new Map(upgradeDefs.map((d) => [d.key, d]));
   }, [upgradeDefs]);
+  const hasNews = getLevelByKey("info_news_speed") > 0;
 
   const equity = cash + position.size * (tick?.price || 0);
   const pnl = equity - startCash;
@@ -518,7 +519,6 @@ export default function Home() {
   const sentiment = news[0]?.sentiment ?? 0;
   const showIndicators = getUpgradeLevel("chart_indicators") > 0;
   const showBotAlerts = getUpgradeLevel("bot_alerts") > 0;
-  const hasNews = getUpgradeLevel("info_news_speed") > 0;
   const hasMultiTf = getUpgradeLevel("chart_multi_tf") > 0;
   const botSignal = tick ? (tick.velocity >= 0 ? "BUY BIAS" : "SELL BIAS") : "--";
 
