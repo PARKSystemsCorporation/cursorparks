@@ -6,6 +6,7 @@ import { OrderBook } from "../src/components/OrderBook";
 import { TradePanel } from "../src/components/TradePanel";
 import { TradeTape } from "../src/components/TradeTape";
 import { NewsFeed } from "../src/components/NewsFeed";
+import { AccountPanel } from "../src/components/AccountPanel";
 import { getSocket } from "../src/engine/socketClient";
 import type { Bar, MarketTick, OrderBook as Book } from "../src/engine/types";
 import { db, type TradeRow, type NewsRow, type LeaderboardRun } from "../src/db/db";
@@ -38,7 +39,7 @@ export default function Home() {
   const [cash, setCash] = useState(BASE_START_CASH);
   const [startCash, setStartCash] = useState(BASE_START_CASH);
   const [qty, setQty] = useState(10);
-  const [symbol, setSymbol] = useState("PSC");
+  const symbol = "PSC";
   const [trades, setTrades] = useState<TradeRow[]>([]);
   const [news, setNews] = useState<NewsRow[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRun[]>([]);
@@ -52,11 +53,9 @@ export default function Home() {
   const [soloLb, setSoloLb] = useState<{ username: string; pnl: number; riskScore: number; streak: number }[]>([]);
   const [firmLb, setFirmLb] = useState<{ firm: string; pnl: number; efficiency: number; consistency: number }[]>([]);
   const [wsOnline, setWsOnline] = useState<number | null>(null);
+  const [totalVisitors, setTotalVisitors] = useState<number | null>(null);
   const [timeframeMs, setTimeframeMs] = useState(1000);
-  const [loginUser, setLoginUser] = useState("");
-  const [loginPass, setLoginPass] = useState("");
-  const [regUser, setRegUser] = useState("");
-  const [regPass, setRegPass] = useState("");
+  // Auth form states now live inside AccountPanel
   const [authError, setAuthError] = useState<string | null>(null);
   const [authBusy, setAuthBusy] = useState<"register" | "login" | null>(null);
   const [firmName, setFirmName] = useState("");
@@ -69,6 +68,7 @@ export default function Home() {
   const newsDelayRef = useRef(6000);
   const startCashRef = useRef(BASE_START_CASH);
   const [panelTab, setPanelTab] = useState<"account" | "upgrades" | "firms" | "leaderboards">("account");
+  const [leftPanelTab, setLeftPanelTab] = useState<"dom" | "live">("dom");
   const [tradeFlash, setTradeFlash] = useState<"buy" | "sell" | null>(null);
   const [showCashoutConfirm, setShowCashoutConfirm] = useState(false);
   const [ready, setReady] = useState(false);
@@ -149,15 +149,17 @@ export default function Home() {
     socket.on("market:snapshot", onTick);
     socket.on("trade:fill", (data) => {
       const signed = data.side === "buy" ? data.size : -data.size;
-      const newSize = position.size + signed;
-      let newAvg = position.avgPrice;
-      if (newSize === 0) {
-        newAvg = 0;
-      } else if (position.size === 0 || Math.sign(position.size) === Math.sign(newSize)) {
-        const totalCost = position.avgPrice * position.size + data.fill * signed;
-        newAvg = totalCost / newSize;
-      }
-      setPosition({ size: newSize, avgPrice: newAvg });
+      setPosition((prev) => {
+        const newSize = prev.size + signed;
+        let newAvg = prev.avgPrice;
+        if (newSize === 0) {
+          newAvg = 0;
+        } else if (prev.size === 0 || Math.sign(prev.size) === Math.sign(newSize)) {
+          const totalCost = prev.avgPrice * prev.size + data.fill * signed;
+          newAvg = totalCost / newSize;
+        }
+        return { size: newSize, avgPrice: newAvg };
+      });
       setCash((c) => c - data.fill * signed);
       if (flashTimeout.current) clearTimeout(flashTimeout.current);
       setTradeFlash(null);
@@ -212,6 +214,7 @@ export default function Home() {
     const socket = getSocket();
     socket.on("presence:update", (data) => {
       setWsOnline(data.online || 0);
+      if (typeof data.total === "number") setTotalVisitors(data.total);
     });
     socket.on("firm:chat", (payload) => {
       if (!firmMember || payload.firmId !== firmMember.firmId) return;
@@ -263,7 +266,16 @@ export default function Home() {
     });
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(text || `Request failed (${res.status})`);
+      let message = text;
+      if (text) {
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed?.error) message = String(parsed.error);
+        } catch {
+          // non-JSON error payload
+        }
+      }
+      throw new Error(message || `Request failed (${res.status})`);
     }
     return res.json();
   }
@@ -353,7 +365,6 @@ export default function Home() {
         body: JSON.stringify({ username: name, password })
       });
       await loadAuth();
-      setRegPass("");
     } catch (e) {
       setAuthError(e instanceof Error ? e.message : "Registration failed.");
     } finally {
@@ -375,7 +386,6 @@ export default function Home() {
         body: JSON.stringify({ username: username.trim(), password })
       });
       await loadAuth();
-      setLoginPass("");
     } catch (e) {
       setAuthError(e instanceof Error ? e.message : "Login failed.");
     } finally {
@@ -575,7 +585,7 @@ export default function Home() {
   const botKeys = ["bot_alerts", "bot_risk", "bot_scalper"];
   const intelKeys = ["info_news_speed", "info_sentiment", "info_vol_forecast"];
 
-  const symbols = useMemo(() => ["PSC"], []);
+  const totalVisitorCount = totalVisitors ?? 0;
   const canRug = position.size !== 0;
   const onRug = () => {
     if (!canRug) return;
@@ -617,6 +627,9 @@ export default function Home() {
             <span className="text-white/15">|</span>
             <span className="text-white/30">RT</span>
             <span className="text-neon-green">{retailCount}</span>
+            <span className="text-white/15">|</span>
+            <span className="text-white/30">VISITS</span>
+            <span className="text-neon-cyan">{totalVisitorCount}</span>
             {getUpgradeLevel("info_vol_forecast") > 0 && (
               <>
                 <span className="text-white/15">|</span>
@@ -653,7 +666,32 @@ export default function Home() {
 
       <div className="grid gap-3 md:grid-cols-[220px_1fr_300px]">
         <div className="hidden md:block">
-          <OrderBook book={orderBook} />
+          <div className="mb-2 flex items-center gap-1 rounded-md border border-white/5 bg-white/[0.02] p-1 text-[10px] uppercase tracking-[0.15em] text-white/40">
+            <button
+              className={`rounded px-2.5 py-1 ${leftPanelTab === "dom" ? "bg-white/10 text-white" : "text-white/45"}`}
+              onClick={() => setLeftPanelTab("dom")}
+            >
+              DOM
+            </button>
+            <button
+              className={`rounded px-2.5 py-1 ${leftPanelTab === "live" ? "bg-white/10 text-white" : "text-white/45"}`}
+              onClick={() => setLeftPanelTab("live")}
+            >
+              Live
+            </button>
+          </div>
+          {leftPanelTab === "dom" ? (
+            <OrderBook book={orderBook} />
+          ) : (
+            <TradeTape
+              trades={globalTape}
+              title="Live Traders"
+              emptyLabel="No live trades."
+              showCount={false}
+              showStats={true}
+              statsLabel="Live Metrics"
+            />
+          )}
         </div>
 
         <div className="glass flex h-[520px] flex-col rounded-md p-3 md:h-[640px]">
@@ -691,7 +729,6 @@ export default function Home() {
           )}
           <TradePanel
             symbol={symbol}
-            symbols={symbols}
             pnl={pnl}
             cash={cash}
             equity={equity}
@@ -709,7 +746,6 @@ export default function Home() {
             onCashout={() => setShowCashoutConfirm(true)}
             onRug={onRug}
             canRug={canRug}
-            onSymbol={setSymbol}
           />
           <TradeTape trades={globalTape.length ? globalTape : trades} />
           {hasNews ? (
@@ -753,7 +789,6 @@ export default function Home() {
               )}
               <TradePanel
                 symbol={symbol}
-                symbols={symbols}
                 pnl={pnl}
                 cash={cash}
                 equity={equity}
@@ -771,7 +806,6 @@ export default function Home() {
                 onCashout={() => setShowCashoutConfirm(true)}
                 onRug={onRug}
                 canRug={canRug}
-                onSymbol={setSymbol}
               />
               <TradeTape trades={globalTape.length ? globalTape : trades} />
             </div>
@@ -801,48 +835,25 @@ export default function Home() {
         </div>
 
         {panelTab === "account" && (
-          <div className="space-y-2 text-xs">
-            {authUser ? (
-              <div className="space-y-2 text-xs">
-                <div className="text-white/80">Signed in as <span className="text-neon-cyan">{authUser.username}</span></div>
-                <div>Level: <span className="text-neon-green">{stats?.level ?? 1}</span></div>
-                <div>Cashout Balance: <span className="text-white/80">${stats?.cashoutBalance?.toFixed(2) ?? "0.00"}</span></div>
-                <button className="rounded-md bg-white/10 px-3 py-2 text-xs" onClick={logout}>Logout</button>
-              </div>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <div className="text-[10px] text-white/50">Register</div>
-                  <input className="mt-1 w-full rounded-md bg-white/5 p-2" placeholder="Username" value={regUser} onChange={(e) => setRegUser(e.target.value)} />
-                  <input className="mt-1 w-full rounded-md bg-white/5 p-2" type="password" placeholder="Password" value={regPass} onChange={(e) => setRegPass(e.target.value)} />
-                  <button
-                    className="mt-2 w-full rounded-md bg-neon-cyan px-3 py-2 text-black disabled:cursor-not-allowed disabled:opacity-60"
-                    onClick={() => register(regUser, regPass)}
-                    disabled={authBusy === "register"}
-                  >
-                    {authBusy === "register" ? "Registering..." : "Register"}
-                  </button>
-                </div>
-                <div>
-                  <div className="text-[10px] text-white/50">Login</div>
-                  <input className="mt-1 w-full rounded-md bg-white/5 p-2" placeholder="Username" value={loginUser} onChange={(e) => setLoginUser(e.target.value)} />
-                  <input className="mt-1 w-full rounded-md bg-white/5 p-2" type="password" placeholder="Password" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} />
-                  <button
-                    className="mt-2 w-full rounded-md bg-white/20 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-                    onClick={() => login(loginUser, loginPass)}
-                    disabled={authBusy === "login"}
-                  >
-                    {authBusy === "login" ? "Logging in..." : "Login"}
-                  </button>
-                </div>
-                {authError && (
-                  <div className="md:col-span-2 rounded-md bg-neon-red/10 px-3 py-2 text-xs text-neon-red">
-                    {authError}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <AccountPanel
+            authUser={authUser}
+            stats={stats}
+            rank={rank}
+            pnl={pnl}
+            tradeCount={trades.length}
+            cash={cash}
+            equity={equity}
+            startCash={startCash}
+            maxOrderSize={maxOrderSize}
+            upgradeDefs={upgradeDefs}
+            getLevelByKey={getLevelByKey}
+            authError={authError}
+            authBusy={authBusy}
+            onRegister={register}
+            onLogin={login}
+            onLogout={logout}
+            onPurchaseUpgrade={purchaseUpgrade}
+          />
         )}
 
         {panelTab === "upgrades" && (
