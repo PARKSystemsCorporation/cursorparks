@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Bar } from "../engine/types";
+import { usePriceDirection } from "../hooks/usePriceDirection";
 
 type Props = {
   bars: Bar[];
@@ -13,6 +14,8 @@ type Props = {
 export function ChartCanvas({ bars, price, showSMA, avgPrice }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const prevPriceRef = useRef(price);
+  const priceDirection = usePriceDirection(price);
 
   useEffect(() => {
     const canvas = ref.current;
@@ -132,20 +135,45 @@ export function ChartCanvas({ bars, price, showSMA, avgPrice }: Props) {
     }
 
     const py = toY(price);
-    ctx.strokeStyle = "rgba(34,211,238,0.7)";
+    const prevPy = prevPriceRef.current > 0 ? toY(prevPriceRef.current) : py;
+    
+    // Smooth price line transition
+    const priceColor = priceDirection === "up" 
+      ? "rgba(0,255,157,0.7)" 
+      : priceDirection === "down" 
+        ? "rgba(255,51,85,0.7)" 
+        : "rgba(34,211,238,0.7)";
+    
+    ctx.strokeStyle = priceColor;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
     ctx.moveTo(pad.l, py);
     ctx.lineTo(w - pad.r, py);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#22d3ee";
+    
+    // Price label with subtle glow
+    ctx.fillStyle = priceColor;
     ctx.fillRect(w - pad.r, py - 9, pad.r, 18);
     ctx.fillStyle = "#0a0a12";
     ctx.font = "bold 10px ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.textAlign = "center";
     ctx.fillText(`$${price.toFixed(2)}`, w - pad.r / 2, py + 4);
-  }, [bars, price, showSMA, avgPrice, size]);
+    
+    prevPriceRef.current = price;
+  }, [bars, price, showSMA, avgPrice, size, priceDirection]);
 
-  return <canvas ref={ref} className="h-full w-full" />;
+  return (
+    <canvas 
+      ref={ref} 
+      className="h-full w-full transition-opacity duration-200" 
+      style={{ 
+        filter: priceDirection === "up" 
+          ? "drop-shadow(0 0 2px rgba(0,255,157,0.3))" 
+          : priceDirection === "down" 
+            ? "drop-shadow(0 0 2px rgba(255,51,85,0.3))" 
+            : "none"
+      }}
+    />
+  );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { TradeRow } from "../db/db";
 
 type Props = {
@@ -33,25 +34,35 @@ export function TradeTape({
   const lastPrice = trades[0]?.price ?? 0;
   const lastSize = trades[0]?.size ?? 0;
   const lastSide = trades[0]?.side ?? null;
+  const prevTradesRef = useRef(trades);
+
+  useEffect(() => {
+    prevTradesRef.current = trades;
+  }, [trades]);
+
+  const isNewTrade = trades.length > 0 && (
+    prevTradesRef.current.length === 0 || 
+    trades[0]?.id !== prevTradesRef.current[0]?.id
+  );
 
   return (
     <div className="glass rounded-md p-3 text-xs">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-[9px] uppercase tracking-[0.15em] text-white/30">{title}</span>
         {showCount && trades.length > 0 && (
-          <span className="font-mono text-[9px] text-white/20">{trades.length} fills</span>
+          <span className="font-mono text-[9px] text-white/20 transition-all duration-200">{trades.length} fills</span>
         )}
       </div>
       {showStats && trades.length > 0 && (
-        <div className="mb-2 rounded border border-white/5 bg-white/[0.02] px-2 py-1 font-mono text-[10px] text-white/45">
+        <div className="mb-2 rounded border border-white/5 bg-white/[0.02] px-2 py-1 font-mono text-[10px] text-white/45 transition-all duration-200">
           <div className="mb-1 text-[9px] uppercase tracking-[0.15em] text-white/25">{statsLabel}</div>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
-            <span>Last: {lastSide ? lastSide.toUpperCase() : "--"} {lastSize}</span>
+            <span className="transition-colors duration-200">Last: <span className={lastSide === "buy" ? "text-neon-green" : "text-neon-red"}>{lastSide ? lastSide.toUpperCase() : "--"}</span> {lastSize}</span>
             <span>@ ${lastPrice.toFixed(2)}</span>
             <span>VWAP: ${vwap.toFixed(2)}</span>
             <span>Vol: {totalVolume}</span>
-            <span>B/S: {buyVolume}/{sellVolume}</span>
-            <span>Count: {buyCount}/{sellCount}</span>
+            <span>B/S: <span className="text-neon-green">{buyVolume}</span>/<span className="text-neon-red">{sellVolume}</span></span>
+            <span>Count: <span className="text-neon-green">{buyCount}</span>/<span className="text-neon-red">{sellCount}</span></span>
           </div>
         </div>
       )}
@@ -59,26 +70,29 @@ export function TradeTape({
         {trades.length === 0 ? (
           <div className="py-2 text-center text-white/25">{emptyLabel}</div>
         ) : (
-          trades.slice(0, maxRows).map((t, i) => (
-            <div
-              key={t.id ?? `trade-${i}`}
-              className={`flex items-center justify-between rounded px-1.5 py-[3px] ${
-                t.side === "buy" ? "text-neon-green" : "text-neon-red"
-              } ${i === 0 ? "animate-slideIn bg-white/[0.03]" : ""}`}
-            >
-              <span>
-                {t.side.toUpperCase()} {t.size}
-              </span>
-              <span className="text-[10px] text-white/20">
-                {new Date(t.t).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit"
-                })}
-              </span>
-              <span>${t.price.toFixed(2)}</span>
-            </div>
-          ))
+          trades.slice(0, maxRows).map((t, i) => {
+            const isNew = i === 0 && isNewTrade;
+            return (
+              <div
+                key={t.id ?? `trade-${i}`}
+                className={`flex items-center justify-between rounded px-1.5 py-[3px] transition-all duration-200 ${
+                  t.side === "buy" ? "text-neon-green" : "text-neon-red"
+                } ${isNew ? "animate-slideInRight bg-white/[0.05] shadow-lg" : "hover:bg-white/[0.02]"}`}
+              >
+                <span className="font-semibold">
+                  {t.side.toUpperCase()} {t.size}
+                </span>
+                <span className="text-[10px] text-white/20">
+                  {new Date(t.t).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                  })}
+                </span>
+                <span className="font-semibold">${t.price.toFixed(2)}</span>
+              </div>
+            );
+          })
         )}
       </div>
     </div>

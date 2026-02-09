@@ -51,9 +51,39 @@ select {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
 }
 
 @keyframes pulseGlow {
@@ -61,14 +91,27 @@ select {
   50% { opacity: 0.35; }
 }
 
+@keyframes pulseScale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
 @keyframes flashGreen {
-  0% { box-shadow: inset 0 0 80px rgba(0, 255, 157, 0.1); }
-  100% { box-shadow: inset 0 0 0 transparent; }
+  0% { box-shadow: inset 0 0 80px rgba(0, 255, 157, 0.15), 0 0 20px rgba(0, 255, 157, 0.2); }
+  50% { box-shadow: inset 0 0 100px rgba(0, 255, 157, 0.25), 0 0 30px rgba(0, 255, 157, 0.3); }
+  100% { box-shadow: inset 0 0 0 transparent, 0 0 0 transparent; }
 }
 
 @keyframes flashRed {
-  0% { box-shadow: inset 0 0 80px rgba(255, 51, 85, 0.1); }
-  100% { box-shadow: inset 0 0 0 transparent; }
+  0% { box-shadow: inset 0 0 80px rgba(255, 51, 85, 0.15), 0 0 20px rgba(255, 51, 85, 0.2); }
+  50% { box-shadow: inset 0 0 100px rgba(255, 51, 85, 0.25), 0 0 30px rgba(255, 51, 85, 0.3); }
+  100% { box-shadow: inset 0 0 0 transparent, 0 0 0 transparent; }
+}
+
+@keyframes flashCyan {
+  0% { box-shadow: 0 0 0 rgba(34, 211, 238, 0); }
+  50% { box-shadow: 0 0 20px rgba(34, 211, 238, 0.4); }
+  100% { box-shadow: 0 0 0 rgba(34, 211, 238, 0); }
 }
 
 @keyframes loadPulse {
@@ -76,21 +119,163 @@ select {
   50% { opacity: 0.8; }
 }
 
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes priceUp {
+  0% { color: #00ff9d; transform: scale(1.1); }
+  100% { color: inherit; transform: scale(1); }
+}
+
+@keyframes priceDown {
+  0% { color: #ff3355; transform: scale(1.1); }
+  100% { color: inherit; transform: scale(1); }
+}
+
+@keyframes numberCount {
+  from { opacity: 0.5; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes depthBar {
+  from { width: 0; opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes newsSlide {
+  from { opacity: 0; transform: translateX(-20px) scale(0.98); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes newsPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 214, 0, 0); }
+  50% { box-shadow: 0 0 12px rgba(255, 214, 0, 0.3); }
+}
+
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+@keyframes buttonHover {
+  from { transform: translateY(0); }
+  to { transform: translateY(-1px); }
+}
+
+@keyframes progressBar {
+  from { width: 0; }
+}
+
+@keyframes modalBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalContent {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes rankUp {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.15); filter: brightness(1.5); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@keyframes tradeParticle {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-30px) scale(0.5); }
+}
+
+@keyframes chartLine {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+  50% { filter: drop-shadow(0 0 12px currentColor); }
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
 /* ── Utility classes ── */
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.animate-fadeInDown {
+  animation: fadeInDown 0.3s ease-out;
 }
 
 .animate-slideIn {
   animation: slideIn 0.2s ease-out;
 }
 
+.animate-slideInRight {
+  animation: slideInRight 0.2s ease-out;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.25s ease-out;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.2s ease-out;
+}
+
 .animate-flash-green {
-  animation: flashGreen 0.4s ease-out;
+  animation: flashGreen 0.5s ease-out;
 }
 
 .animate-flash-red {
-  animation: flashRed 0.4s ease-out;
+  animation: flashRed 0.5s ease-out;
+}
+
+.animate-flash-cyan {
+  animation: flashCyan 0.6s ease-out;
+}
+
+.animate-price-up {
+  animation: priceUp 0.4s ease-out;
+}
+
+.animate-price-down {
+  animation: priceDown 0.4s ease-out;
+}
+
+.animate-number-count {
+  animation: numberCount 0.3s ease-out;
+}
+
+.animate-news-slide {
+  animation: newsSlide 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-button-press {
+  animation: buttonPress 0.15s ease-out;
+}
+
+.animate-rank-up {
+  animation: rankUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-modal-backdrop {
+  animation: modalBackdrop 0.2s ease-out;
+}
+
+.animate-modal-content {
+  animation: modalContent 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .pulse-dot {
@@ -105,12 +290,34 @@ select {
   animation: loadPulse 1.2s ease-in-out infinite;
 }
 
+.depth-bar-animate {
+  animation: depthBar 0.3s ease-out;
+  transition: width 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.progress-bar-animate {
+  animation: progressBar 0.5s ease-out;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
 /* ── Order book depth bars ── */
 .depth-bar {
   position: absolute;
   top: 0;
   bottom: 0;
   opacity: 0.08;
+  transition: width 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+.depth-bar-animate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-out;
 }
 
 /* ── Button feedback ── */
@@ -121,5 +328,116 @@ button:active {
 button,
 a,
 select {
-  transition: all 0.12s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover:not(:disabled) {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Smooth transitions for dynamic values ── */
+[class*="text-neon-"],
+[class*="bg-neon-"],
+[class*="border-neon-"] {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* ── Number animation wrapper ── */
+.number-animate {
+  display: inline-block;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.number-animate.updating {
+  animation: numberCount 0.3s ease-out;
+}
+
+/* ── Trade particle effect ── */
+.trade-particle {
+  position: absolute;
+  pointer-events: none;
+  font-size: 12px;
+  font-weight: bold;
+  animation: tradeParticle 0.8s ease-out forwards;
+  z-index: 1000;
+}
+
+/* ── Smooth scrolling ── */
+.overflow-y-auto,
+.overflow-y-scroll {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-y-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track,
+.overflow-y-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb,
+.overflow-y-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover,
+.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Enhanced glass effect ── */
+.glass {
+  transition: box-shadow 0.3s ease, background-color 0.2s ease;
+}
+
+.glass:hover {
+  box-shadow: 0 6px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Smooth color transitions for neon elements ── */
+.text-neon-green,
+.text-neon-red,
+.text-neon-cyan,
+.text-neon-blue,
+.text-neon-yellow {
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+/* ── Input focus animations ── */
+input:focus {
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+input:focus-visible {
+  outline: 2px solid rgba(34, 211, 238, 0.5);
+  outline-offset: 2px;
+}
+
+/* ── Prevent layout shift during animations ── */
+* {
+  will-change: auto;
+}
+
+.number-animate,
+.depth-bar-animate,
+.progress-bar-animate {
+  will-change: transform, opacity, width;
+}
+
+/* ── Optimize animations for performance ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

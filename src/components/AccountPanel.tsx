@@ -193,7 +193,7 @@ export function AccountPanel({
               onChange={(e) => setRegPass(e.target.value)}
             />
             <button
-              className="mt-2.5 w-full rounded bg-neon-cyan py-2 text-[11px] font-semibold text-black disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-2.5 w-full rounded bg-neon-cyan py-2 text-[11px] font-semibold text-black transition-all duration-200 hover:bg-neon-cyan/90 hover:shadow-glow-cyan hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
               onClick={() => onRegister(regUser, regPass)}
               disabled={authBusy === "register"}
             >
@@ -218,7 +218,7 @@ export function AccountPanel({
               onChange={(e) => setLoginPass(e.target.value)}
             />
             <button
-              className="mt-2.5 w-full rounded bg-white/10 py-2 text-[11px] font-medium text-white/60 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-2.5 w-full rounded bg-white/10 py-2 text-[11px] font-medium text-white/60 transition-all duration-200 hover:bg-white/15 hover:text-white/80 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
               onClick={() => onLogin(loginUser, loginPass)}
               disabled={authBusy === "login"}
             >
@@ -289,7 +289,7 @@ export function AccountPanel({
         </div>
         <button
           onClick={onLogout}
-          className="rounded border border-white/10 px-2.5 py-1 text-[10px] text-white/25 hover:text-white/40"
+          className="rounded border border-white/10 px-2.5 py-1 text-[10px] text-white/25 transition-all duration-200 hover:text-white/40 hover:bg-white/5 hover:scale-105 active:scale-95"
         >
           Logout
         </button>
@@ -390,16 +390,16 @@ export function AccountPanel({
         </div>
         {/* Progress to next */}
         {rank.nextMin !== null && (
-          <div className="mt-2 px-3">
+            <div className="mt-2 px-3">
             <div className="flex items-center justify-between font-mono text-[9px]">
               <span className="text-white/15">{rank.name}</span>
               <span className="text-white/15">
                 ${rank.nextMin.toLocaleString()} to next
               </span>
             </div>
-            <div className="mt-0.5 h-px w-full bg-white/10">
+            <div className="mt-0.5 h-px w-full bg-white/10 overflow-hidden rounded-full">
               <div
-                className="h-full bg-neon-cyan/30 transition-all duration-500"
+                className="progress-bar-animate h-full bg-neon-cyan/30 transition-all duration-500 ease-out"
                 style={{ width: `${progressToNext * 100}%` }}
               />
             </div>
@@ -527,10 +527,10 @@ export function AccountPanel({
                             {/* Purchase button */}
                             {!isMaxed && (isOwned || isAvailable) && (
                               <button
-                                className={`mt-1.5 rounded px-2 py-1 text-[9px] font-semibold ${
+                                className={`mt-1.5 rounded px-2 py-1 text-[9px] font-semibold transition-all duration-200 ${
                                   isAvailable
-                                    ? `${c.bg} ${c.text} border ${c.border} hover:bg-white/[0.06]`
-                                    : "border border-white/5 bg-white/[0.03] text-white/30 hover:bg-white/[0.05]"
+                                    ? `${c.bg} ${c.text} border ${c.border} hover:bg-white/[0.06] hover:scale-105 active:scale-95`
+                                    : "border border-white/5 bg-white/[0.03] text-white/30 hover:bg-white/[0.05] hover:scale-105 active:scale-95"
                                 }`}
                                 onClick={() => onPurchaseUpgrade(key)}
                               >

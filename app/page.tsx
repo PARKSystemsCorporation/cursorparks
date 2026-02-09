@@ -596,10 +596,10 @@ export default function Home() {
   if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg-void">
-        <div className="text-center">
+        <div className="animate-fadeIn text-center">
           <div className="text-[10px] uppercase tracking-[0.5em] text-white/30">Connecting to</div>
-          <div className="mt-1 text-xl font-bold tracking-wider text-white">PARKSYSTEMS</div>
-          <div className="mx-auto mt-4 h-px w-12 bg-neon-cyan/30 load-pulse" />
+          <div className="mt-1 text-xl font-bold tracking-wider text-white transition-all duration-300">PARKSYSTEMS</div>
+          <div className="mx-auto mt-4 h-px w-12 bg-neon-cyan/30 load-pulse rounded-full" />
         </div>
       </div>
     );
@@ -650,15 +650,15 @@ export default function Home() {
       </div>
 
       {position.size !== 0 && (
-        <div className="animate-fadeIn mb-3 flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-4 py-2 font-mono text-[11px]">
+        <div className="animate-fadeIn mb-3 flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-4 py-2 font-mono text-[11px] transition-all duration-200 hover:bg-white/[0.03]">
           <div className="flex items-center gap-4">
             <span className="text-white/30">POS</span>
-            <span className={position.size > 0 ? "text-neon-green" : "text-neon-red"}>
+            <span className={`transition-colors duration-200 ${position.size > 0 ? "text-neon-green" : "text-neon-red"}`}>
               {position.size > 0 ? "LONG" : "SHORT"} {Math.abs(position.size)}
             </span>
             <span className="text-white/25">@ {position.avgPrice.toFixed(2)}</span>
           </div>
-          <div className={`font-semibold ${unrealizedPnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
+          <div className={`font-semibold transition-colors duration-200 ${unrealizedPnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
             {unrealizedPnl >= 0 ? "+" : ""}{unrealizedPnl.toFixed(2)} unrealized
           </div>
         </div>
@@ -666,15 +666,23 @@ export default function Home() {
 
       <div className="grid gap-3 md:grid-cols-[220px_1fr_300px]">
         <div className="hidden md:block">
-          <div className="mb-2 flex items-center gap-1 rounded-md border border-white/5 bg-white/[0.02] p-1 text-[10px] uppercase tracking-[0.15em] text-white/40">
+            <div className="mb-2 flex items-center gap-1 rounded-md border border-white/5 bg-white/[0.02] p-1 text-[10px] uppercase tracking-[0.15em] text-white/40">
             <button
-              className={`rounded px-2.5 py-1 ${leftPanelTab === "dom" ? "bg-white/10 text-white" : "text-white/45"}`}
+              className={`rounded px-2.5 py-1 transition-all duration-200 ${
+                leftPanelTab === "dom" 
+                  ? "bg-white/10 text-white scale-105" 
+                  : "text-white/45 hover:text-white/60 hover:bg-white/5"
+              }`}
               onClick={() => setLeftPanelTab("dom")}
             >
               DOM
             </button>
             <button
-              className={`rounded px-2.5 py-1 ${leftPanelTab === "live" ? "bg-white/10 text-white" : "text-white/45"}`}
+              className={`rounded px-2.5 py-1 transition-all duration-200 ${
+                leftPanelTab === "live" 
+                  ? "bg-white/10 text-white scale-105" 
+                  : "text-white/45 hover:text-white/60 hover:bg-white/5"
+              }`}
               onClick={() => setLeftPanelTab("live")}
             >
               Live
@@ -698,14 +706,18 @@ export default function Home() {
           <div className="mb-2 flex items-center justify-between font-mono text-[11px] text-white/40">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-white/70">{symbol}</span>
-              <span className="text-neon-cyan">${currentPrice.toFixed(2)}</span>
+              <span className="text-neon-cyan transition-colors duration-200">${currentPrice.toFixed(2)}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex rounded bg-white/5 p-0.5">
                 {timeframes.map((opt) => (
                   <button
                     key={opt.value}
-                    className={`rounded px-2 py-0.5 text-[10px] ${timeframeMs === opt.value ? "bg-white/10 text-white" : "text-white/35"}`}
+                    className={`rounded px-2 py-0.5 text-[10px] transition-all duration-200 ${
+                      timeframeMs === opt.value 
+                        ? "bg-white/10 text-white scale-105" 
+                        : "text-white/35 hover:text-white/50 hover:bg-white/[0.03]"
+                    }`}
                     onClick={() => setTimeframeMs(opt.value)}
                   >
                     {opt.label}
@@ -722,9 +734,9 @@ export default function Home() {
 
         <div className="hidden md:flex md:flex-col md:gap-3">
           {showBotAlerts && (
-            <div className="glass rounded-xl p-3 text-xs">
+            <div className="glass rounded-xl p-3 text-xs transition-all duration-200 hover:bg-white/[0.02]">
               <div className="text-[10px] uppercase tracking-[0.2em] text-white/50">Bot Alert</div>
-              <div className="mt-1 text-neon-cyan">{botSignal}</div>
+              <div className="mt-1 text-neon-cyan transition-colors duration-200">{botSignal}</div>
             </div>
           )}
           <TradePanel
@@ -767,13 +779,21 @@ export default function Home() {
             </div>
             <div className="flex gap-1">
               <button
-                className={`rounded px-2.5 py-1 text-[10px] font-medium ${mobileTab === "trade" ? "bg-white/10 text-white" : "text-white/35"}`}
+                className={`rounded px-2.5 py-1 text-[10px] font-medium transition-all duration-200 ${
+                  mobileTab === "trade" 
+                    ? "bg-white/10 text-white scale-105" 
+                    : "text-white/35 hover:text-white/50 hover:bg-white/5"
+                }`}
                 onClick={() => setMobileTab("trade")}
               >
                 Trade
               </button>
               <button
-                className={`rounded px-2.5 py-1 text-[10px] font-medium ${mobileTab === "news" ? "bg-white/10 text-white" : "text-white/35"}`}
+                className={`rounded px-2.5 py-1 text-[10px] font-medium transition-all duration-200 ${
+                  mobileTab === "news" 
+                    ? "bg-white/10 text-white scale-105" 
+                    : "text-white/35 hover:text-white/50 hover:bg-white/5"
+                }`}
                 onClick={() => setMobileTab("news")}
               >
                 News
@@ -826,7 +846,11 @@ export default function Home() {
           {(["account","upgrades","firms","leaderboards"] as const).map((tab) => (
             <button
               key={tab}
-              className={`rounded-full px-3 py-1 text-xs ${panelTab === tab ? "bg-neon-cyan text-black" : "bg-white/10 text-white/70"}`}
+              className={`rounded-full px-3 py-1 text-xs transition-all duration-200 ${
+                panelTab === tab 
+                  ? "bg-neon-cyan text-black scale-105 shadow-glow-cyan" 
+                  : "bg-white/10 text-white/70 hover:bg-white/15 hover:text-white/90 hover:scale-105"
+              }`}
               onClick={() => setPanelTab(tab)}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -990,9 +1014,12 @@ export default function Home() {
                   <div className="text-white/40">No entries yet.</div>
                 ) : (
                   soloLb.map((row, idx) => (
-                    <div key={`${row.username}-${idx}`} className="flex justify-between rounded bg-white/5 px-2 py-1">
+                    <div 
+                      key={`${row.username}-${idx}`} 
+                      className="flex justify-between rounded bg-white/5 px-2 py-1 transition-all duration-200 hover:bg-white/10 hover:scale-[1.02]"
+                    >
                       <span>{row.username}</span>
-                      <span className={row.pnl >= 0 ? "text-neon-green" : "text-neon-red"}>
+                      <span className={`transition-colors duration-200 ${row.pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
                         {row.pnl >= 0 ? "+" : ""}${row.pnl.toFixed(2)}
                       </span>
                     </div>
@@ -1007,9 +1034,12 @@ export default function Home() {
                   <div className="text-white/40">No entries yet.</div>
                 ) : (
                   firmLb.map((row, idx) => (
-                    <div key={`${row.firm}-${idx}`} className="flex justify-between rounded bg-white/5 px-2 py-1">
+                    <div 
+                      key={`${row.firm}-${idx}`} 
+                      className="flex justify-between rounded bg-white/5 px-2 py-1 transition-all duration-200 hover:bg-white/10 hover:scale-[1.02]"
+                    >
                       <span>{row.firm}</span>
-                      <span className={row.pnl >= 0 ? "text-neon-green" : "text-neon-red"}>
+                      <span className={`transition-colors duration-200 ${row.pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
                         {row.pnl >= 0 ? "+" : ""}${row.pnl.toFixed(2)}
                       </span>
                     </div>
@@ -1022,20 +1052,32 @@ export default function Home() {
       </div>
 
       {showCashoutConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowCashoutConfirm(false)}>
-          <div className="glass mx-4 w-full max-w-xs rounded-md p-6 text-center" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="animate-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" 
+          onClick={() => setShowCashoutConfirm(false)}
+        >
+          <div 
+            className="animate-modal-content glass mx-4 w-full max-w-xs rounded-md p-6 text-center shadow-2xl" 
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="text-[10px] uppercase tracking-[0.3em] text-white/35">End Session</div>
-            <div className={`mt-2 font-mono text-3xl font-bold ${pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
+            <div className={`mt-2 font-mono text-3xl font-bold transition-colors duration-200 ${pnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
               {pnl >= 0 ? "+" : ""}${pnl.toFixed(2)}
             </div>
             <div className="mt-1 text-[11px] text-white/30">
               {trades.length} trades &middot; {rank.name}
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <button onClick={() => setShowCashoutConfirm(false)} className="rounded border border-white/10 py-2.5 text-[11px] text-white/50 hover:bg-white/5">
+              <button 
+                onClick={() => setShowCashoutConfirm(false)} 
+                className="rounded border border-white/10 py-2.5 text-[11px] text-white/50 transition-all duration-200 hover:bg-white/5 hover:border-white/20 hover:scale-[1.02] active:scale-[0.98]"
+              >
                 Keep Trading
               </button>
-              <button onClick={onCashout} className="rounded bg-neon-cyan py-2.5 text-[11px] font-semibold text-black hover:bg-neon-cyan/90">
+              <button 
+                onClick={onCashout} 
+                className="rounded bg-neon-cyan py-2.5 text-[11px] font-semibold text-black transition-all duration-200 hover:bg-neon-cyan/90 hover:shadow-glow-cyan hover:scale-[1.02] active:scale-[0.98]"
+              >
                 Cash Out
               </button>
             </div>

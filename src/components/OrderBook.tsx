@@ -1,11 +1,17 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { OrderBook } from "../engine/types";
 
 type Props = { book: OrderBook };
 
 export function OrderBook({ book }: Props) {
   const maxSize = Math.max(...book.bids.map((b) => b.size), ...book.asks.map((a) => a.size), 1);
+  const prevBookRef = useRef(book);
+
+  useEffect(() => {
+    prevBookRef.current = book;
+  }, [book]);
 
   return (
     <div className="glass flex h-full flex-col rounded-md p-3 text-xs">
@@ -18,27 +24,33 @@ export function OrderBook({ book }: Props) {
           .slice()
           .reverse()
           .map((a, idx) => (
-            <div key={`ask-${idx}`} className="relative flex justify-between px-1.5 py-[3px] text-neon-red">
+            <div 
+              key={`ask-${idx}`} 
+              className="relative flex justify-between px-1.5 py-[3px] text-neon-red transition-colors duration-150 hover:bg-white/[0.02]"
+            >
               <div
-                className="depth-bar right-0 bg-neon-red"
+                className="depth-bar-animate right-0 bg-neon-red/20"
                 style={{ width: `${(a.size / maxSize) * 100}%` }}
               />
-              <span className="relative">{a.size}</span>
-              <span className="relative">{a.price.toFixed(2)}</span>
+              <span className="relative z-10 transition-all duration-150">{a.size}</span>
+              <span className="relative z-10 transition-all duration-150">{a.price.toFixed(2)}</span>
             </div>
           ))}
         <div className="my-1.5 border-y border-white/5 py-1.5 text-center text-[10px]">
           <span className="text-white/25">SPREAD</span>{" "}
-          <span className="font-semibold text-white/50">{book.spread.toFixed(3)}</span>
+          <span className="font-semibold text-white/50 transition-colors duration-200">{book.spread.toFixed(3)}</span>
         </div>
         {book.bids.map((b, idx) => (
-          <div key={`bid-${idx}`} className="relative flex justify-between px-1.5 py-[3px] text-neon-green">
+          <div 
+            key={`bid-${idx}`} 
+            className="relative flex justify-between px-1.5 py-[3px] text-neon-green transition-colors duration-150 hover:bg-white/[0.02]"
+          >
             <div
-              className="depth-bar left-0 bg-neon-green"
+              className="depth-bar-animate left-0 bg-neon-green/20"
               style={{ width: `${(b.size / maxSize) * 100}%` }}
             />
-            <span className="relative">{b.size}</span>
-            <span className="relative">{b.price.toFixed(2)}</span>
+            <span className="relative z-10 transition-all duration-150">{b.size}</span>
+            <span className="relative z-10 transition-all duration-150">{b.price.toFixed(2)}</span>
           </div>
         ))}
       </div>
