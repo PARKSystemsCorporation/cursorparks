@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserFromSession } from "@/src/server/auth";
 import { prisma } from "@/src/server/db";
-import { getIO } from "@/src/server/socket.js";
+import { getIO } from "@/src/server/socket";
 
 export async function GET() {
   const user = await getUserFromSession();

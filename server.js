@@ -20,7 +20,7 @@ app.prepare().then(() => {
 
   const { setIO } = require("./src/server/socket.js");
   const crypto = require("crypto");
-  const { prisma } = require("./src/server/db");
+  const { prisma } = require("./src/server/db.js");
   const { getEngine } = require("./src/server/marketEngine");
   setIO(io);
 
