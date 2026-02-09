@@ -57,7 +57,7 @@ class MarketEngine extends EventEmitter {
       liquidity: this.liquidity,
       orderBook: this.makeOrderBook(),
       bar: this.curBar,
-      bars: this.bars.slice(-120),
+      bars: this.bars.slice(-600),
       online: this.online,
       news: this.news
     };

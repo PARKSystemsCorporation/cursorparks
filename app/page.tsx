@@ -39,6 +39,7 @@ export default function Home() {
   const [soloLb, setSoloLb] = useState<{ username: string; pnl: number; riskScore: number; streak: number }[]>([]);
   const [firmLb, setFirmLb] = useState<{ firm: string; pnl: number; efficiency: number; consistency: number }[]>([]);
   const [wsOnline, setWsOnline] = useState<number | null>(null);
+  const [timeframeMs, setTimeframeMs] = useState(1000);
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [regUser, setRegUser] = useState("");
@@ -59,6 +60,27 @@ export default function Home() {
     spread: 0,
     mid: tick?.price || 0
   };
+
+  const displayBars = useMemo(() => {
+    if (!bars.length || timeframeMs <= 1000) return bars;
+    const out: Bar[] = [];
+    let cur: Bar | null = null;
+    let curBucket = 0;
+    for (const b of bars) {
+      const bucket = Math.floor(b.t / timeframeMs) * timeframeMs;
+      if (!cur || bucket !== curBucket) {
+        if (cur) out.push(cur);
+        curBucket = bucket;
+        cur = { t: bucket, o: b.o, h: b.h, l: b.l, c: b.c };
+      } else {
+        cur.h = Math.max(cur.h, b.h);
+        cur.l = Math.min(cur.l, b.l);
+        cur.c = b.c;
+      }
+    }
+    if (cur) out.push(cur);
+    return out;
+  }, [bars, timeframeMs]);
 
   const equity = cash + position.size * (tick?.price || 0);
   const pnl = equity - START_CASH;
@@ -427,10 +449,28 @@ export default function Home() {
         <div className="glass flex h-[520px] flex-col rounded-xl p-3 md:h-[640px]">
           <div className="mb-2 flex items-center justify-between text-xs text-white/60">
             <span>{symbol} · ${tick?.price.toFixed(2) || "--"}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-[0.18em] text-white/40">Candle View</span>
+              <div className="flex rounded-full bg-white/5 p-1">
+                {[
+                  { label: "Fast", value: 1000 },
+                  { label: "5s", value: 5000 },
+                  { label: "10s", value: 10000 }
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    className={`rounded-full px-2 py-1 text-[10px] ${timeframeMs === opt.value ? "bg-neon-cyan text-black" : "text-white/60"}`}
+                    onClick={() => setTimeframeMs(opt.value)}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <span>Spread {tick?.spread.toFixed(3) || "--"}</span>
           </div>
           <div className="flex-1">
-            <ChartCanvas bars={bars} price={tick?.price || 0} showSMA={showIndicators} />
+            <ChartCanvas bars={displayBars} price={tick?.price || 0} showSMA={showIndicators} />
           </div>
         </div>
 
