@@ -1114,8 +1114,9 @@ export default function HomeClient() {
   }
 
   return (
-    <div className={`min-h-[100dvh] bg-bg-void px-4 py-3 pb-[min(35dvh,320px)] lg:pb-0 md:px-6 ${tradeFlash === "buy" ? "animate-flash-green" : tradeFlash === "sell" ? "animate-flash-red" : ""}`}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+    <div className={`min-h-[100dvh] bg-bg-void px-4 py-3 md:px-6 ${tradeFlash === "buy" ? "animate-flash-green" : tradeFlash === "sell" ? "animate-flash-red" : ""} flex h-[100dvh] flex-col overflow-hidden lg:h-auto lg:overflow-visible`}>
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -1157,24 +1158,24 @@ export default function HomeClient() {
             )}
           </div>
         </div>
-      </div>
-
-      {position.size !== 0 && (
-        <div className="animate-fadeIn mb-3 flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-4 py-2 font-mono text-[11px] transition-all duration-200 hover:bg-white/[0.03]">
-          <div className="flex items-center gap-4">
-            <span className="text-white/70">POS</span>
-            <span className={`transition-colors duration-200 ${position.size > 0 ? "text-neon-green" : "text-neon-red"}`}>
-              {position.size > 0 ? "LONG" : "SHORT"} {Math.abs(position.size)}
-            </span>
-            <span className="text-white/70">@ {position.avgPrice.toFixed(2)}</span>
-          </div>
-          <div className={`font-semibold transition-colors duration-200 ${unrealizedPnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
-            {unrealizedPnl >= 0 ? "+" : ""}{unrealizedPnl.toFixed(2)} unrealized
-          </div>
         </div>
-      )}
 
-      <div className="grid gap-3 lg:grid-cols-[220px_1fr_300px] xl:grid-cols-[240px_1fr_320px]">
+        {position.size !== 0 && (
+          <div className="animate-fadeIn mb-3 flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-4 py-2 font-mono text-[11px] transition-all duration-200 hover:bg-white/[0.03]">
+            <div className="flex items-center gap-4">
+              <span className="text-white/70">POS</span>
+              <span className={`transition-colors duration-200 ${position.size > 0 ? "text-neon-green" : "text-neon-red"}`}>
+                {position.size > 0 ? "LONG" : "SHORT"} {Math.abs(position.size)}
+              </span>
+              <span className="text-white/70">@ {position.avgPrice.toFixed(2)}</span>
+            </div>
+            <div className={`font-semibold transition-colors duration-200 ${unrealizedPnl >= 0 ? "text-neon-green" : "text-neon-red"}`}>
+              {unrealizedPnl >= 0 ? "+" : ""}{unrealizedPnl.toFixed(2)} unrealized
+            </div>
+          </div>
+        )}
+
+        <div className="flex min-h-0 flex-1 flex-col gap-3 lg:grid lg:grid-cols-[220px_1fr_300px] xl:grid-cols-[240px_1fr_320px]">
         <div className="hidden lg:block">
             <div className="mb-2 flex items-center gap-1 rounded-md border border-white/5 bg-white/[0.02] p-1 text-[10px] uppercase tracking-[0.15em] text-white/70">
             <button
@@ -1222,7 +1223,7 @@ export default function HomeClient() {
           )}
         </div>
 
-        <div className="glass flex h-[520px] flex-col rounded-md p-3 lg:h-[640px]">
+        <div className="glass flex min-h-0 flex-1 flex-col rounded-md p-3 lg:h-[640px] lg:flex-none">
           <div className="mb-2 flex items-center justify-between font-mono text-[11px] text-white/70">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-white/90">{symbol}</span>
@@ -1284,24 +1285,25 @@ export default function HomeClient() {
             </div>
           )}
         </div>
-      </div>
-
-      <MobileSheet>
-        <div className="px-4 pt-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-white/70">Trade Desk</span>
-              <span className="rounded border border-neon-cyan/20 bg-neon-cyan/5 px-1.5 py-0.5 text-[9px] font-semibold text-neon-cyan">
-                {rank.name}
-              </span>
-            </div>
-            <div className="font-mono text-[10px] text-white/60">
-              {symbol} ${currentPrice.toFixed(2)}
-            </div>
-          </div>
         </div>
-        <div className="px-4 pb-3">
-          <div className="max-h-[42dvh] space-y-3 overflow-y-auto scrollbar-hidden">
+
+        <MobileSheet>
+          <div className="flex h-[40dvh] flex-col md:h-[35dvh]">
+            <div className="px-4 pt-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-white/70">Trade Desk</span>
+                  <span className="rounded border border-neon-cyan/20 bg-neon-cyan/5 px-1.5 py-0.5 text-[9px] font-semibold text-neon-cyan">
+                    {rank.name}
+                  </span>
+                </div>
+                <div className="font-mono text-[10px] text-white/60">
+                  {symbol} ${currentPrice.toFixed(2)}
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden px-4 pb-3">
+              <div className="h-full space-y-3 overflow-hidden">
             {mobileTab === "trade" && (
               <>
                 {showBotAlerts && (
@@ -1310,26 +1312,12 @@ export default function HomeClient() {
                   </div>
                 )}
                 <TradePanel {...tradePanelProps} />
-                <PriceAlerts
-                  currentPrice={currentPrice}
-                  alerts={priceAlerts}
-                  onAdd={addPriceAlert}
-                  onRemove={removePriceAlert}
-                  onTrigger={triggerPriceAlert}
-                />
-                <AdvancedOrders
-                  orders={advancedOrders.filter((o) => o.status !== "cancelled")}
-                  currentPrice={currentPrice}
-                  onSubmit={submitAdvancedOrder}
-                  onCancel={cancelAdvancedOrder}
-                  maxQty={maxOrderSize}
-                />
               </>
             )}
 
             {mobileTab === "dom" && (
               <>
-                <OrderBook book={orderBook} />
+                <OrderBook book={orderBook} maxRows={8} scrollable={false} />
                 <div className="mt-2">
                   <MarketDepthViz book={orderBook} currentPrice={currentPrice} />
                 </div>
@@ -1401,16 +1389,18 @@ export default function HomeClient() {
                 </div>
               </>
             )}
+              </div>
+            </div>
+            <MobileTabBar
+              tabs={MOBILE_TABS}
+              active={mobileTab}
+              onChange={(id) => setMobileTab(id as MobileTab)}
+            />
           </div>
-        </div>
-        <MobileTabBar
-          tabs={MOBILE_TABS}
-          active={mobileTab}
-          onChange={(id) => setMobileTab(id as MobileTab)}
-        />
-      </MobileSheet>
+        </MobileSheet>
+      </div>
 
-      <div className="mt-6 glass rounded-xl p-4">
+      <div className="mt-6 hidden lg:block glass rounded-xl p-4">
         <div className="mb-3 flex flex-wrap gap-2">
           {PANEL_TABS.map((tab) => (
             <button
@@ -1431,7 +1421,7 @@ export default function HomeClient() {
       </div>
 
       {/* ── Utility buttons ── */}
-      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+      <div className="mt-3 hidden lg:flex flex-wrap items-center gap-2 text-xs">
         <button onClick={() => setShowTradeHistory(true)} className="rounded border border-white/10 px-3 py-1.5 text-[10px] text-white/30 transition-all duration-200 hover:bg-white/5 hover:text-white/50">
           Trade History
         </button>

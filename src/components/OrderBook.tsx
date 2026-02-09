@@ -3,12 +3,14 @@
 import { useEffect, useRef } from "react";
 import type { OrderBook } from "../engine/types";
 
-type Props = { book: OrderBook };
+type Props = { book: OrderBook; maxRows?: number; scrollable?: boolean };
 
-export function OrderBook({ book }: Props) {
+export function OrderBook({ book, maxRows, scrollable = true }: Props) {
+  const asks = maxRows ? book.asks.slice(0, maxRows) : book.asks;
+  const bids = maxRows ? book.bids.slice(0, maxRows) : book.bids;
   let maxSize = 1;
-  for (const b of book.bids) if (b.size > maxSize) maxSize = b.size;
-  for (const a of book.asks) if (a.size > maxSize) maxSize = a.size;
+  for (const b of bids) if (b.size > maxSize) maxSize = b.size;
+  for (const a of asks) if (a.size > maxSize) maxSize = a.size;
   const prevBookRef = useRef(book);
 
   useEffect(() => {
@@ -21,8 +23,10 @@ export function OrderBook({ book }: Props) {
         <span>Size</span>
         <span>Price</span>
       </div>
-      <div className="flex-1 space-y-px overflow-y-auto scrollbar-hidden font-mono text-[11px]">
-        {book.asks
+      <div
+        className={`flex-1 space-y-px font-mono text-[11px] ${scrollable ? "overflow-y-auto scrollbar-hidden" : "overflow-hidden"}`}
+      >
+        {asks
           .slice()
           .reverse()
           .map((a, idx) => (
@@ -42,7 +46,7 @@ export function OrderBook({ book }: Props) {
           <span className="text-white/70">SPREAD</span>{" "}
           <span className="font-semibold text-white/90 transition-colors duration-200">{book.spread.toFixed(3)}</span>
         </div>
-        {book.bids.map((b, idx) => (
+        {bids.map((b, idx) => (
           <div 
             key={`bid-${idx}`} 
             className="relative flex justify-between px-1.5 py-[3px] text-neon-green transition-colors duration-150 hover:bg-white/[0.02]"
