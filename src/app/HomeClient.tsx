@@ -451,15 +451,6 @@ export default function HomeClient() {
     return () => clearInterval(interval);
   }, [authUser, statsLastUpdatedAt]);
 
-  const refreshProgression = useCallback(async () => {
-    if (!authUser || progressionRefreshInFlight.current) return null;
-    progressionRefreshInFlight.current = true;
-    try {
-      return await loadProgression();
-    } finally {
-      progressionRefreshInFlight.current = false;
-    }
-  }, [authUser, loadProgression]);
   useEffect(() => {
     if (!authUser) return;
     const socket = getSocket();
