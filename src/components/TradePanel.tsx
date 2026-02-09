@@ -13,6 +13,8 @@ type Props = {
   onBuy: () => void;
   onSell: () => void;
   onCashout: () => void;
+  onRug: () => void;
+  canRug: boolean;
   onSymbol: (s: string) => void;
 };
 
@@ -31,6 +33,8 @@ export function TradePanel({
   onBuy,
   onSell,
   onCashout,
+  onRug,
+  canRug,
   onSymbol
 }: Props) {
   return (
@@ -58,6 +62,13 @@ export function TradePanel({
         className="rounded-lg bg-white/10 py-2 text-xs uppercase tracking-[0.2em] text-white/80 hover:bg-white/20"
       >
         Cash Out
+      </button>
+      <button
+        onClick={onRug}
+        disabled={!canRug}
+        className="rounded-lg bg-neon-red/20 py-2 text-xs uppercase tracking-[0.2em] text-neon-red hover:bg-neon-red/30 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        RUG (Flatten)
       </button>
       <div className="rounded-lg border border-white/10 bg-white/5 p-2">
         <div className="text-[10px] uppercase tracking-[0.2em] text-white/50">Ticker</div>

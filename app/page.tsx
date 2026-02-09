@@ -25,7 +25,7 @@ export default function Home() {
   const [position, setPosition] = useState({ size: 0, avgPrice: 0 });
   const [cash, setCash] = useState(START_CASH);
   const [qty, setQty] = useState(10);
-  const [symbol, setSymbol] = useState("NQ");
+  const [symbol, setSymbol] = useState("PSC");
   const [trades, setTrades] = useState<TradeRow[]>([]);
   const [news, setNews] = useState<NewsRow[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRun[]>([]);
@@ -239,9 +239,14 @@ export default function Home() {
     }
   }
 
-  const handleTrade = (side: "buy" | "sell") => {
+  const submitTrade = (side: "buy" | "sell", size: number) => {
+    if (!size || !Number.isFinite(size)) return;
     const socket = getSocket();
-    socket.emit("trade:submit", { side, size: qty, symbol });
+    socket.emit("trade:submit", { side, size, symbol });
+  };
+
+  const handleTrade = (side: "buy" | "sell") => {
+    submitTrade(side, qty);
   };
 
   async function register(username: string, password: string) {
@@ -387,7 +392,13 @@ export default function Home() {
   const showBotAlerts = getUpgradeLevel("bot_alerts") > 0;
   const botSignal = tick ? (tick.velocity >= 0 ? "BUY BIAS" : "SELL BIAS") : "--";
 
-  const symbols = useMemo(() => ["NQ", "ES", "RTY"], []);
+  const symbols = useMemo(() => ["PSC"], []);
+  const canRug = position.size !== 0;
+  const onRug = () => {
+    if (!canRug) return;
+    const side = position.size > 0 ? "sell" : "buy";
+    submitTrade(side, Math.abs(position.size));
+  };
 
   return (
     <div className="min-h-screen bg-bg-void px-4 py-4 md:px-6">
@@ -443,6 +454,8 @@ export default function Home() {
             onBuy={() => handleTrade("buy")}
             onSell={() => handleTrade("sell")}
             onCashout={onCashout}
+            onRug={onRug}
+            canRug={canRug}
             onSymbol={setSymbol}
           />
           <TradeTape trades={globalTape.length ? globalTape : trades} />
@@ -489,6 +502,8 @@ export default function Home() {
                 onBuy={() => handleTrade("buy")}
                 onSell={() => handleTrade("sell")}
                 onCashout={onCashout}
+                onRug={onRug}
+                canRug={canRug}
                 onSymbol={setSymbol}
               />
               <TradeTape trades={globalTape.length ? globalTape : trades} />

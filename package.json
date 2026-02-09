@@ -9,7 +9,7 @@
     "lint": "next lint",
     "prisma": "prisma",
     "db:push": "prisma db push",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate && prisma db push"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
