@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
@@ -24,23 +23,15 @@ export async function createSession(userId: string) {
   await prisma.session.create({
     data: { userId, tokenHash, expiresAt }
   });
-  cookies().set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    expires: expiresAt
-  });
+  return { token, expiresAt };
 }
 
-export async function clearSession() {
-  const token = cookies().get(SESSION_COOKIE)?.value;
+export async function clearSession(token?: string | null) {
   if (!token) return;
   await prisma.session.deleteMany({ where: { tokenHash: hashToken(token) } });
-  cookies().set(SESSION_COOKIE, "", { httpOnly: true, path: "/", maxAge: 0 });
 }
 
-export async function getUserFromSession() {
-  const token = cookies().get(SESSION_COOKIE)?.value;
+export async function getUserFromSession(token?: string | null) {
   if (!token) return null;
   const tokenHash = hashToken(token);
   const session = await prisma.session.findFirst({
