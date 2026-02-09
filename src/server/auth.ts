@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import { cookies as nextCookies } from "next/headers";
 import { prisma } from "./db";
 
 const SESSION_DAYS = 30;
@@ -31,8 +32,16 @@ export async function clearSession(token?: string | null) {
 }
 
 export async function getUserFromSession(token?: string | null) {
-  if (!token) return null;
-  const tokenHash = hashToken(token);
+  let resolvedToken = token || null;
+  if (!resolvedToken) {
+    try {
+      resolvedToken = nextCookies().get("ps_session")?.value || null;
+    } catch {
+      resolvedToken = null;
+    }
+  }
+  if (!resolvedToken) return null;
+  const tokenHash = hashToken(resolvedToken);
   const session = await prisma.session.findFirst({
     where: { tokenHash, expiresAt: { gt: new Date() } },
     include: { user: true }
