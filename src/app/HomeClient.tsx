@@ -1288,8 +1288,16 @@ export default function HomeClient() {
                     {rank.name}
                   </span>
                 </div>
-                <div className="font-mono text-[10px] text-white/60">
-                  {symbol} ${currentPrice.toFixed(2)}
+                <div className="flex flex-col items-end gap-1">
+                  <div className="font-mono text-[10px] text-white/60">
+                    {symbol} ${currentPrice.toFixed(2)}
+                  </div>
+                  <button
+                    onClick={() => setShowCashoutConfirm(true)}
+                    className="rounded border border-white/10 px-2 py-1 text-[9px] uppercase tracking-[0.18em] text-white/70 transition-all duration-200 hover:border-white/20 hover:bg-white/5 hover:text-white"
+                  >
+                    Cash Out
+                  </button>
                 </div>
               </div>
             </div>
