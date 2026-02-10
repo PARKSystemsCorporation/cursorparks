@@ -102,6 +102,7 @@ export default function BazaarScene() {
         return () => {
             if (socket) socket.disconnect();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleShout = (text: string) => {
