@@ -8,69 +8,73 @@ import * as THREE from "three";
 interface Message {
     id: number;
     content: string;
-    // We'll ignore the backend positions normally and allow the crowd system to place them
-    // but if backend provides, we can use. For now, random spawn in alley.
 }
 
 // Floating Text Component
 function ChatBubble({ message, index, count }: { message: Message; index: number; count: number }) {
-    const ref = useRef<any>(null);
+    const textRef = useRef<any>(null);
     const birthTime = useMemo(() => Date.now(), []);
 
-    // Deterministic random start position based on ID or index
+    // Deterministic random start position
     const startPos = useMemo(() => {
-        return {
-            x: (Math.random() - 0.5) * 4, // Spread across alley width
-            y: 0.5 + Math.random() * 2,    // Start low-ish
-            z: (Math.random() - 0.5) * 6 - 4 // Spread in depth
-        };
+        return new THREE.Vector3(
+            (Math.random() - 0.5) * 5, // Wider spread
+            0.5 + Math.random() * 1.5, // Start height
+            (Math.random() - 0.5) * 8 - 4 // Depth spread
+        );
     }, []);
 
+    const driftSpeed = useMemo(() => 0.2 + Math.random() * 0.3, []);
+
     useFrame(({ clock }) => {
-        if (!ref.current) return;
+        if (!textRef.current) return;
+        const t = clock.getElapsedTime();
         const age = (Date.now() - birthTime) / 1000;
-        const life = 15; // Long life but fades
+        const life = 12; // Seconds to live
 
-        // Rise like smoke
-        const yOffset = age * 0.3; // Rise speed
-        const xDrift = Math.sin(age * 0.5 + index) * 0.5; // Wafting
+        // Physics: Rise and Drift
+        // Smoke-like motion: rise steadily, drift horizontally with noise
+        const yOffset = age * driftSpeed;
+        const xDrift = Math.sin(age * 0.5 + index) * 0.5 + Math.sin(t * 2 + index) * 0.05; // Macro + Micro jitter
 
-        ref.current.position.set(
+        textRef.current.position.set(
             startPos.x + xDrift,
             startPos.y + yOffset,
             startPos.z
         );
 
-        // Opacity management (Congestion)
-        // More specific logic: if count is high, fade faster?
-        // simple linear fade for now
+        // Rotation Jitter (Wind buffeting)
+        textRef.current.rotation.z = Math.sin(t * 3 + index) * 0.05;
+
+        // Opacity / Fade 
         let opacity = 1;
-        if (age < 0.5) opacity = age / 0.5; // Fade in
-        else if (age > life - 3) opacity = (life - age) / 3; // Fade out
+        if (age < 1) opacity = age; // Fade in
+        else if (age > life - 2) opacity = (life - age) / 2; // Fade out
 
-        // Congestion hack: if many messages, max opacity is lower
-        const maxOpacity = Math.max(0.3, 1 - (count / 50));
-        ref.current.color = opacity * maxOpacity; // Trick: Troika text handles opacity via color alpha often or material
+        // Congestion adjustment
+        const densityFactor = Math.max(0.4, 1 - (count / 60));
+        const finalOpacity = opacity * densityFactor;
 
-        ref.current.material.opacity = opacity * maxOpacity;
-        ref.current.material.transparent = true;
-        ref.current.material.depthWrite = false; // Prevent blocking other transparents
+        // Apply visual updates
+        textRef.current.fillOpacity = finalOpacity;
+        textRef.current.outlineOpacity = finalOpacity;
     });
 
     return (
         <Billboard>
             <Text
-                ref={ref}
-                fontSize={0.35}
-                color="#eeeeee"
+                ref={textRef}
+                fontSize={0.3} // Slightly smaller for scale
+                color="#e0dcca" // Warm paper/parchment white
                 font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
                 anchorX="center"
                 anchorY="middle"
-                maxWidth={3.5}
+                maxWidth={4}
                 textAlign="center"
-                outlineWidth={0.03}
-                outlineColor="#000000"
-                outlineBlur={0.05} // Soft shadow look
+                outlineWidth={0.02}
+                outlineColor="#1a1a1a" // Softer outline
+                outlineBlur={0.04} // Smoky edges
+                depthWrite={false} // Transparent sorting
             >
                 {message.content}
             </Text>
@@ -79,10 +83,7 @@ function ChatBubble({ message, index, count }: { message: Message; index: number
 }
 
 export default function Crowd({ messages }: { messages: any[] }) {
-    // Only render last 30 messages to prevent performance kill, 
-    // or render all if we want CHAOS. User asked for high density.
-    // Let's render up to 50 recent.
-    const recentMessages = messages.slice(-50);
+    const recentMessages = messages.slice(-60); // Show more chaos
 
     return (
         <group>
