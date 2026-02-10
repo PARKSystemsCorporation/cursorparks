@@ -2,166 +2,143 @@
 
 import React, { useRef, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Plane, Text, Float, Billboard } from "@react-three/drei";
 import * as THREE from "three";
+import { Text, Billboard } from "@react-three/drei";
 
-// Vendor Config - Positioned tighter in the alley
+// --- Archetypes ---
 const VENDORS = [
     {
-        id: "broker",
-        name: "THE BROKER",
-        color: "#4a90e2",
-        position: [-2.2, 1.4, -2.5],
-        shouts: ["Local. Autonomous. Yours.", "No cloud. No leash.", "Data is currency."],
-        shoutInterval: 8000,
-        prop: "cube"
+        id: "broker", name: "THE BROKER", color: "#3a506b",
+        position: [-2.5, 0, -2.5],
+        shouts: ["Information has a price.", "I see the strings.", "Do you need a key?"],
+        shoutInterval: 8000
     },
     {
-        id: "barker",
-        name: "THE BARKER",
-        color: "#e24a4a",
-        position: [2.2, 1.3, -5],
-        shouts: ["WATCH THEM THINK.", "RUNNING LIVE—RIGHT NOW.", "DIGITAL FLESH!"],
-        shoutInterval: 5000,
-        prop: "cone"
+        id: "barker", name: "THE BARKER", color: "#6b3a3a",
+        position: [2.5, 0, -5],
+        shouts: ["Step right up!", "Don't be shy!", "Fortune favors the bold."],
+        shoutInterval: 6000
     },
     {
-        id: "gamemaster",
-        name: "GAMEMASTER",
-        color: "#50e3c2",
-        position: [-2.0, 1.5, -9],
-        shouts: ["TRY IT. BREAK IT.", "WIN OR LEARN.", "LEVEL UP."],
-        shoutInterval: 6000,
-        prop: "torus"
+        id: "gamemaster", name: "GAMEMASTER", color: "#3a6b50",
+        position: [-2.5, 0, -9],
+        shouts: ["Roll the dice.", "All part of the game.", "Win or lose, you play."],
+        shoutInterval: 10000
     },
     {
-        id: "gatekeeper",
-        name: "THE GATEKEEPER",
-        color: "#9013fe",
-        position: [0, 1.6, -14],
-        shouts: ["NOT FOR EVERYONE.", "YOU KNOW IF IT’S FOR YOU.", "ACCESS RESTRICTED."],
-        shoutInterval: 12000,
-        prop: "sphere"
+        id: "gatekeeper", name: "GATEKEEPER", color: "#555555",
+        position: [0, 0, -14],
+        shouts: ["None shall pass... unpaid.", "The void watches.", "Halt."],
+        shoutInterval: 12000
     }
 ] as const;
 
-function VendorVisuals({ type, color }: { type: string, color: string }) {
-    // Procedural "Silhouette" generation using basic shapes
-    return (
-        <group>
-            {/* Hood/Head */}
-            <mesh position={[0, 0.6, 0]}>
-                <sphereGeometry args={[0.25, 16, 16]} />
-                <meshStandardMaterial color="#111" roughness={0.9} />
-            </mesh>
-            {/* Eyes */}
-            <mesh position={[0.08, 0.6, 0.15]}>
-                <sphereGeometry args={[0.03]} />
-                <meshBasicMaterial color={color} />
-            </mesh>
-            <mesh position={[-0.08, 0.6, 0.15]}>
-                <sphereGeometry args={[0.03]} />
-                <meshBasicMaterial color={color} />
-            </mesh>
-
-            {/* Body */}
-            <mesh position={[0, 0, 0]}>
-                <coneGeometry args={[0.4, 1.5, 8]} />
-                <meshStandardMaterial color="#050505" roughness={0.9} />
-            </mesh>
-
-            {/* Floating Prop */}
-            <Float speed={2} rotationIntensity={1} floatIntensity={0.5}>
-                <mesh position={[0.6, 0.5, 0.3]}>
-                    {type === 'cube' && <boxGeometry args={[0.3, 0.3, 0.3]} />}
-                    {type === 'cone' && <coneGeometry args={[0.2, 0.4, 16]} />}
-                    {type === 'torus' && <torusGeometry args={[0.15, 0.05, 16, 32]} />}
-                    {type === 'sphere' && <octahedronGeometry args={[0.2]} />}
-                    <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} wireframe />
-                </mesh>
-            </Float>
-        </group>
-    );
-}
-
-function Vendor({ data, isTarget }: { data: typeof VENDORS[number], isTarget: boolean }) {
+// --- Procedural Vendor Visuals ---
+// Cloaked figure: Cone body, Sphere head/Hood
+function VendorFigure({ color, isTarget }: { color: string, isTarget: boolean }) {
     const group = useRef<THREE.Group>(null);
-    const [shoutText, setShoutText] = useState("");
-    const lastShoutRef = useRef(0);
-
-    // Random idle offset
-    const offset = useMemo(() => Math.random() * 100, []);
 
     useFrame(({ clock }) => {
         if (!group.current) return;
         const t = clock.getElapsedTime();
-
-        // Idle: Subtle sway
-        group.current.position.y = data.position[1] + Math.sin(t * 1.5 + offset) * 0.03;
-        group.current.rotation.y = Math.sin(t * 0.5 + offset) * 0.1; // Look around slightly
-
-        // Target Focus
-        if (isTarget) {
-            group.current.scale.lerp(new THREE.Vector3(1.1, 1.1, 1.1), 0.1);
-            group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, 0, 0.1); // Face forward
-        } else {
-            group.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
-        }
-
-        // Sim Shout
-        // Real implementation would come from server for synced shouts, 
-        // but adding local flavor for "aliveness"
-        if (Date.now() - lastShoutRef.current > data.shoutInterval + Math.random() * 4000) {
-            triggerShout();
-        }
+        // Breathing
+        group.current.scale.y = 1 + Math.sin(t * 2) * 0.01;
+        // Idle sway
+        group.current.rotation.z = Math.sin(t * 1) * 0.02;
     });
 
-    const triggerShout = () => {
-        if (Math.random() > 0.7) return; // Not always
-        const text = data.shouts[Math.floor(Math.random() * data.shouts.length)];
-        setShoutText(text);
-        lastShoutRef.current = Date.now();
-        setTimeout(() => setShoutText(""), 4000);
-    };
+    return (
+        <group ref={group}>
+            {/* Body / Cloak */}
+            <mesh position={[0, 0.9, 0]} castShadow receiveShadow>
+                <coneGeometry args={[0.6, 1.8, 7]} />
+                <meshStandardMaterial color={color} roughness={0.9} />
+            </mesh>
+            {/* Hood / Head */}
+            <mesh position={[0, 1.6, 0.1]} castShadow>
+                <dodecahedronGeometry args={[0.35, 0]} />
+                <meshStandardMaterial color={new THREE.Color(color).multiplyScalar(0.5)} roughness={1} />
+            </mesh>
+            {/* Shoulders */}
+            <mesh position={[0, 1.4, 0]} castShadow>
+                <cylinderGeometry args={[0.4, 0.5, 0.4]} />
+                <meshStandardMaterial color={color} roughness={0.9} />
+            </mesh>
+        </group>
+    );
+}
+
+function VendorItem({ id, ...props }: any) {
+    const group = useRef<THREE.Group>(null);
+    const [lastShout, setLastShout] = useState<string | null>(null);
+    const [shoutOpacity, setShoutOpacity] = useState(0);
+
+    // Shout logic
+    useFrame((state) => {
+        if (state.clock.elapsedTime * 1000 % props.shoutInterval < 50) {
+            if (Math.random() > 0.7) {
+                setLastShout(props.shouts[Math.floor(Math.random() * props.shouts.length)]);
+                setShoutOpacity(1);
+            }
+        }
+        if (shoutOpacity > 0) setShoutOpacity(prev => prev - 0.01);
+    });
+
+    const isTarget = props.targetId === id;
 
     return (
-        <group ref={group} position={new THREE.Vector3(...data.position)}>
-            {/* Visuals */}
-            <VendorVisuals type={data.prop} color={data.color} />
+        <group
+            ref={group}
+            position={props.position}
+            onClick={() => props.setTarget(id)}
+        >
+            <VendorFigure color={props.color} isTarget={isTarget} />
 
-            {/* Interaction Hitbox (Invisible) */}
-            <mesh visible={false}>
-                <boxGeometry args={[1, 2, 1]} />
-            </mesh>
+            {/* Nameplate */}
+            <Billboard position={[0, 2.2, 0]}>
+                <Text
+                    fontSize={isTarget ? 0.3 : 0.2}
+                    color="#ffffff"
+                    anchorY="bottom"
+                    outlineWidth={0.02}
+                    outlineColor="#000000"
+                >
+                    {props.name}
+                </Text>
+            </Billboard>
 
-            {/* Shout Text - World Space, Billboarded */}
-            {shoutText && (
-                <Billboard position={[0, 1.8, 0]}>
+            {/* Shout Bubble */}
+            {lastShout && shoutOpacity > 0 && (
+                <Billboard position={[0.8, 1.8, 0.5]}>
                     <Text
-                        fontSize={0.25}
-                        color={data.color}
-                        font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff" // Standard font
-                        anchorX="center"
-                        anchorY="middle"
-                        outlineWidth={0.02}
-                        outlineColor="#000"
+                        fontSize={0.2}
                         maxWidth={3}
-                        textAlign="center"
+                        color="#ffeebb"
+                        fillOpacity={shoutOpacity}
+                        outlineWidth={0.01}
+                        outlineColor="#332200"
+                        outlineOpacity={shoutOpacity}
+                        font="Inter"
                     >
-                        {shoutText}
+                        {lastShout}
                     </Text>
                 </Billboard>
+            )}
+
+            {/* Selection Highlight */}
+            {isTarget && (
+                <pointLight distance={3} intensity={2} color={props.color} position={[0, 1, 1]} decay={2} />
             )}
         </group>
     );
 }
 
-export default function Vendors({ target }: { target: string | null }) {
+export default function Vendors({ setTarget, targetId }: { setTarget: (id: string) => void, targetId: string | null }) {
     return (
-        <>
+        <group>
             {VENDORS.map((v) => (
-                <Vendor key={v.id} data={v} isTarget={target === v.id} />
+                <VendorItem key={v.id} {...v} setTarget={setTarget} targetId={targetId} />
             ))}
-        </>
+        </group>
     );
 }

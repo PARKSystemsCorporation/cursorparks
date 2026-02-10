@@ -1,141 +1,156 @@
 "use client";
 
-import React, { Suspense, useEffect, useState, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Loader, Stars, BakeShadows, Preload } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
 import { Physics } from "@react-three/cannon";
-import BazaarEnvironment from "./Environment";
+import { useEffect, useState, Suspense } from "react";
+import * as THREE from "three";
+import Environment from "./Environment";
+import Vendor from "./Vendor";
 import Crowd from "./Crowd";
-import Vendors from "./Vendor";
 import CameraRig from "./CameraRig";
 import InputBar from "./InputBar";
-import { io, Socket } from "socket.io-client";
-import * as THREE from "three";
-import "./BazaarLanding.css";
 
-// --- Scene Configuration ---
+// --- Configuration ---
 const CONFIG = {
-    fog: { color: "#050510", near: 2, far: 18 },
+    fog: { color: "#020205", near: 1, far: 20 }, // Darker, tighter fog
     lights: {
-        ambient: { intensity: 0.1, color: "#8a96c7" }, // Cool moonlight
-        lanterns: { intensity: 2.5, distance: 8, decay: 2, color: "#ffaa33" }, // Warm fire
+        ambient: { intensity: 0.2, color: "#1a2030" }, // Deep blue moon fill
+        moon: { intensity: 1.5, color: "#8a96c7", position: [10, 20, 10] }, // Hard moon key
+        lanterns: { intensity: 3, distance: 10, decay: 2, color: "#ff9000" }, // Fire
     },
     camera: {
-        position: [0, 1.7, 6] as [number, number, number], // Human eye level
-        fov: 65,
+        position: [0, 1.7, 6] as [number, number, number],
+        fov: 55, // 55mm lens feel (cinematic, less distortion)
     },
     postprocessing: {
-        exposure: 1.2
+        exposure: 1.0,
+        toneMapping: THREE.ACESFilmicToneMapping
     }
 };
 
-let socket: Socket;
-
 function SceneContent({ messages, targetVendor, onShout }: { messages: any[], targetVendor: string | null, onShout: (t: string) => void }) {
-    // Subtle handheld camera shake or drift could go here in a generic useFrame if not in CameraRig
     return (
         <>
+            {/* Cinematic Atmosphere */}
             <fog attach="fog" args={[CONFIG.fog.color, CONFIG.fog.near, CONFIG.fog.far]} />
             <color attach="background" args={[CONFIG.fog.color]} />
 
-            {/* Lighting Setup */}
+            {/* Cinematic Lighting System */}
             <ambientLight intensity={CONFIG.lights.ambient.intensity} color={CONFIG.lights.ambient.color} />
-
-            {/* Main Moon/City Light */}
             <directionalLight
-                position={[5, 10, 5]}
-                intensity={0.3}
-                color="#aaccff"
+                position={[10, 20, 5]}
+                intensity={CONFIG.lights.moon.intensity}
+                color={CONFIG.lights.moon.color}
                 castShadow
-                shadow-bias={-0.001}
+                shadow-mapSize={[1024, 1024]}
             />
+            {/* Hemisphere for ground bounce */}
+            <hemisphereLight args={["#1a2030", "#050505", 0.5]} />
 
-            <Suspense fallback={null}>
-                <Physics gravity={[0, -9.81, 0]}>
-                    <BazaarEnvironment />
-                    <Vendors target={targetVendor} />
-                </Physics>
+            {/* Physics World */}
+            <Physics gravity={[0, -9.8, 0]}>
+                <Environment />
+                <Vendor setTarget={onShout} targetId={targetVendor} />
                 <Crowd messages={messages} />
-            </Suspense>
+            </Physics>
 
+            {/* Camera Control */}
             <CameraRig targetVendor={targetVendor} />
-
-            {/* Preload assets if we had them */}
-            <Preload all />
         </>
     );
 }
 
 export default function BazaarScene() {
     const [messages, setMessages] = useState<any[]>([]);
+    const [socket, setSocket] = useState<any>(null);
     const [targetVendor, setTargetVendor] = useState<string | null>(null);
 
-    // Initialize Socket
+    // Initial Message for atmosphere
     useEffect(() => {
-        if (!socket) {
-            socket = io({
-                path: "/socket",
+        setMessages([
+            { id: "init-1", content: "The market is open...", timestamp: Date.now() },
+            { id: "init-2", content: "Don't stare at the shadows.", timestamp: Date.now() }
+        ]);
+    }, []);
+
+    // Socket Connection (Simulated if backend missing for dev)
+    useEffect(() => {
+        const initSocket = async () => {
+            const { io } = await import("socket.io-client");
+            const newSocket = io("http://localhost:3001", {
+                transports: ["websocket"],
+                reconnectionAttempts: 5,
             });
-        }
 
-        socket.on("bazaar:init", (data) => {
-            if (data && data.messages) {
-                setMessages(data.messages);
-            }
-        });
-
-        socket.on("bazaar:shout", (msg) => {
-            setMessages((prev) => {
-                const next = [...prev, msg];
-                if (next.length > 80) return next.slice(next.length - 80);
-                return next;
+            newSocket.on("connect", () => {
+                console.log("Connected to Bazaar");
+                newSocket.emit("request-history");
             });
-        });
 
+            newSocket.on("chat-history", (history: any[]) => {
+                setMessages(prev => [...history, ...prev].slice(0, 50));
+            });
+
+            newSocket.on("chat-message", (msg: any) => {
+                setMessages((prev) => [msg, ...prev].slice(0, 50));
+            });
+
+            setSocket(newSocket);
+        };
+
+        initSocket();
         return () => {
-            socket.off("bazaar:init");
-            socket.off("bazaar:shout");
+            if (socket) socket.disconnect();
         };
     }, []);
 
     const handleShout = (text: string) => {
-        // Check for slash commands
+        // Command parsing for local feedback (immediate)
         if (text.startsWith("/")) {
-            const cmd = text.toLowerCase().trim();
-            if (cmd.includes("broker")) setTargetVendor("broker");
-            else if (cmd.includes("barker")) setTargetVendor("barker");
-            else if (cmd.includes("game")) setTargetVendor("gamemaster");
-            else if (cmd.includes("vip") || cmd.includes("gate")) setTargetVendor("gatekeeper");
-            // Also allow clearing focus
-            else if (cmd === "/reset" || cmd === "/back") setTargetVendor(null);
-            return;
+            const cmd = text.slice(1).toLowerCase();
+            if (cmd.startsWith("broker")) setTargetVendor("broker");
+            else if (cmd.startsWith("barker")) setTargetVendor("barker");
+            else if (cmd.startsWith("gamemaster") || cmd === "gm") setTargetVendor("gamemaster");
+            else if (cmd.startsWith("gatekeeper")) setTargetVendor("gatekeeper");
+            else if (cmd === "reset" || cmd === "back") setTargetVendor(null);
         }
 
-        // Default shout
-        if (socket) socket.emit("bazaar:shout", { content: text });
-        setTargetVendor(null); // Shout breaks focus
+        if (socket) {
+            socket.emit("chat-message", text);
+        } else {
+            // Local fallback
+            const msg = { id: Date.now().toString(), content: text, timestamp: Date.now() };
+            setMessages(prev => [msg, ...prev].slice(0, 50));
+        }
     };
 
     return (
         <div className="bazaar-canvas-container">
             <Canvas
                 shadows
-                camera={{ position: CONFIG.camera.position, fov: CONFIG.camera.fov }}
-                dpr={[1, 1.5]} // Cap DPR for performance
+                dpr={[1, 1.5]} // Cap DPI for performance
                 gl={{
-                    antialias: false, // Gritty look
-                    toneMapping: THREE.ACESFilmicToneMapping,
-                    toneMappingExposure: CONFIG.postprocessing.exposure
+                    antialias: false, // Grittier look, faster
+                    toneMapping: CONFIG.postprocessing.toneMapping,
+                    toneMappingExposure: CONFIG.postprocessing.exposure,
+                    stencil: false,
+                    depth: true
                 }}
+                camera={CONFIG.camera}
             >
-                <SceneContent messages={messages} targetVendor={targetVendor} onShout={handleShout} />
+                <Suspense fallback={null}>
+                    <SceneContent
+                        messages={messages}
+                        targetVendor={targetVendor}
+                        onShout={(t) => setTargetVendor(t)}
+                    />
+                </Suspense>
             </Canvas>
 
-            <Loader />
-            <InputBar onShout={handleShout} />
+            {/* Vignette & Grain Overlay (CSS) */}
+            <div className="bazaar-overlay-vignette" />
 
-            {/* Visual overlay for vignette/grain could be CSS or PostProcessing */}
-            <div className="bazaar-overlay-vignette pointer-events-none" />
+            <InputBar onShout={handleShout} />
         </div>
     );
 }

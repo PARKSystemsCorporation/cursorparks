@@ -42,151 +42,93 @@ function DustSystem() {
             let y = p.y + Math.sin(t * 0.5 + p.offset) * 0.5;
             let x = p.x + Math.sin(t * 0.2 + p.offset) * 0.2;
             let z = p.z + Math.cos(t * 0.1 + p.offset) * 0.2;
-
-            dummy.position.set(x, y, z);
-            // Constant rotation
-            dummy.rotation.set(t * 0.1, t * 0.2, t * 0.3);
-            dummy.scale.setScalar(0.02);
-            dummy.updateMatrix();
-            mesh.current!.setMatrixAt(i, dummy.matrix);
+            ref.current.rotation.z = (rotation?.[2] || 0) + Math.sin(t * 2 + position[0]) * 0.05;
         });
-        mesh.current.instanceMatrix.needsUpdate = true;
-    });
 
-    return (
-        <instancedMesh ref={mesh} args={[undefined, undefined, count]}>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.3} />
-        </instancedMesh>
-    );
-}
+        return (
+            <group position={position} rotation={rotation ? new THREE.Euler(...rotation) : new THREE.Euler()}>
+                {/* Corrected: rotation on the mesh, not geometry */}
+                <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]}>
+                    <cylinderGeometry args={[0.02, 0.02, 1.2]} />
+                    <meshStandardMaterial color="#333" />
+                </mesh>
+                <mesh ref={ref} position={[0, 0, 0]}>
+                    <planeGeometry args={[1, 1.5, 5, 5]} />
+                    <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.8} />
+                </mesh>
+            </group>
+        );
+    }
 
-// --- Props ---
-function Lantern({ position, color, delay = 0 }: { position: [number, number, number], color: string, delay?: number }) {
-    const group = useRef<THREE.Group>(null);
+function DustSystem() {
+            // Subtle motes
+            const count = 150;
+            return (
+                <Instances range={count}>
+                    <sphereGeometry args={[0.02, 4, 4]} />
+                    <meshBasicMaterial color="#aaa" transparent opacity={0.4} blending={THREE.AdditiveBlending} />
+                    {Array.from({ length: count }).map((_, i) => (
+                        <Float key={i} speed={0.5} rotationIntensity={1} floatIntensity={2} floatingRange={[-1, 1]}>
+                            <group position={[
+                                (Math.random() - 0.5) * 8,
+                                (Math.random()) * 3 + 0.5,
+                                (Math.random() - 0.5) * 15 - 5
+                            ]}>
+                                <Instance />
+                            </group>
+                        </Float>
+                    ))}
+                </Instances>
+            );
+        }
 
-    useFrame(({ clock }) => {
-        if (!group.current) return;
-        const t = clock.getElapsedTime() + delay;
-        // Sway
-        group.current.rotation.z = Math.sin(t * 1.5) * 0.1;
-        group.current.rotation.x = Math.cos(t * 1.2) * 0.05;
-    });
-
-    return (
-        <group ref={group} position={new THREE.Vector3(...position)}>
-            {/* Light Source */}
-            <pointLight
-                color={color}
-                intensity={1.5}
-                distance={6}
-                decay={2}
-                castShadow
-                shadow-bias={-0.0001}
-            />
-
-            {/* Lantern Body */}
-            <mesh position={[0, -0.4, 0]}>
-                <cylinderGeometry args={[0.15, 0.1, 0.4, 6]} />
-                <meshStandardMaterial emissive={color} emissiveIntensity={2} color="#000" />
-            </mesh>
-            <mesh position={[0, -0.15, 0]}>
-                <cylinderGeometry args={[0.2, 0.2, 0.1, 6]} />
-                <meshStandardMaterial color="#111" />
-            </mesh>
-
-            {/* Rope */}
-            <mesh position={[0, 0.5, 0]}>
-                <cylinderGeometry args={[0.01, 0.01, 1.8]} />
-                <primitive object={Mats.rope} />
-            </mesh>
-        </group>
-    );
-}
-
-function HangingBanner({ position, rotation, texture }: { position: [number, number, number], rotation?: [number, number, number], texture?: string }) {
-    const ref = useRef<THREE.Mesh>(null);
-
-    useFrame(({ clock }) => {
-        if (!ref.current) return;
-        const t = clock.getElapsedTime();
-        // Wind flutter effect
-        ref.current.rotation.x = Math.sin(t * 2 + position[0]) * 0.1;
-    });
-
-    return (
-        <group position={new THREE.Vector3(...position)} rotation={new THREE.Euler(...(rotation || [0, 0, 0]))}>
-            {/* Pole */}
-            <mesh position={[0, 0.6, 0]} rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.03, 0.03, 1.2]} />
-                <primitive object={Mats.wood} />
-            </mesh>
-            {/* Cloth */}
-            <mesh ref={ref} position={[0, -0.2, 0]}>
-                <planeGeometry args={[1, 1.4, 4, 4]} />
-                <primitive object={texture === 'blue' ? Mats.fabric2 : Mats.fabric1} />
-            </mesh>
-        </group>
-    );
-}
-
-export default function BazaarEnvironment() {
-    return (
-        <group>
-            {/* Ground */}
-            <Plane args={[15, 60]} rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, -10]} receiveShadow>
-                <primitive object={Mats.floor} />
-            </Plane>
-
-            {/* Alley Walls (Left/Right) */}
-            {/* Left */}
-            <Box args={[1, 12, 60]} position={[-3.5, 6, -10]} receiveShadow castShadow>
-                <primitive object={Mats.wall} />
-            </Box>
-            {/* Right */}
-            <Box args={[1, 12, 60]} position={[3.5, 6, -10]} receiveShadow castShadow>
-                <primitive object={Mats.wall} />
-            </Box>
-
-            {/* Ceiling Beams / Cables */}
-            {Array.from({ length: 10 }).map((_, i) => (
-                <group key={i} position={[0, 4.5, -3 - i * 3]}>
-                    <mesh rotation={[0, 0, Math.PI / 2]}>
-                        <cylinderGeometry args={[0.05, 0.05, 7]} />
-                        <primitive object={Mats.rope} />
-                    </mesh>
-                    {/* Random Lantern per beam */}
-                    <Lantern
-                        position={[(Math.random() - 0.5) * 4, -0.5, 0]}
-                        color={Math.random() > 0.5 ? "#ffaa33" : "#ff5522"}
-                        delay={i}
+export default function Environment() {
+        return (
+            <group>
+                {/* Ground - Physical wet cobblestone feel */}
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+                    <planeGeometry args={[20, 40]} />
+                    <meshStandardMaterial
+                        color="#1a1816"
+                        roughness={0.7}
+                        metalness={0.1}
                     />
-                </group>
-            ))}
+                </mesh>
 
-            {/* Side Props / Stalls Silhouettes (Low Poly) */}
-            <group position={[-2.8, 0, -2]}>
-                <Box args={[1.5, 2.5, 1.5]} position={[0, 1.25, 0]} castShadow receiveShadow>
-                    <primitive object={Mats.wood} />
-                </Box>
-                <HangingBanner position={[0.8, 2.5, 0]} rotation={[0, -0.2, 0]} />
+                {/* Narrow Alley Walls */}
+                <mesh position={[-3, 4, -5]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+                    <planeGeometry args={[30, 8]} />
+                    <meshStandardMaterial color="#222020" roughness={0.9} />
+                </mesh>
+                <mesh position={[3, 4, -5]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
+                    <planeGeometry args={[30, 8]} />
+                    <meshStandardMaterial color="#222020" roughness={0.9} />
+                </mesh>
+
+                {/* Ceiling/Sky blocker (optional, but helps enclosure) */}
+
+                {/* Props */}
+                <Cables />
+                <Beams />
+
+                {/* Lanterns - Light Sources */}
+                <Lantern position={[-2, 2.5, -2]} color="#ffaa00" delay={0} />
+                <Lantern position={[2, 2.5, -5]} color="#ff9000" delay={2} />
+                <Lantern position={[-2, 2.5, -9]} color="#ffbb00" delay={1} />
+                <Lantern position={[0, 2.8, -12]} color="#ffaa00" delay={3} />
+
+                {/* Banners */}
+                <HangingBanner position={[-2.8, 2.5, -3]} rotation={[0, Math.PI / 2, 0]} color="#551111" />
+                <HangingBanner position={[2.8, 2.5, -6]} rotation={[0, -Math.PI / 2, 0]} color="#112233" />
+
+                {/* Clutter / Crates */}
+                <mesh position={[-2.5, 0.5, -1]} rotation={[0, 0.2, 0]} castShadow receiveShadow>
+                    <boxGeometry args={[0.8, 1, 0.8]} />
+                    <meshStandardMaterial color="#3d2914" />
+                </mesh>
+
+                <DustSystem />
             </group>
-
-            <group position={[2.8, 0, -5]}>
-                <Box args={[1.5, 2, 1.5]} position={[0, 1, 0]} castShadow receiveShadow>
-                    <primitive object={Mats.wood} />
-                </Box>
-                <HangingBanner position={[-0.8, 2.2, 0]} rotation={[0, 0.2, 0]} texture="blue" />
-            </group>
-
-            <group position={[-2.8, 0, -9]}>
-                <Box args={[1.2, 3, 1.2]} position={[0, 1.5, 0]} castShadow receiveShadow>
-                    <primitive object={Mats.wood} />
-                </Box>
-            </group>
-
-            {/* Floating Dust */}
-            <DustSystem />
-        </group>
-    );
-}
+        );
+    }
+    ```
