@@ -1,0 +1,1836 @@
+/* ========================================
+   PARKS PUBLIC BAZAAR - MASTER STYLES
+   
+   Production-grade marketplace environment
+   with realistic materials and cinematic motion
+   
+   COMPONENT INDEX:
+   1. CSS Variables & Base
+   2. Environment Layers
+   3. Signpost Navigation System
+   4. Stall Components
+   5. Price Tag Components
+   6. Center Gathering Zone
+   7. Activity Ticker
+   8. Modal System
+   9. Animations
+   10. Responsive
+======================================== */
+
+/* ========================================
+   1. CSS VARIABLES & BASE
+======================================== */
+:root {
+    /* Wood tones */
+    --wood-dark: #3d2914;
+    --wood-medium: #5c3d1e;
+    --wood-light: #7a5233;
+    --wood-highlight: #96673f;
+    --wood-grain: #2a1c0d;
+    
+    /* Fabric tones */
+    --fabric-burgundy: #6b2d3a;
+    --fabric-gold: #9c7a3c;
+    --fabric-cream: #d4c4a8;
+    --fabric-deep: #4a1f2a;
+    
+    /* Metal tones */
+    --metal-dark: #3a3632;
+    --metal-medium: #5a5550;
+    --metal-light: #7a756f;
+    --metal-rust: #8b5a3c;
+    
+    /* Ground tones */
+    --ground-dirt: #4a3c2e;
+    --ground-path: #5c4b3a;
+    --ground-stone: #6b6358;
+    --ground-shadow: #2a231c;
+    
+    /* Ambient */
+    --ambient-warm: #ff9d4d;
+    --ambient-fire: #ff6b35;
+    --ambient-glow: #ffb366;
+    --ambient-smoke: rgba(80, 70, 60, 0.3);
+    
+    /* Atmosphere */
+    --sky-top: #1a1512;
+    --sky-bottom: #2d251e;
+    --haze: rgba(45, 37, 30, 0.6);
+    
+    /* Text */
+    --text-carved: #d4c4a8;
+    --text-shadow: #1a1512;
+    
+    /* Timing */
+    --ease-physical: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    --ease-settle: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --ease-organic: cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'IM Fell English', serif;
+    background: var(--sky-top);
+    color: var(--text-carved);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+/* ========================================
+   2. ENVIRONMENT LAYERS
+======================================== */
+.bazaar-world {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.env-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Background - Distant structures */
+.env-background {
+    z-index: 0;
+}
+
+.sky-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        var(--sky-top) 0%,
+        var(--sky-bottom) 40%,
+        #3d322a 100%
+    );
+}
+
+.atmospheric-haze {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        ellipse at 50% 100%,
+        var(--haze) 0%,
+        transparent 70%
+    );
+}
+
+.distant-structures {
+    position: absolute;
+    bottom: 20%;
+    left: 0;
+    width: 100%;
+    height: 40%;
+}
+
+.distant-building {
+    position: absolute;
+    bottom: 0;
+    background: linear-gradient(to top, #2a231c, #1a1512);
+    opacity: 0.3;
+}
+
+.building-1 {
+    left: 5%;
+    width: 8%;
+    height: 60%;
+    clip-path: polygon(20% 100%, 20% 30%, 50% 0%, 80% 30%, 80% 100%);
+}
+
+.building-2 {
+    left: 15%;
+    width: 6%;
+    height: 45%;
+    clip-path: polygon(0% 100%, 0% 20%, 50% 0%, 100% 20%, 100% 100%);
+}
+
+.building-3 {
+    right: 10%;
+    width: 10%;
+    height: 55%;
+    clip-path: polygon(10% 100%, 10% 25%, 30% 10%, 70% 10%, 90% 25%, 90% 100%);
+}
+
+/* Midground - Hanging elements */
+.env-midground {
+    z-index: 1;
+}
+
+.hanging-elements {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 30%;
+}
+
+.cable {
+    position: absolute;
+    top: 0;
+    height: 100px;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--wood-dark), transparent);
+}
+
+.cable-1 { left: 20%; height: 80px; transform: rotate(-5deg); }
+.cable-2 { left: 50%; height: 120px; }
+.cable-3 { right: 25%; height: 90px; transform: rotate(3deg); }
+
+.hanging-banner {
+    position: absolute;
+    top: 60px;
+    width: 80px;
+    height: 150px;
+    background: linear-gradient(135deg, var(--fabric-burgundy), var(--fabric-deep));
+    clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 50% 85%, 0% 100%);
+    animation: bannerSway 8s ease-in-out infinite;
+}
+
+.banner-left { left: 15%; animation-delay: -2s; }
+.banner-right { right: 20%; animation-delay: -5s; }
+
+.hanging-lantern {
+    position: absolute;
+    top: 40px;
+    width: 30px;
+    height: 45px;
+    animation: lanternSwing 6s ease-in-out infinite;
+}
+
+.hanging-lantern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 15px;
+    background: var(--metal-dark);
+}
+
+.hanging-lantern::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 30px;
+    background: radial-gradient(ellipse at center, var(--ambient-glow), var(--ambient-warm));
+    border-radius: 4px 4px 8px 8px;
+    box-shadow: 0 0 30px var(--ambient-warm), 0 0 60px rgba(255, 157, 77, 0.3);
+    opacity: 0.8;
+}
+
+.lantern-1 { left: 30%; animation-delay: 0s; }
+.lantern-2 { left: 55%; animation-delay: -3s; }
+.lantern-3 { right: 30%; animation-delay: -1.5s; }
+
+/* Foreground - Dust */
+.env-foreground {
+    z-index: 100;
+}
+
+.dust-system {
+    position: absolute;
+    inset: 0;
+}
+
+.dust-particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: rgba(212, 196, 168, 0.3);
+    border-radius: 50%;
+    animation: dustFloat 15s linear infinite;
+}
+
+/* ========================================
+   3. SIGNPOST NAVIGATION SYSTEM
+   
+   MODULAR: Each .nav-plank is copy-pasteable
+======================================== */
+.signpost-nav {
+    position: fixed;
+    top: 50%;
+    left: 30px;
+    transform: translateY(-50%);
+    z-index: 50;
+    animation: signpostSettle 1.5s var(--ease-settle) forwards;
+}
+
+.signpost-pole {
+    position: absolute;
+    left: 50%;
+    top: -40px;
+    transform: translateX(-50%);
+    width: 24px;
+    height: calc(100% + 80px);
+    background: linear-gradient(
+        90deg,
+        var(--wood-dark) 0%,
+        var(--wood-medium) 30%,
+        var(--wood-light) 50%,
+        var(--wood-medium) 70%,
+        var(--wood-dark) 100%
+    );
+    border-radius: 4px;
+    animation: poleBreath 10s ease-in-out infinite;
+}
+
+.pole-wood-grain {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 8px,
+        rgba(0,0,0,0.1) 8px,
+        rgba(0,0,0,0.1) 10px
+    );
+    border-radius: 4px;
+}
+
+.pole-shadow {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(0,0,0,0.3), transparent);
+}
+
+.signpost-planks {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 0;
+}
+
+/* === NAV_PLANK_BLOCK STYLES === */
+.nav-plank {
+    position: relative;
+    display: block;
+    padding: 12px 24px 12px 40px;
+    text-decoration: none;
+    color: var(--text-carved);
+    transform-origin: left center;
+    transition: transform 0.4s var(--ease-physical);
+    cursor: pointer;
+}
+
+.nav-plank[data-direction="left"] {
+    margin-left: 12px;
+    transform: rotate(-2deg);
+}
+
+.nav-plank[data-direction="right"] {
+    margin-left: 20px;
+    transform: rotate(1deg);
+}
+
+.nav-plank:hover {
+    transform: rotate(0deg) translateX(5px);
+}
+
+.plank-wood {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        var(--wood-light) 0%,
+        var(--wood-medium) 50%,
+        var(--wood-dark) 100%
+    );
+    border-radius: 3px;
+    clip-path: polygon(
+        0% 10%,
+        5% 0%,
+        95% 0%,
+        100% 5%,
+        100% 90%,
+        97% 100%,
+        3% 100%,
+        0% 95%
+    );
+}
+
+.plank-grain {
+    position: absolute;
+    inset: 0;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            transparent 0px,
+            transparent 20px,
+            rgba(0,0,0,0.05) 20px,
+            rgba(0,0,0,0.05) 22px
+        ),
+        repeating-linear-gradient(
+            0deg,
+            transparent 0px,
+            transparent 3px,
+            rgba(255,255,255,0.02) 3px,
+            rgba(255,255,255,0.02) 4px
+        );
+    border-radius: 3px;
+}
+
+.plank-edge {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+}
+
+.plank-edge-top {
+    top: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+.plank-edge-bottom {
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(0,0,0,0.2), transparent);
+}
+
+.plank-text {
+    position: relative;
+    z-index: 2;
+    font-family: 'Almendra', serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-shadow: 1px 1px 2px var(--text-shadow);
+}
+
+.plank-nail {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background: radial-gradient(circle at 30% 30%, var(--metal-light), var(--metal-dark));
+    border-radius: 50%;
+    box-shadow: inset -1px -1px 2px rgba(0,0,0,0.5);
+}
+
+.plank-nail-left { left: 8px; }
+.plank-nail-right { right: 8px; }
+
+.plank-shadow {
+    position: absolute;
+    left: 5px;
+    right: -5px;
+    bottom: -4px;
+    height: 100%;
+    background: rgba(0,0,0,0.3);
+    border-radius: 3px;
+    filter: blur(3px);
+    z-index: -1;
+    transform: skewX(-5deg);
+}
+
+.signpost-base {
+    position: absolute;
+    bottom: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 40px;
+}
+
+.base-stones {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(ellipse at 30% 50%, var(--ground-stone), var(--ground-shadow));
+    border-radius: 30% 30% 50% 50%;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
+
+/* ========================================
+   4. STALL COMPONENTS
+   
+   MODULAR: Each .stall-block is self-contained
+======================================== */
+.bazaar-street {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 40px;
+    padding: 120px 100px 100px 140px;
+    min-height: 100vh;
+    z-index: 10;
+}
+
+.stall-row {
+    display: flex;
+    flex-direction: column;
+    gap: 60px;
+}
+
+.stall-row-left {
+    padding-top: 40px;
+}
+
+.stall-row-right {
+    padding-top: 80px;
+}
+
+/* Ground system */
+.ground-system {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30%;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.dirt-path {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to top,
+        var(--ground-dirt) 0%,
+        var(--ground-path) 40%,
+        transparent 100%
+    );
+}
+
+.stone-patches {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+}
+
+.stone {
+    position: absolute;
+    background: var(--ground-stone);
+    border-radius: 40% 50% 45% 55%;
+    box-shadow: 
+        inset 2px 2px 4px rgba(255,255,255,0.1),
+        inset -2px -2px 4px rgba(0,0,0,0.2),
+        2px 2px 5px rgba(0,0,0,0.3);
+}
+
+.stone-1 { left: 10%; bottom: 5%; width: 60px; height: 25px; }
+.stone-2 { left: 25%; bottom: 15%; width: 45px; height: 20px; }
+.stone-3 { left: 50%; bottom: 8%; width: 70px; height: 30px; }
+.stone-4 { right: 20%; bottom: 12%; width: 50px; height: 22px; }
+.stone-5 { right: 35%; bottom: 3%; width: 40px; height: 18px; }
+
+.ground-debris {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.debris-leaf {
+    position: absolute;
+    width: 15px;
+    height: 8px;
+    background: linear-gradient(45deg, #5a4a35, #7a6a55);
+    border-radius: 0 80% 0 80%;
+    opacity: 0.6;
+    animation: debrisDrift 20s linear infinite;
+}
+
+.debris-1 { left: 15%; bottom: 20%; animation-delay: 0s; }
+.debris-2 { left: 60%; bottom: 25%; animation-delay: -8s; }
+.debris-straw { 
+    left: 40%; 
+    bottom: 18%; 
+    width: 30px;
+    height: 3px;
+    background: #9a8a6a;
+    border-radius: 2px;
+    transform: rotate(25deg);
+}
+
+/* === STALL_BLOCK STYLES === */
+.stall-block {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    animation: stallAppear 0.8s var(--ease-settle) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.stall-block:nth-child(1) { animation-delay: 0.2s; }
+.stall-block:nth-child(2) { animation-delay: 0.4s; }
+.stall-block:nth-child(3) { animation-delay: 0.6s; }
+
+/* Stall structure */
+.stall-structure {
+    position: relative;
+}
+
+.stall-awning {
+    position: relative;
+    height: 60px;
+    margin-bottom: -10px;
+    z-index: 3;
+}
+
+.awning-fabric {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    overflow: hidden;
+    border-radius: 5px 5px 0 0;
+}
+
+.fabric-fold {
+    flex: 1;
+    position: relative;
+    animation: fabricSway 6s ease-in-out infinite;
+}
+
+.fabric-fold::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(255,255,255,0.1) 0%,
+        transparent 30%,
+        rgba(0,0,0,0.1) 100%
+    );
+}
+
+.fold-1 { animation-delay: 0s; }
+.fold-2 { animation-delay: -1s; }
+.fold-3 { animation-delay: -2s; }
+
+/* Material variants */
+.stall-material-fabric .fabric-fold {
+    background: linear-gradient(135deg, var(--fabric-burgundy), var(--fabric-deep));
+}
+
+.stall-material-wood .fabric-fold {
+    background: linear-gradient(135deg, #5a4a3a, #3a2a1a);
+}
+
+.stall-material-metal .fabric-fold {
+    background: linear-gradient(135deg, var(--metal-medium), var(--metal-dark));
+}
+
+.stall-material-canvas .fabric-fold {
+    background: linear-gradient(135deg, var(--fabric-cream), #b5a590);
+}
+
+.stall-material-rope .fabric-fold {
+    background: linear-gradient(135deg, #8a7a5a, #5a4a3a);
+}
+
+.stall-material-leather .fabric-fold {
+    background: linear-gradient(135deg, #6a4a3a, #4a2a1a);
+}
+
+.awning-fringe {
+    position: absolute;
+    bottom: -8px;
+    left: 5%;
+    right: 5%;
+    height: 12px;
+    background: repeating-linear-gradient(
+        90deg,
+        var(--fabric-gold) 0px,
+        var(--fabric-gold) 8px,
+        transparent 8px,
+        transparent 16px
+    );
+    clip-path: polygon(
+        0% 0%, 
+        4% 100%, 8% 0%, 12% 100%, 16% 0%, 20% 100%, 24% 0%, 28% 100%, 32% 0%, 36% 100%,
+        40% 0%, 44% 100%, 48% 0%, 52% 100%, 56% 0%, 60% 100%, 64% 0%, 68% 100%, 72% 0%, 76% 100%,
+        80% 0%, 84% 100%, 88% 0%, 92% 100%, 96% 0%, 100% 100%, 100% 0%
+    );
+    animation: fringeSway 4s ease-in-out infinite;
+}
+
+.awning-shadow {
+    position: absolute;
+    bottom: -20px;
+    left: 10%;
+    right: 10%;
+    height: 20px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.3), transparent);
+    filter: blur(5px);
+}
+
+/* Posts */
+.stall-post {
+    position: absolute;
+    top: 0;
+    width: 16px;
+    height: 200px;
+    background: linear-gradient(
+        90deg,
+        var(--wood-dark) 0%,
+        var(--wood-medium) 40%,
+        var(--wood-light) 60%,
+        var(--wood-medium) 100%
+    );
+    border-radius: 3px;
+    z-index: 2;
+}
+
+.post-left { left: 10px; }
+.post-right { right: 10px; }
+
+.post-wood-grain {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent 0px,
+        transparent 12px,
+        rgba(0,0,0,0.08) 12px,
+        rgba(0,0,0,0.08) 14px
+    );
+    border-radius: 3px;
+}
+
+.post-wrap {
+    position: absolute;
+    top: 30%;
+    left: -2px;
+    right: -2px;
+    height: 20px;
+    background: repeating-linear-gradient(
+        -45deg,
+        #8a7a5a 0px,
+        #8a7a5a 4px,
+        #6a5a4a 4px,
+        #6a5a4a 8px
+    );
+    border-radius: 2px;
+}
+
+/* Counter */
+.stall-counter {
+    position: absolute;
+    bottom: 40px;
+    left: 0;
+    right: 0;
+    height: 25px;
+    z-index: 2;
+}
+
+.counter-wood {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        0deg,
+        var(--wood-dark) 0%,
+        var(--wood-medium) 50%,
+        var(--wood-highlight) 100%
+    );
+    border-radius: 3px;
+    box-shadow: 
+        0 3px 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.counter-edge {
+    position: absolute;
+    bottom: -3px;
+    left: 5%;
+    right: 5%;
+    height: 6px;
+    background: var(--wood-dark);
+    border-radius: 0 0 3px 3px;
+}
+
+/* Stall interior */
+.stall-interior {
+    position: relative;
+    padding: 70px 20px 30px;
+    background: linear-gradient(
+        180deg,
+        rgba(30, 25, 20, 0.95) 0%,
+        rgba(40, 35, 28, 0.9) 100%
+    );
+    border-radius: 0 0 5px 5px;
+    min-height: 220px;
+    z-index: 1;
+}
+
+/* Clutter items */
+.stall-clutter {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    height: 50px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.clutter-item {
+    width: 20px;
+    height: 30px;
+    opacity: 0.7;
+    animation: clutterIdle 8s ease-in-out infinite;
+}
+
+.item-scroll {
+    width: 25px;
+    height: 35px;
+    background: linear-gradient(90deg, var(--fabric-cream), #c5b598);
+    border-radius: 3px;
+    transform: rotate(-5deg);
+}
+
+.item-bottle {
+    width: 12px;
+    height: 28px;
+    background: linear-gradient(90deg, #4a6a5a, #2a4a3a);
+    border-radius: 4px 4px 2px 2px;
+    animation-delay: -2s;
+}
+
+.item-book {
+    width: 22px;
+    height: 26px;
+    background: linear-gradient(180deg, var(--fabric-burgundy), var(--fabric-deep));
+    border-radius: 2px;
+    animation-delay: -4s;
+}
+
+.item-candle {
+    width: 8px;
+    height: 24px;
+    background: linear-gradient(180deg, #d4c4a8, #b5a590);
+    border-radius: 2px;
+    position: relative;
+}
+
+.item-candle::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 8px;
+    background: var(--ambient-fire);
+    border-radius: 50% 50% 30% 30%;
+    box-shadow: 0 0 8px var(--ambient-warm);
+    animation: candleFlicker 0.5s ease-in-out infinite alternate;
+}
+
+.item-crate {
+    width: 28px;
+    height: 24px;
+    background: repeating-linear-gradient(
+        0deg,
+        var(--wood-medium) 0px,
+        var(--wood-medium) 6px,
+        var(--wood-dark) 6px,
+        var(--wood-dark) 8px
+    );
+    border-radius: 2px;
+}
+
+.item-sack {
+    width: 22px;
+    height: 28px;
+    background: radial-gradient(ellipse at 50% 60%, #8a7a5a, #5a4a3a);
+    border-radius: 30% 30% 40% 40%;
+    animation-delay: -3s;
+}
+
+.item-scale {
+    width: 30px;
+    height: 20px;
+    background: var(--metal-medium);
+    clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+    animation-delay: -1s;
+}
+
+/* Agent presence */
+.agent-presence {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    margin: 20px auto;
+}
+
+.agent-ambient {
+    position: absolute;
+    inset: -20px;
+    background: radial-gradient(circle, var(--ambient-glow) 0%, transparent 70%);
+    opacity: 0.3;
+    animation: agentAmbient 4s ease-in-out infinite;
+}
+
+.agent-core {
+    position: absolute;
+    inset: 15px;
+    background: radial-gradient(circle at 40% 40%, var(--ambient-warm), var(--ambient-fire));
+    border-radius: 50%;
+    box-shadow: 
+        0 0 20px var(--ambient-warm),
+        0 0 40px rgba(255, 157, 77, 0.4);
+}
+
+.agent-pulse {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--ambient-glow);
+    border-radius: 50%;
+    opacity: 0;
+    animation: agentPulse 3s ease-out infinite;
+}
+
+/* Stall info */
+.stall-info {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.stall-title {
+    font-family: 'UnifrakturMaguntia', cursive;
+    font-size: 20px;
+    color: var(--text-carved);
+    text-shadow: 2px 2px 4px var(--text-shadow);
+    margin-bottom: 5px;
+}
+
+.stall-desc {
+    font-size: 13px;
+    color: rgba(212, 196, 168, 0.7);
+    font-style: italic;
+}
+
+/* Stall actions */
+.stall-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.observe-btn {
+    background: transparent;
+    border: 1px solid var(--fabric-gold);
+    color: var(--fabric-gold);
+    padding: 8px 24px;
+    font-family: 'Almendra', serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s var(--ease-physical);
+    position: relative;
+    overflow: hidden;
+}
+
+.observe-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--fabric-gold);
+    transform: translateX(-100%);
+    transition: transform 0.3s var(--ease-physical);
+    z-index: -1;
+}
+
+.observe-btn:hover {
+    color: var(--wood-dark);
+}
+
+.observe-btn:hover::before {
+    transform: translateX(0);
+}
+
+/* Stall shadow */
+.stall-ground-shadow {
+    position: absolute;
+    bottom: -15px;
+    left: 10%;
+    right: 10%;
+    height: 20px;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.4), transparent);
+    filter: blur(8px);
+}
+
+/* ========================================
+   5. PRICE TAG COMPONENTS
+   
+   MODULAR: Self-contained hanging tag
+======================================== */
+.price-tag {
+    position: relative;
+    display: inline-block;
+    text-decoration: none;
+    transform-origin: top center;
+    animation: tagSwing 5s ease-in-out infinite;
+}
+
+.tag-string {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 20px;
+    background: linear-gradient(to bottom, #8a7a5a, #5a4a3a);
+}
+
+.tag-body {
+    position: relative;
+    background: linear-gradient(
+        135deg,
+        var(--fabric-cream) 0%,
+        #c5b598 50%,
+        #b5a590 100%
+    );
+    padding: 8px 16px;
+    clip-path: polygon(
+        0% 10%, 
+        10% 0%, 
+        90% 0%, 
+        100% 10%, 
+        100% 80%,
+        90% 100%,
+        50% 90%,
+        10% 100%,
+        0% 80%
+    );
+    box-shadow: 2px 3px 6px rgba(0,0,0,0.3);
+}
+
+.tag-texture {
+    position: absolute;
+    inset: 0;
+    background: 
+        repeating-linear-gradient(
+            45deg,
+            transparent 0px,
+            transparent 2px,
+            rgba(0,0,0,0.02) 2px,
+            rgba(0,0,0,0.02) 4px
+        );
+}
+
+.tag-text {
+    position: relative;
+    font-family: 'Almendra', serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--wood-dark);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.tag-shadow {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: -5px;
+    bottom: -5px;
+    background: rgba(0,0,0,0.2);
+    filter: blur(4px);
+    z-index: -1;
+    clip-path: polygon(
+        0% 10%, 
+        10% 0%, 
+        90% 0%, 
+        100% 10%, 
+        100% 80%,
+        90% 100%,
+        50% 90%,
+        10% 100%,
+        0% 80%
+    );
+}
+
+.price-tag:hover {
+    animation-play-state: paused;
+    transform: scale(1.05);
+}
+
+/* ========================================
+   6. CENTER GATHERING ZONE
+======================================== */
+.center-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 100px;
+}
+
+.gathering-fire {
+    position: relative;
+    width: 150px;
+    height: 150px;
+}
+
+.fire-pit {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 40px;
+}
+
+.pit-stones {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, var(--ground-stone), var(--ground-shadow));
+    border-radius: 50%;
+    box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.pit-ash {
+    position: absolute;
+    top: 10px;
+    left: 20%;
+    right: 20%;
+    height: 20px;
+    background: radial-gradient(ellipse at center, #4a4540, #3a3530);
+    border-radius: 50%;
+}
+
+.fire-flames {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 100px;
+}
+
+.flame {
+    position: absolute;
+    bottom: 0;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    animation: flameFlicker 0.4s ease-in-out infinite alternate;
+}
+
+.flame-1 {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 80px;
+    background: linear-gradient(to top, var(--ambient-fire) 0%, var(--ambient-warm) 50%, #ffdd88 100%);
+}
+
+.flame-2 {
+    left: 30%;
+    width: 25px;
+    height: 50px;
+    background: linear-gradient(to top, var(--ambient-fire), var(--ambient-warm));
+    animation-delay: -0.2s;
+}
+
+.flame-3 {
+    right: 30%;
+    width: 25px;
+    height: 55px;
+    background: linear-gradient(to top, var(--ambient-fire), var(--ambient-glow));
+    animation-delay: -0.3s;
+}
+
+.fire-glow {
+    position: absolute;
+    inset: -50px;
+    background: radial-gradient(circle, var(--ambient-warm) 0%, transparent 60%);
+    opacity: 0.4;
+    animation: fireGlow 2s ease-in-out infinite;
+}
+
+.fire-sparks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.spark {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: var(--ambient-warm);
+    border-radius: 50%;
+    animation: sparkRise 2s ease-out forwards;
+}
+
+.fire-smoke {
+    position: absolute;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 80px;
+    pointer-events: none;
+}
+
+.smoke-particle {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: var(--ambient-smoke);
+    border-radius: 50%;
+    animation: smokeRise 4s ease-out forwards;
+}
+
+.gathering-circle {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin-top: -30px;
+}
+
+.circle-stones {
+    position: absolute;
+    inset: 0;
+    border: 8px solid transparent;
+    border-radius: 50%;
+    background: 
+        linear-gradient(var(--ground-path), var(--ground-path)) padding-box,
+        repeating-conic-gradient(
+            from 0deg,
+            var(--ground-stone) 0deg 20deg,
+            var(--ground-shadow) 20deg 40deg
+        ) border-box;
+    opacity: 0.5;
+}
+
+.chat-zone {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.chat-bubble {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(4px);
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    max-width: 120px;
+    animation: bubbleFloat 4s ease-out forwards;
+}
+
+/* ========================================
+   7. ACTIVITY TICKER
+======================================== */
+.activity-board {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    max-width: 600px;
+    width: 90%;
+}
+
+.board-frame-footer {
+    position: relative;
+    padding: 12px 20px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.board-wood-footer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        var(--wood-medium) 0%,
+        var(--wood-dark) 100%
+    );
+    border: 3px solid var(--wood-light);
+    border-radius: 4px;
+}
+
+.board-wood-footer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0px,
+        transparent 40px,
+        rgba(0,0,0,0.05) 40px,
+        rgba(0,0,0,0.05) 42px
+    );
+}
+
+.ticker-viewport {
+    position: relative;
+    overflow: hidden;
+    height: 20px;
+}
+
+.ticker-track {
+    display: flex;
+    gap: 40px;
+    animation: tickerScroll 30s linear infinite;
+    white-space: nowrap;
+}
+
+.ticker-item {
+    font-family: 'IM Fell English', serif;
+    font-size: 13px;
+    color: var(--text-carved);
+    flex-shrink: 0;
+}
+
+/* ========================================
+   8. MODAL SYSTEM
+======================================== */
+.observation-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s var(--ease-physical);
+}
+
+.observation-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 16, 12, 0.9);
+    backdrop-filter: blur(8px);
+}
+
+.modal-frame {
+    position: relative;
+    width: 90%;
+    max-width: 500px;
+    background: linear-gradient(
+        180deg,
+        rgba(50, 42, 32, 0.98) 0%,
+        rgba(35, 28, 20, 0.98) 100%
+    );
+    border-radius: 8px;
+    padding: 30px;
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.4s var(--ease-settle);
+}
+
+.observation-modal.active .modal-frame {
+    transform: scale(1) translateY(0);
+}
+
+.modal-wood-border {
+    position: absolute;
+    inset: 0;
+    border: 4px solid var(--wood-medium);
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+.modal-wood-border::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 2px solid var(--wood-dark);
+    border-radius: 10px;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background: var(--wood-dark);
+    border: 1px solid var(--wood-light);
+    border-radius: 50%;
+    color: var(--text-carved);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: var(--wood-medium);
+}
+
+.modal-content {
+    position: relative;
+}
+
+.observed-agent-display {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.agent-large {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+}
+
+.agent-ambient-large {
+    position: absolute;
+    inset: -30px;
+    background: radial-gradient(circle, var(--ambient-glow) 0%, transparent 70%);
+    opacity: 0.4;
+    animation: agentAmbient 4s ease-in-out infinite;
+}
+
+.agent-core-large {
+    position: absolute;
+    inset: 20px;
+    background: radial-gradient(circle at 40% 40%, var(--ambient-warm), var(--ambient-fire));
+    border-radius: 50%;
+    box-shadow: 
+        0 0 30px var(--ambient-warm),
+        0 0 60px rgba(255, 157, 77, 0.4);
+}
+
+.agent-pulse-large {
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--ambient-glow);
+    border-radius: 50%;
+    opacity: 0;
+    animation: agentPulse 3s ease-out infinite;
+}
+
+.observed-title {
+    font-family: 'UnifrakturMaguntia', cursive;
+    font-size: 28px;
+    color: var(--text-carved);
+    text-shadow: 2px 2px 4px var(--text-shadow);
+    margin-bottom: 8px;
+}
+
+.observed-desc {
+    font-size: 14px;
+    color: rgba(212, 196, 168, 0.7);
+    font-style: italic;
+}
+
+.observation-feed {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 15px;
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.feed-entry {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+.feed-time {
+    color: var(--fabric-gold);
+    flex-shrink: 0;
+}
+
+.feed-message {
+    color: rgba(212, 196, 168, 0.8);
+}
+
+.modal-actions {
+    text-align: center;
+}
+
+.claim-board {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    text-decoration: none;
+    position: relative;
+}
+
+.claim-wood {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        var(--wood-light) 0%,
+        var(--wood-medium) 50%,
+        var(--wood-dark) 100%
+    );
+    border-radius: 4px;
+    border: 2px solid var(--wood-highlight);
+}
+
+.claim-text {
+    position: relative;
+    font-family: 'Almendra', serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-carved);
+    letter-spacing: 2px;
+}
+
+.claim-arrow {
+    position: relative;
+    color: var(--fabric-gold);
+    font-size: 18px;
+    transition: transform 0.3s;
+}
+
+.claim-board:hover .claim-arrow {
+    transform: translateX(5px);
+}
+
+/* Presence board */
+.presence-board {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    z-index: 50;
+}
+
+.board-frame {
+    position: relative;
+    padding: 12px 20px;
+}
+
+.board-wood {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        var(--wood-medium) 0%,
+        var(--wood-dark) 100%
+    );
+    border: 2px solid var(--wood-light);
+    border-radius: 4px;
+}
+
+.board-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.presence-glow {
+    width: 8px;
+    height: 8px;
+    background: var(--ambient-warm);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--ambient-warm);
+    animation: presenceGlow 2s ease-in-out infinite;
+}
+
+.presence-count {
+    font-family: 'Almendra', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ambient-glow);
+}
+
+.presence-label {
+    font-size: 12px;
+    color: rgba(212, 196, 168, 0.6);
+}
+
+/* ========================================
+   9. ANIMATIONS
+======================================== */
+@keyframes signpostSettle {
+    from {
+        opacity: 0;
+        transform: translateY(-50%) translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(-50%) translateX(0);
+    }
+}
+
+@keyframes poleBreath {
+    0%, 100% { transform: translateX(-50%) rotate(-0.3deg); }
+    50% { transform: translateX(-50%) rotate(0.3deg); }
+}
+
+@keyframes bannerSway {
+    0%, 100% { transform: rotate(-3deg) skewY(-1deg); }
+    50% { transform: rotate(3deg) skewY(1deg); }
+}
+
+@keyframes lanternSwing {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+}
+
+@keyframes dustFloat {
+    0% {
+        transform: translate(0, 0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.3;
+    }
+    90% {
+        opacity: 0.3;
+    }
+    100% {
+        transform: translate(100px, -200px);
+        opacity: 0;
+    }
+}
+
+@keyframes stallAppear {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fabricSway {
+    0%, 100% { transform: skewY(-0.5deg); }
+    50% { transform: skewY(0.5deg); }
+}
+
+@keyframes fringeSway {
+    0%, 100% { transform: translateX(-1px); }
+    50% { transform: translateX(1px); }
+}
+
+@keyframes clutterIdle {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-2px) rotate(1deg); }
+}
+
+@keyframes candleFlicker {
+    0% { 
+        opacity: 0.8;
+        transform: translateX(-50%) scaleY(0.95);
+    }
+    100% { 
+        opacity: 1;
+        transform: translateX(-50%) scaleY(1.05);
+    }
+}
+
+@keyframes agentAmbient {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+@keyframes agentPulse {
+    0% {
+        opacity: 0.8;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(2);
+    }
+}
+
+@keyframes tagSwing {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+}
+
+@keyframes flameFlicker {
+    0% {
+        transform: translateX(-50%) scaleX(0.95) scaleY(1);
+    }
+    100% {
+        transform: translateX(-50%) scaleX(1.05) scaleY(1.1);
+    }
+}
+
+@keyframes fireGlow {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+@keyframes sparkRise {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100px) translateX(var(--spark-drift)) scale(0);
+    }
+}
+
+@keyframes smokeRise {
+    0% {
+        opacity: 0.3;
+        transform: translateY(0) scale(0.5);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-100px) scale(2);
+    }
+}
+
+@keyframes bubbleFloat {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    20% {
+        opacity: 1;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+}
+
+@keyframes tickerScroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes presenceGlow {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes debrisDrift {
+    0% {
+        transform: translateX(0) rotate(0deg);
+    }
+    50% {
+        transform: translateX(10px) rotate(5deg);
+    }
+    100% {
+        transform: translateX(0) rotate(0deg);
+    }
+}
+
+/* ========================================
+   10. RESPONSIVE
+======================================== */
+@media (max-width: 1200px) {
+    .bazaar-street {
+        grid-template-columns: 1fr 1fr;
+        padding: 100px 40px 100px 120px;
+    }
+    
+    .center-zone {
+        grid-column: 1 / -1;
+        order: -1;
+        padding: 40px 0;
+    }
+    
+    .stall-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 900px) {
+    .signpost-nav {
+        top: auto;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .signpost-planks {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    .signpost-pole {
+        display: none;
+    }
+    
+    .nav-plank {
+        margin-left: 0 !important;
+        transform: rotate(0deg) !important;
+    }
+    
+    .bazaar-street {
+        grid-template-columns: 1fr;
+        padding: 80px 20px 180px;
+    }
+    
+    .presence-board {
+        top: 15px;
+        right: 15px;
+    }
+}
+
+@media (max-width: 600px) {
+    .stall-block {
+        max-width: 100%;
+    }
+    
+    .activity-board {
+        bottom: 100px;
+    }
+    
+    .hanging-elements {
+        display: none;
+    }
+}
+
+/* Performance: Reduce animations for reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
