@@ -1,68 +1,68 @@
 "use client";
 
+import React, { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { useRef } from "react";
-// import { eased } from "gsap"; // Not used/doesn't exist in root
-
-// Vendor Positions (Must match Vendor.tsx)
-const CAMERA_TARGETS: Record<string, THREE.Vector3> = {
-    broker: new THREE.Vector3(-3, 1.5, -2),
-    barker: new THREE.Vector3(3, 1.5, -4),
-    gamemaster: new THREE.Vector3(-2.5, 1.5, -8),
-    gatekeeper: new THREE.Vector3(0, 1.5, -12),
-};
-
-const DEFAULT_POS = new THREE.Vector3(0, 1.8, 6);
-const LOOK_AT_DEFAULT = new THREE.Vector3(0, 1.5, -10);
+import gsap from "gsap";
 
 export default function CameraRig({ targetVendor }: { targetVendor: string | null }) {
     const { camera } = useThree();
-    const vec = new THREE.Vector3();
-    const lookAtVec = new THREE.Vector3();
+    const mouse = useRef({ x: 0, y: 0 });
 
-    // Mouse drift
-    const mouse = new THREE.Vector2();
+    // Vendor Focus Positions
+    // Broker: [-2.2, 1.4, -2.5] -> Cam: [-1.2, 1.5, -0.5]
+    // Barker: [2.2, 1.3, -5] -> Cam: [1.2, 1.4, -3.0]
+    // Gamemaster: [-2.0, 1.5, -9] -> Cam: [-1.0, 1.5, -7.0]
+    // Gatekeeper: [0, 1.6, -14] -> Cam: [0, 1.6, -11.5]
 
-    useFrame((state) => {
-        // Smooth mouse drift
-        mouse.x = THREE.MathUtils.lerp(mouse.x, (state.pointer.x * 0.5), 0.05);
-        mouse.y = THREE.MathUtils.lerp(mouse.y, (state.pointer.y * 0.2), 0.05);
+    useEffect(() => {
+        let x = 0, y = 1.7, z = 6; // Default
 
-        let targetPos = DEFAULT_POS.clone();
-        let targetLook = LOOK_AT_DEFAULT.clone();
+        if (targetVendor === "broker") { x = -1.2; y = 1.5; z = -0.5; }
+        else if (targetVendor === "barker") { x = 1.2; y = 1.4; z = -3.0; }
+        else if (targetVendor === "gamemaster") { x = -1.0; y = 1.5; z = -7.0; }
+        else if (targetVendor === "gatekeeper") { x = 0; y = 1.6; z = -11.5; }
 
-        if (targetVendor && CAMERA_TARGETS[targetVendor]) {
-            // Move closer to vendor
-            const vPos = CAMERA_TARGETS[targetVendor];
-            // Offset slightly so we aren't INSIDE them
-            targetPos = vPos.clone().add(new THREE.Vector3(0, 0, 3));
-            targetLook = vPos.clone();
-        }
+        gsap.to(camera.position, {
+            x, y, z,
+            duration: 1.5,
+            ease: "power2.inOut"
+        });
 
-        // Apply Drift
-        targetPos.x += mouse.x;
-        targetPos.y += mouse.y;
+        // Also rotate towards vendor?
+        // Let's rely on the lookAt logic in useFrame
+    }, [targetVendor, camera]);
 
-        // Smooth Lerp Camera
-        camera.position.lerp(targetPos, 0.04);
+    // Track mouse
+    useEffect(() => {
+        const handleMove = (e: MouseEvent) => {
+            mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.current.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        };
+        window.addEventListener("mousemove", handleMove);
+        return () => window.removeEventListener("mousemove", handleMove);
+    }, []);
 
-        // Smooth LookAt
-        // We manually lerp the quaternion or just use lookAt on a dummy and lerp that?
-        // Simple approach: lerp a vector then look at it
-        // Note: lookAt is instant, so we need to lerp the target vector first.
-        // We can't store previous lookAt easily without ref.
+    useFrame(({ clock }) => {
+        const t = clock.getElapsedTime();
 
-        // Actually, just standard lerp on position is enough for "drift".
-        // For rotation, let's keep it simple: always look at targetLook
-        // But we want it smooth.
+        // Handheld Noise
+        const noiseX = Math.sin(t * 0.5) * 0.05;
+        const noiseY = Math.cos(t * 0.3) * 0.05;
 
-        vec.copy(targetLook);
-        // We want to interpolate the CURRENT look target.
-        // Since Threejs camera doesn't expose "target", we have to manage it.
-        // Or we use state.camera.lookAt(x,y,z) every frame.
+        // Base Look Target (down alley)
+        const lookX = mouse.current.x * 2;
+        const lookY = 1.5 + mouse.current.y * 1 + noiseY;
+        const lookZ = camera.position.z - 5; // Look forward relative to cam
 
-        state.camera.lookAt(vec);
+        // If target selected, bias look towards them
+        // (We can't easily adhere strictly to them without complex logic, 
+        // so we'll just let the user look around freely but from a closer vantage point)
+
+        // Apply rotation
+        // Instead of lookAt every frame which overrides GSAP if we animated rotation,
+        // we'll just lookAt a target point.
+        camera.lookAt(lookX + noiseX, lookY, lookZ);
     });
 
     return null;

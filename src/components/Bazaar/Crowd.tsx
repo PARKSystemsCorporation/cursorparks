@@ -1,67 +1,93 @@
 "use client";
 
-import React, { useRef, useMemo, useEffect } from "react";
+import React, { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
+import { Text, Billboard } from "@react-three/drei";
 import * as THREE from "three";
 
 interface Message {
     id: number;
     content: string;
-    x: number;
-    y: number;
-    z: number;
-    timestamp: number;
+    // We'll ignore the backend positions normally and allow the crowd system to place them
+    // but if backend provides, we can use. For now, random spawn in alley.
 }
 
 // Floating Text Component
-function ChatBubble({ message, index }: { message: Message; index: number }) {
+function ChatBubble({ message, index, count }: { message: Message; index: number; count: number }) {
     const ref = useRef<any>(null);
     const birthTime = useMemo(() => Date.now(), []);
+
+    // Deterministic random start position based on ID or index
+    const startPos = useMemo(() => {
+        return {
+            x: (Math.random() - 0.5) * 4, // Spread across alley width
+            y: 0.5 + Math.random() * 2,    // Start low-ish
+            z: (Math.random() - 0.5) * 6 - 4 // Spread in depth
+        };
+    }, []);
 
     useFrame(({ clock }) => {
         if (!ref.current) return;
         const age = (Date.now() - birthTime) / 1000;
+        const life = 15; // Long life but fades
 
-        // Float UP
-        ref.current.position.y = message.y + age * 0.5;
+        // Rise like smoke
+        const yOffset = age * 0.3; // Rise speed
+        const xDrift = Math.sin(age * 0.5 + index) * 0.5; // Wafting
 
-        // Fade Out
-        const life = 10; // 10 seconds life
+        ref.current.position.set(
+            startPos.x + xDrift,
+            startPos.y + yOffset,
+            startPos.z
+        );
+
+        // Opacity management (Congestion)
+        // More specific logic: if count is high, fade faster?
+        // simple linear fade for now
         let opacity = 1;
-        if (age > life - 2) {
-            opacity = (life - age) / 2;
-        }
-        if (age > life) opacity = 0;
+        if (age < 0.5) opacity = age / 0.5; // Fade in
+        else if (age > life - 3) opacity = (life - age) / 3; // Fade out
 
-        ref.current.material.opacity = opacity;
-        ref.current.lookAt(0, 1.5, 8); // Look at camera roughly
+        // Congestion hack: if many messages, max opacity is lower
+        const maxOpacity = Math.max(0.3, 1 - (count / 50));
+        ref.current.color = opacity * maxOpacity; // Trick: Troika text handles opacity via color alpha often or material
+
+        ref.current.material.opacity = opacity * maxOpacity;
+        ref.current.material.transparent = true;
+        ref.current.material.depthWrite = false; // Prevent blocking other transparents
     });
 
     return (
-        <Text
-            ref={ref}
-            position={[message.x, message.y, message.z]}
-            fontSize={0.4}
-            color="#cccccc"
-            anchorX="center"
-            anchorY="middle"
-            maxWidth={4}
-            textAlign="center"
-            outlineWidth={0.02}
-            outlineColor="#000000"
-            font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff" // Default font
-        >
-            {message.content}
-        </Text>
+        <Billboard>
+            <Text
+                ref={ref}
+                fontSize={0.35}
+                color="#eeeeee"
+                font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
+                anchorX="center"
+                anchorY="middle"
+                maxWidth={3.5}
+                textAlign="center"
+                outlineWidth={0.03}
+                outlineColor="#000000"
+                outlineBlur={0.05} // Soft shadow look
+            >
+                {message.content}
+            </Text>
+        </Billboard>
     );
 }
 
 export default function Crowd({ messages }: { messages: any[] }) {
+    // Only render last 30 messages to prevent performance kill, 
+    // or render all if we want CHAOS. User asked for high density.
+    // Let's render up to 50 recent.
+    const recentMessages = messages.slice(-50);
+
     return (
         <group>
-            {messages.map((msg, i) => (
-                <ChatBubble key={msg.id || i} message={msg} index={i} />
+            {recentMessages.map((msg, i) => (
+                <ChatBubble key={msg.id || i} message={msg} index={i} count={recentMessages.length} />
             ))}
         </group>
     );
