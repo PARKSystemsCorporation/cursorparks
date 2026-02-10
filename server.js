@@ -1,12 +1,34 @@
 const http = require("http");
 const next = require("next");
 const { Server } = require("socket.io");
+const Database = require("better-sqlite3");
+const path = require("path");
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
 const PORT = process.env.PORT || 3000;
+
+// Initialize SQLite for Bazaar
+const dbPath = path.join(process.cwd(), "bazaar.db");
+const db = new Database(dbPath);
+
+// Create messages table if not exists
+db.exec(`
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    x REAL NOT NULL,
+    y REAL NOT NULL,
+    z REAL NOT NULL,
+    timestamp INTEGER NOT NULL
+  )
+`);
+
+const insertMessage = db.prepare("INSERT INTO messages (content, x, y, z, timestamp) VALUES (?, ?, ?, ?, ?)");
+const getRecentMessages = db.prepare("SELECT * FROM messages ORDER BY timestamp DESC LIMIT 100");
+const pruneMessages = db.prepare("DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY timestamp DESC LIMIT 100)");
 
 app.prepare().then(() => {
   const server = http.createServer((req, res) => {
@@ -71,6 +93,10 @@ app.prepare().then(() => {
     socket.emit("market:snapshot", engine.getSnapshot());
     io.emit("presence:update", { online: onlineCount, total: totalVisitors });
 
+    // Bazaar Init
+    const recent = getRecentMessages.all();
+    socket.emit("bazaar:init", { messages: recent });
+
     const assignUserRoom = (userId) => {
       const previousUserId = socket.data.userId;
       if (previousUserId && previousUserId !== userId) {
@@ -102,6 +128,31 @@ app.prepare().then(() => {
       socket.emit("trade:fill", { side, size, fill: res.fill, price: res.price });
     });
 
+    // Bazaar Events
+    socket.on("bazaar:shout", (data) => {
+      if (!data || !data.content) return;
+
+      const msg = {
+        content: data.content.slice(0, 140), // Length limit
+        x: data.x || (Math.random() * 10 - 5),
+        y: data.y || (Math.random() * 5 + 1),
+        z: data.z || (Math.random() * 10 - 5),
+        timestamp: Date.now()
+      };
+
+      try {
+        const info = insertMessage.run(msg.content, msg.x, msg.y, msg.z, msg.timestamp);
+        msg.id = info.lastInsertRowid;
+
+        // Prune old messages occasionally (every 10 inserts or just do it here)
+        pruneMessages.run();
+
+        io.emit("bazaar:shout", msg);
+      } catch (err) {
+        console.error("Bazaar DB Error:", err);
+      }
+    });
+
     socket.on("disconnect", () => {
       onlineCount = Math.max(0, onlineCount - 1);
       engine.online.retail = onlineCount;
@@ -118,6 +169,7 @@ app.prepare().then(() => {
     engine.stop();
     io.close();
     server.close(() => {
+      db.close(); // Close SQLite
       prisma.$disconnect().then(() => process.exit(0));
     });
     setTimeout(() => process.exit(1), 5000);
