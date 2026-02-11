@@ -33,6 +33,168 @@ function Cables() {
     );
 }
 
+function POVLight() {
+    const ref = useRef<THREE.Group>(null);
+    useFrame(({ camera }) => {
+        if (!ref.current) return;
+        // Follow camera with slight offset
+        ref.current.position.copy(camera.position);
+        ref.current.position.y += 0.2; // Shoulder height
+        ref.current.position.z += 0.1;
+    });
+
+    return (
+        <group ref={ref}>
+            <pointLight distance={10} decay={2} intensity={1} color="#ddeeff" />
+        </group>
+    );
+}
+
+function WindowGrid() {
+    // 3 Stories of windows on left and right
+    const windows = [];
+    const stories = [5, 10, 15]; // Heights
+    const zLocations = [-2, -8, -14];
+
+    // Left Wall Windows
+    for (let y of stories) {
+        for (let z of zLocations) {
+            windows.push(
+                <mesh key={`l-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
+                    <planeGeometry args={[1.5, 2]} />
+                    <meshStandardMaterial color="#ffaa55" emissive="#ffddaa" emissiveIntensity={1.5 + Math.random()} toneMapped={false} />
+                </mesh>
+            )
+            windows.push(
+                <mesh key={`r-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
+                    <planeGeometry args={[1.5, 2]} />
+                    <meshStandardMaterial color="#55aaff" emissive="#aaddee" emissiveIntensity={1.5 + Math.random()} toneMapped={false} />
+                </mesh>
+            )
+        }
+    }
+
+    return <group>{windows}</group>;
+}
+
+function WallBlock({ position, size, rotation = [0, 0, 0] }: { position: [number, number, number], size: [number, number, number], rotation?: [number, number, number] }) {
+    return (
+        <mesh position={position} rotation={new THREE.Euler(...rotation)} receiveShadow castShadow>
+            <boxGeometry args={size} />
+            <LayerMaterial lighting="standard" color="#1a1a1a" roughness={0.8} metalness={0.4}>
+                <Depth colorA="#111" colorB="#333" alpha={1} mode="normal" near={0} far={15} origin={[0, -5, 0]} />
+                <Noise mapping="local" type="cell" scale={0.5} mode="overlay" alpha={0.1} />
+            </LayerMaterial>
+        </mesh>
+    );
+}
+
+function VendorStall({ position, rotationY = 0 }: { position: [number, number, number], rotationY?: number }) {
+    // A stall is a "hole" so we build around it, OR we place the interior clutter props.
+    // Ideally, the main wall logic handles the hole, this component handles the interior.
+
+    return (
+        <group position={position} rotation={[0, rotationY, 0]}>
+            {/* Interior Back Wall */}
+            <mesh position={[0, 1.5, -1.8]}>
+                <planeGeometry args={[3.8, 3]} />
+                <meshStandardMaterial color="#222" roughness={0.8} />
+            </mesh>
+            {/* Ceiling */}
+            <mesh position={[0, 3, -1]}>
+                <boxGeometry args={[3.8, 0.1, 2]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+
+            {/* Counter */}
+            <mesh position={[0, 0.5, 0.5]} castShadow receiveShadow>
+                <boxGeometry args={[3.5, 1, 0.8]} />
+                <meshStandardMaterial color="#442211" roughness={0.6} />
+            </mesh>
+            {/* Counter LED Strip */}
+            <mesh position={[0, 0.9, 0.91]}>
+                <planeGeometry args={[3.5, 0.05]} />
+                <meshBasicMaterial color="#00ffff" toneMapped={false} />
+            </mesh>
+
+            {/* Shelves */}
+            <mesh position={[0, 1.5, -1.7]}>
+                <boxGeometry args={[3.6, 0.1, 0.5]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+            <mesh position={[0, 2.2, -1.7]}>
+                <boxGeometry args={[3.6, 0.1, 0.5]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+            {/* Shelf LED Strips */}
+            <mesh position={[0, 1.45, -1.45]}>
+                <planeGeometry args={[3.6, 0.02]} />
+                <meshBasicMaterial color="#ff00ff" toneMapped={false} />
+            </mesh>
+            <mesh position={[0, 2.15, -1.45]}>
+                <planeGeometry args={[3.6, 0.02]} />
+                <meshBasicMaterial color="#ffaa00" toneMapped={false} />
+            </mesh>
+
+            {/* Interior Light - contained */}
+            <pointLight position={[0, 2.5, -0.5]} distance={5} decay={2} intensity={2} color="#ccaaff" />
+
+            {/* Clutter - Random boxes */}
+            <mesh position={[-1, 1.7, -1.6]} rotation={[0, 0.2, 0]}>
+                <boxGeometry args={[0.4, 0.3, 0.3]} />
+                <meshStandardMaterial color="#555" />
+            </mesh>
+            <mesh position={[0.5, 1.7, -1.6]} rotation={[0, -0.1, 0]}>
+                <boxGeometry args={[0.3, 0.5, 0.3]} />
+                <meshStandardMaterial color="#777" />
+            </mesh>
+            <mesh position={[1.2, 0.6, -1.0]} rotation={[0, 0.5, 0]}>
+                <boxGeometry args={[0.5, 0.5, 0.5]} />
+                <meshStandardMaterial color="#332211" />
+            </mesh>
+        </group>
+    );
+}
+
+function ConstructedWalls() {
+    // Manually place wall blocks to leave holes for vendors
+    // Vendors are at: 
+    // Broker: [-2.5, 0, -2.5] -> Hole on LEFT at Z ~ -2.5
+    // Barker: [2.5, 0, -5] -> Hole on RIGHT at Z ~ -5
+    // Gamemaster: [-2.5, 0, -9] -> Hole on LEFT at Z ~ -9
+    // Gatekeeper: [0, 0, -14] -> End of hall (handled separately)
+
+    return (
+        <group>
+            {/* --- LEFT WALL (x = -4) --- */}
+            {/* Pre-Broker Segment */}
+            <WallBlock position={[-4, 4, 1.5]} size={[2, 8, 8]} />
+            {/* Broker Hole is roughly z=-1 to -4 */}
+            {/* Post-Broker / Pre-Gamemaster Segment */}
+            <WallBlock position={[-4, 4, -6]} size={[2, 8, 4]} />
+            {/* Gamemaster Hole is roughly z=-7 to -11 */}
+            {/* Post-Gamemaster Segment */}
+            <WallBlock position={[-4, 4, -15]} size={[2, 8, 8]} />
+            {/* Upper fill above stalls */}
+            <WallBlock position={[-4, 7, -2.5]} size={[2, 4, 4]} /> {/* Above Broker */}
+            <WallBlock position={[-4, 7, -9]} size={[2, 4, 4]} /> {/* Above Gamemaster */}
+
+
+            {/* --- RIGHT WALL (x = 4) --- */}
+            {/* Pre-Barker Segment */}
+            <WallBlock position={[4, 4, 0]} size={[2, 8, 10]} />
+            {/* Barker Hole is roughly z=-3 to -7 */}
+            {/* Post-Barker Segment */}
+            <WallBlock position={[4, 4, -13]} size={[2, 8, 16]} />
+            {/* Upper fill above stalls */}
+            <WallBlock position={[4, 7, -5]} size={[2, 4, 4]} /> {/* Above Barker */}
+
+            {/* --- BACK WALL --- */}
+            <WallBlock position={[0, 6, -18]} size={[12, 12, 2]} />
+        </group>
+    );
+}
+
 function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flicker = false }: any) {
     const ref = useRef<THREE.Mesh>(null);
     useFrame(({ clock }) => {
@@ -307,26 +469,22 @@ export default function Environment() {
             {/* Wet Ground - High Metalness/Roughness adjustments */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
                 <planeGeometry args={[20, 60]} />
-                <LayerMaterial lighting="physical" color="#050505" roughness={0.2} metalness={0.6}>
+                <LayerMaterial lighting="physical" color="#050505" roughness={0.7} metalness={0.2}>
                     <Depth colorA="#000000" colorB="#111116" alpha={1} mode="normal" near={0} far={10} origin={[0, 0, 0]} />
                     <Noise mapping="local" type="cell" scale={0.6} mode="overlay" alpha={0.2} />
                     <Noise mapping="local" type="perlin" scale={0.3} mode="add" alpha={0.1} />
                 </LayerMaterial>
             </mesh>
 
-            {/* Towering Alley Walls */}
-            <mesh position={[-4, 8, -10]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-                <planeGeometry args={[40, 20]} />
-                <LayerMaterial lighting="standard" color="#1a1a1a" roughness={0.7} metalness={0.3}>
-                    <Depth colorA="#0a0a0a" colorB="#202020" alpha={1} mode="normal" near={0} far={15} origin={[0, -5, 0]} />
-                </LayerMaterial>
-            </mesh>
-            <mesh position={[4, 8, -10]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
-                <planeGeometry args={[40, 20]} />
-                <LayerMaterial lighting="standard" color="#1a1a1a" roughness={0.7} metalness={0.3}>
-                    <Depth colorA="#0a0a0a" colorB="#202020" alpha={1} mode="normal" near={0} far={15} origin={[0, -5, 0]} />
-                </LayerMaterial>
-            </mesh>
+            {/* Replaced procedural walls with Constructed Stalls */}
+            <ConstructedWalls />
+            <WindowGrid />
+            <POVLight />
+
+            {/* Vendor Stalls Interiors - Matched to Vendor Positions */}
+            <VendorStall position={[-3.8, 0, -2.5]} rotationY={Math.PI / 2} /> {/* Broker */}
+            <VendorStall position={[3.8, 0, -5]} rotationY={-Math.PI / 2} /> {/* Barker */}
+            <VendorStall position={[-3.8, 0, -9]} rotationY={Math.PI / 2} /> {/* Gamemaster */}
 
             <UpperCityLayer />
 
