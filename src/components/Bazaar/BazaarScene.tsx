@@ -4,7 +4,7 @@
 import { Canvas, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import * as THREE from "three";
-import { Sky, Environment as DreiEnvironment } from "@react-three/drei";
+import { Environment as DreiEnvironment } from "@react-three/drei";
 import BazaarSet from "./Environment";
 import Vendor from "./Vendor";
 import Crowd from "./Crowd";
@@ -18,9 +18,10 @@ import { BazaarMaterialsProvider } from "./BazaarMaterials";
 import NeonSign from "./NeonSign";
 import LedBar from "./LedBar";
 import AlleyLight from "./AlleyLight";
+import MarketAtmosphere from "./MarketAtmosphere";
+import MarketSoundscape from "./MarketSoundscape";
 
-// --- Daylight configuration (high-sun cinematic market) ---
-const SKY_BLUE = "#87CEEB";
+// --- Market configuration ---
 const CONFIG = {
     fog: { color: "#b8d4e3", near: 18, far: 52 },
     lights: {
@@ -60,30 +61,9 @@ function SceneContent({ messages, targetVendor, onShout, onEnterAlleyTwo }: { me
     return (
         <>
             <ShadowMapSetup />
-            <fog attach="fog" args={[CONFIG.fog.color, CONFIG.fog.near, CONFIG.fog.far]} />
-            <color attach="background" args={[SKY_BLUE]} />
+            <MarketAtmosphere />
 
-            {/* Sky dome (bright blue, light atmospheric haze) */}
-            <Sky sunPosition={[CONFIG.lights.sun.position[0], CONFIG.lights.sun.position[1], CONFIG.lights.sun.position[2]]} turbidity={4} rayleigh={0.5} mieCoefficient={0.005} />
-
-            {/* Skybox-based IBL for PBR materials */}
             <DreiEnvironment preset="park" background={false} environmentIntensity={1.2} />
-
-            <ambientLight intensity={CONFIG.lights.ambient.intensity} color={CONFIG.lights.ambient.color} />
-            <directionalLight
-                position={CONFIG.lights.sun.position}
-                intensity={CONFIG.lights.sun.intensity}
-                color={CONFIG.lights.sun.color}
-                castShadow
-                shadow-mapSize={[CONFIG.shadow.mapSize, CONFIG.shadow.mapSize]}
-                shadow-normalBias={CONFIG.shadow.normalBias}
-                shadow-camera-far={CONFIG.shadow.cameraFar}
-                shadow-camera-left={CONFIG.shadow.cameraLeft}
-                shadow-camera-right={CONFIG.shadow.cameraRight}
-                shadow-camera-top={CONFIG.shadow.cameraTop}
-                shadow-camera-bottom={CONFIG.shadow.cameraBottom}
-            />
-            <hemisphereLight args={[CONFIG.lights.hemisphere.sky, CONFIG.lights.hemisphere.ground, CONFIG.lights.hemisphere.intensity]} />
 
             <BazaarSet onEnterPortal={onEnterAlleyTwo} />
             <Vendor setTarget={onShout} targetId={targetVendor} />
@@ -222,6 +202,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: BazaarSceneProps = {}) 
             <div className="bazaar-overlay-vignette" />
 
             <InputBar onShout={handleShout} />
+            <MarketSoundscape />
         </div>
     );
 }

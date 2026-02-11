@@ -8,9 +8,16 @@ import { BAZAAR_BRIGHTNESS } from "./brightness";
 import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 import LedBar from "./LedBar";
 import { AlleyEndingPortal } from "./AlleyEnding";
+import StringLights from "./StringLights";
+import FruitStall from "./FruitStall";
+import CoffeeCart from "./CoffeeCart";
+import JewelryStand from "./JewelryStand";
+import BirdFlyby from "./BirdFlyby";
 
 // Cutoff: hollow everything past this Z (just past Barker). Portal and back wall sit here.
 const Z_CUTOFF = -6;
+
+const STRING_LIGHT_POSITIONS: [number, number, number][] = [[-2, 3.8, 0], [0, 3.5, -2], [2, 3.6, -4], [-1, 3.4, -5]];
 
 // --- SHARED MATERIALS (created once, reused across all components) ---
 const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
@@ -146,13 +153,22 @@ function WindowACs() {
 }
 
 function HangingBlanket({ y, z, width, height, color }: { y: number; z: number; width: number; height: number; color: string }) {
+    const meshRef = useRef<THREE.Mesh>(null);
+    const frameCount = useRef(0);
+    useFrame(({ clock }) => {
+        if (!meshRef.current) return;
+        frameCount.current++;
+        if (frameCount.current % 2 !== 0) return;
+        const t = clock.getElapsedTime() + z * 0.2;
+        meshRef.current.rotation.z = Math.sin(t * 1.5) * 0.04 + Math.cos(t * 0.8) * 0.02;
+    });
     return (
         <group position={[0, y, z]}>
             <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
                 <cylinderGeometry args={[0.015, 0.015, 7.6, 8]} />
                 <meshStandardMaterial color="#2a2520" roughness={0.9} />
             </mesh>
-            <mesh position={[0, -height / 2, 0]} rotation={[0, 0, Math.PI / 2]} receiveShadow castShadow>
+            <mesh ref={meshRef} position={[0, -height / 2, 0]} rotation={[0, 0, Math.PI / 2]} receiveShadow castShadow>
                 <planeGeometry args={[width, height]} />
                 <meshStandardMaterial color={color} roughness={0.95} side={THREE.DoubleSide} />
             </mesh>
@@ -392,58 +408,63 @@ const HAWKER_HOLE_Y = { min: 0.5, max: 2.8 };
 const RIGHT_WALL_HOLE_Z = { min: 0.5, max: 2.5 };
 const RIGHT_WALL_HOLE_Y = { min: 0.8, max: 2.2 };
 
-// Full shop stall for Hawker: counter, shelves, neon — vendor stands behind counter
+// Full shop stall for Hawker: counter, shelves, neon — vendor stands behind counter. Floor level with alley ground (y=0).
 function HawkerStallShop() {
-    const { woodCrate, metalPanel } = useBazaarMaterials();
+    const { woodCrate, metalPanel, concreteWall } = useBazaarMaterials();
     const holeZ = (HAWKER_HOLE_Z.min + HAWKER_HOLE_Z.max) / 2;
-    const holeY = (HAWKER_HOLE_Y.min + HAWKER_HOLE_Y.max) / 2;
-    // Position at left wall: opening at x=-4, recess extends to x=-5
+    const holeHeight = HAWKER_HOLE_Y.max - HAWKER_HOLE_Y.min;
+    // Position so bottom of alcove is at alley ground (y=0): group y = half height
+    const groupY = holeHeight / 2;
     const dimOrange = "#cc6633";
     const orangeIntensity = 0.6 * BAZAAR_BRIGHTNESS * (EMISSIVE_SCALE > 0 ? EMISSIVE_SCALE : 0.6);
 
     return (
-        <group position={[-4.5, holeY, holeZ]}>
+        <group position={[-4.5, groupY, holeZ]}>
+            {/* Floor of alcove — level with alley ground */}
+            <mesh position={[-0.5, -groupY, 0]} receiveShadow material={concreteWall}>
+                <boxGeometry args={[0.8, 0.08, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.2]} />
+            </mesh>
             {/* Back wall of alcove (local -X = into wall) */}
             <mesh position={[-0.8, 0, 0]} receiveShadow material={metalPanel}>
-                <boxGeometry args={[0.1, HAWKER_HOLE_Y.max - HAWKER_HOLE_Y.min + 0.2, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.2]} />
+                <boxGeometry args={[0.1, holeHeight + 0.2, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.2]} />
             </mesh>
             {/* Side walls */}
             <mesh position={[-0.4, 0, -(HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min) / 2 - 0.05]} material={metalPanel}>
-                <boxGeometry args={[0.8, HAWKER_HOLE_Y.max - HAWKER_HOLE_Y.min + 0.3, 0.1]} />
+                <boxGeometry args={[0.8, holeHeight + 0.3, 0.1]} />
             </mesh>
             <mesh position={[-0.4, 0, (HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min) / 2 + 0.05]} material={metalPanel}>
-                <boxGeometry args={[0.8, HAWKER_HOLE_Y.max - HAWKER_HOLE_Y.min + 0.3, 0.1]} />
+                <boxGeometry args={[0.8, holeHeight + 0.3, 0.1]} />
             </mesh>
-            {/* Market counter — prominent wooden counter vendor stands behind */}
-            <mesh position={[-0.15, 0.15, 0]} castShadow receiveShadow material={woodCrate}>
+            {/* Market counter — prominent wooden counter vendor stands behind (slightly above floor) */}
+            <mesh position={[-0.15, 0.15 + 0.04, 0]} castShadow receiveShadow material={woodCrate}>
                 <boxGeometry args={[0.5, 0.9, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min]} />
             </mesh>
             {/* Counter top with neon strip */}
-            <mesh position={[-0.15, 0.55, 0]}>
+            <mesh position={[-0.15, 0.55 + 0.04, 0]}>
                 <boxGeometry args={[0.02, 0.04, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.1]} />
                 <meshStandardMaterial color={dimOrange} emissive={dimOrange} emissiveIntensity={orangeIntensity} />
             </mesh>
             {/* Shelves behind counter */}
-            <mesh position={[-0.5, 0.7, 0]} material={metalPanel}>
+            <mesh position={[-0.5, 0.7 + 0.04, 0]} material={metalPanel}>
                 <boxGeometry args={[0.08, 0.05, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min - 0.4]} />
             </mesh>
-            <mesh position={[-0.55, 0.72, 0]}>
+            <mesh position={[-0.55, 0.72 + 0.04, 0]}>
                 <boxGeometry args={[0.02, 0.02, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min - 0.5]} />
                 <meshStandardMaterial color={dimOrange} emissive={dimOrange} emissiveIntensity={orangeIntensity} />
             </mesh>
-            <mesh position={[-0.55, 1.1, 0]} material={metalPanel}>
+            <mesh position={[-0.55, 1.1 + 0.04, 0]} material={metalPanel}>
                 <boxGeometry args={[0.08, 0.05, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min - 0.5]} />
             </mesh>
             {/* Neon frame around shop opening */}
             <mesh position={[0.02, 0, 0]}>
-                <boxGeometry args={[0.04, HAWKER_HOLE_Y.max - HAWKER_HOLE_Y.min + 0.1, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.15]} />
+                <boxGeometry args={[0.04, holeHeight + 0.1, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.15]} />
                 <meshStandardMaterial color={dimOrange} emissive={dimOrange} emissiveIntensity={orangeIntensity} />
             </mesh>
             {/* Clutter on counter */}
-            <mesh position={[-0.15, 0.5, -0.8]} rotation={[0, 0.2, 0]} material={woodCrate}>
+            <mesh position={[-0.15, 0.5 + 0.04, -0.8]} rotation={[0, 0.2, 0]} material={woodCrate}>
                 <boxGeometry args={[0.25, 0.2, 0.2]} />
             </mesh>
-            <mesh position={[-0.15, 0.52, 0.5]} rotation={[0, -0.1, 0]} material={metalPanel}>
+            <mesh position={[-0.15, 0.52 + 0.04, 0.5]} rotation={[0, -0.1, 0]} material={metalPanel}>
                 <boxGeometry args={[0.2, 0.15, 0.15]} />
             </mesh>
             {PRACTICAL_LIGHT_INTENSITY > 0 && (
@@ -938,7 +959,18 @@ export default function Environment({ onEnterPortal }: { onEnterPortal?: () => v
             {/* Barker - Custom Internal Wall */}
             <InternalVendorWall position={[4, 0, -5]} rotationY={-Math.PI / 2} />
 
+            {/* Vibrant market stalls */}
+            <FruitStall position={[2.5, 0, -1]} rotation={[0, -0.4, 0]} />
+            <CoffeeCart position={[-1.5, 0, -4]} rotation={[0, 0.3, 0]} />
+            <JewelryStand position={[2, 0, -3.5]} rotation={[0, 0.2, 0]} />
+            <MarketCart position={[-2.5, 0, -5]} rotation={[0, 0.5, 0]} />
+
             <UpperCityLayer />
+
+            {/* String lights - winding overhead */}
+            <StringLights positions={STRING_LIGHT_POSITIONS} color="#ffcc88" />
+
+            <BirdFlyby />
 
             {/* Neon Signage Cluster (only up to cutoff) */}
             <NeonSign text="MARKET" position={[-3.5, 4, -5]} rotation={[0, Math.PI / 2, 0]} color="#ff0055" size={2} />
