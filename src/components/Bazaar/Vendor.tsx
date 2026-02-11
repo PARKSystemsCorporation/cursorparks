@@ -118,7 +118,7 @@ function VendorItem({ id, ...props }: any) {
                         outlineWidth={0.01}
                         outlineColor="#332200"
                         outlineOpacity={shoutOpacity}
-                        font="Inter"
+                        font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
                     >
                         {lastShout}
                     </Text>
