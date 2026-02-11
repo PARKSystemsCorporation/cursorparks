@@ -94,9 +94,11 @@ export default function BazaarScene() {
             // matching server.js `path: "/socket"`
             const newSocket = io({
                 path: "/socket",
-                transports: ["websocket", "polling"], // Allow polling fallback
+                // transports: ["websocket", "polling"], // Let Socket.io negotiate default (polling -> upgrade)
                 reconnection: true,
-                timeout: 5000,
+                reconnectionAttempts: Infinity,
+                timeout: 20000, // Increased timeout
+                forceNew: true,
             });
 
             newSocket.on("connect_error", (err) => {
