@@ -16,7 +16,7 @@ export default function LedSign() {
     });
 
     return (
-        <group position={[0, 2.5, -4]}>
+        <group position={[3.8, 3.1, -4]} rotation={[0, -Math.PI / 2, 0]}>
             {/* The Text Object */}
             <Text
                 ref={textRef}
