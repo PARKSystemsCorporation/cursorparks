@@ -40,8 +40,8 @@ export default function StringLights({ positions, color = "#ffaa55", bulbRadius 
         frameCount.current++;
         if (frameCount.current % 2 !== 0) return;
         const t = clock.getElapsedTime();
-        cableRef.current.rotation.z = Math.sin(t * 1.2) * 0.03;
-        cableRef.current.rotation.x = Math.cos(t * 0.9) * 0.02;
+        cableRef.current.rotation.z = Math.sin(t * 1.2) * 0.06;
+        cableRef.current.rotation.x = Math.cos(t * 0.9) * 0.04;
     });
 
     if (!curve || bulbs.length === 0) return null;

@@ -21,6 +21,7 @@ import LedBar from "./LedBar";
 import AlleyLight from "./AlleyLight";
 import MarketAtmosphere from "./MarketAtmosphere";
 import MarketSoundscape from "./MarketSoundscape";
+import DustParticulates from "./DustParticulates";
 
 // --- Market configuration ---
 const CONFIG = {
@@ -36,7 +37,7 @@ const CONFIG = {
     },
     // Camera config moved to CameraPresence
     postprocessing: {
-        exposure: 1.2, // Slightly boost exposure for contrasty look
+        exposure: 1.5, // Bright, sunlit exposure
         toneMapping: THREE.ACESFilmicToneMapping,
     },
     shadow: {
@@ -65,6 +66,7 @@ function SceneContent({ messages, targetVendor, onShout, onEnterAlleyTwo }: { me
             <ShadowMapSetup />
             <CameraPresence />
             <MarketAtmosphere />
+            <DustParticulates />
 
             <DreiEnvironment preset="park" background={false} environmentIntensity={1.2} />
 
@@ -90,7 +92,7 @@ function SceneContent({ messages, targetVendor, onShout, onEnterAlleyTwo }: { me
 
             <EffectComposer>
                 <SMAA />
-                <Bloom luminanceThreshold={1.2} mipmapBlur intensity={0.4} radius={0.5} />
+                <Bloom luminanceThreshold={1.5} mipmapBlur intensity={0.2} radius={0.4} />
                 <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
             </EffectComposer>
         </>

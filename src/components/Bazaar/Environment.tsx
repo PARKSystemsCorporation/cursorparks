@@ -87,13 +87,13 @@ function WindowGrid() {
                 out.push(
                     <mesh key={`l-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
                         <planeGeometry args={[1.5, 2]} />
-                        <meshStandardMaterial color="#ffcc77" emissive="#ffeecc" emissiveIntensity={(1.5 + pseudoRandom(seedL)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE + 0.45} toneMapped={EMISSIVE_SCALE === 0} />
+                        <meshStandardMaterial color="#ffcc77" emissive="#ffeecc" emissiveIntensity={(0.5 + pseudoRandom(seedL)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE * 0.5} toneMapped={EMISSIVE_SCALE === 0} />
                     </mesh>
                 );
                 out.push(
                     <mesh key={`r-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
                         <planeGeometry args={[1.5, 2]} />
-                        <meshStandardMaterial color="#88ccff" emissive="#cceeff" emissiveIntensity={(1.5 + pseudoRandom(seedR)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE + 0.65} toneMapped={EMISSIVE_SCALE === 0} />
+                        <meshStandardMaterial color="#88ccff" emissive="#cceeff" emissiveIntensity={(0.5 + pseudoRandom(seedR)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE * 0.5} toneMapped={EMISSIVE_SCALE === 0} />
                     </mesh>
                 );
             }
@@ -250,13 +250,20 @@ function Clothesline({ y, z }: { y: number; z: number }) {
         return m;
     }, [cloth]);
 
+    const groupRef = useRef<THREE.Group>(null);
+    useFrame(({ clock }) => {
+        if (!groupRef.current) return;
+        const t = clock.getElapsedTime();
+        groupRef.current.rotation.z = Math.sin(t * 1 + z) * 0.03; // Gentle sway
+    });
+
     return (
-        <group position={[0, y, z]}>
+        <group ref={groupRef} position={[0, y, z]}>
             <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]} material={darkMetal}>
                 <cylinderGeometry args={[0.01, 0.01, 7.6, 4]} />
             </mesh>
             {clothes.map((c, i) => (
-                <group key={i} position={[c.x, -0.15, 0]} rotation={[0, 0, c.rot]}>
+                <group key={i} position={[c.x, -0.15, 0]} rotation={[0, 0, c.rot + Math.sin(i + z) * 0.1]}>
                     {c.type === "shirt" && (
                         <>
                             <mesh castShadow material={darkCloth}>
@@ -345,7 +352,7 @@ function InternalVendorWall({ position, rotationY = 0 }: { position: [number, nu
             {/* Counter strip (paint/plastic in day, glow at night) */}
             <mesh position={[0, 1.1, 1.01]}>
                 <planeGeometry args={[3.6, 0.05]} />
-                <meshStandardMaterial color="#ff0055" emissive="#ff0055" emissiveIntensity={EMISSIVE_SCALE} />
+                <meshStandardMaterial color="#ff0055" emissive="#ff0055" emissiveIntensity={EMISSIVE_SCALE * 0.5} />
             </mesh>
 
             {/* Back Shelves/Tech */}
@@ -359,7 +366,7 @@ function InternalVendorWall({ position, rotationY = 0 }: { position: [number, nu
             {/* Overhead strip */}
             <mesh position={[0, 2.9, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[3.5, 0.2]} />
-                <meshStandardMaterial color="#ff0055" emissive="#ff0055" emissiveIntensity={EMISSIVE_SCALE} transparent opacity={0.8 + 0.2 * (1 - EMISSIVE_SCALE)} />
+                <meshStandardMaterial color="#ff0055" emissive="#ff0055" emissiveIntensity={EMISSIVE_SCALE * 0.5} transparent opacity={0.8 + 0.2 * (1 - EMISSIVE_SCALE)} />
             </mesh>
             {EMISSIVE_SCALE > 0 && (
                 <mesh position={[0, 1.5, 0.5]} rotation={[0, 0, 0]}>
@@ -400,7 +407,7 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
             {/* Counter LED strip */}
             <mesh position={[0, 0.9, 0.91]}>
                 <planeGeometry args={[3.5, 0.05]} />
-                <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={EMISSIVE_SCALE} />
+                <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={EMISSIVE_SCALE * 0.5} />
             </mesh>
 
             {/* Shelves */}
@@ -413,11 +420,11 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
             {/* Shelf LED strips */}
             <mesh position={[0, 1.45, -1.45]}>
                 <planeGeometry args={[3.6, 0.02]} />
-                <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={EMISSIVE_SCALE} />
+                <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={EMISSIVE_SCALE * 0.5} />
             </mesh>
             <mesh position={[0, 2.15, -1.45]}>
                 <planeGeometry args={[3.6, 0.02]} />
-                <meshStandardMaterial color="#ffaa00" emissive="#ffaa00" emissiveIntensity={EMISSIVE_SCALE} />
+                <meshStandardMaterial color="#ffaa00" emissive="#ffaa00" emissiveIntensity={EMISSIVE_SCALE * 0.5} />
             </mesh>
 
             {/* Interior Light - REMOVED -> Baked into emissive strips */}
@@ -608,7 +615,7 @@ function ConstructedWalls({ onEnterPortal }: { onEnterPortal?: () => void }) {
 
 
 function LargeWallLedStrip({ position, rotation, width, height, color }: { position: [number, number, number]; rotation: [number, number, number]; width: number; height: number; color: string }) {
-    const intensity = 2.5 * BAZAAR_BRIGHTNESS * (EMISSIVE_SCALE > 0 ? EMISSIVE_SCALE : 0.5);
+    const intensity = 0.8 * BAZAAR_BRIGHTNESS * (EMISSIVE_SCALE > 0 ? EMISSIVE_SCALE : 0.5);
     return (
         <group position={position} rotation={rotation}>
             <mesh position={[0, 0, 0]}>
@@ -659,7 +666,7 @@ function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flick
                 outlineBlur={0.2}
             >
                 {text}
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE * 0.5} />
             </Text>
             {/* Backing plate */}
             <mesh position={[0, 0, -0.05]} material={darkMetal}>
@@ -761,7 +768,7 @@ function ProtrudingSign({ position, text, color = "#ff00ff" }: ProtrudingSignPro
                 anchorY="middle"
             >
                 {text}
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE * 0.5} />
             </Text>
             {/* LED Text Back */}
             <Text
@@ -774,7 +781,7 @@ function ProtrudingSign({ position, text, color = "#ff00ff" }: ProtrudingSignPro
                 anchorY="middle"
             >
                 {text}
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE * 0.5} />
             </Text>
         </group>
     );
@@ -991,7 +998,7 @@ function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { posi
             {/* Bulb */}
             <mesh position={[0, 0.55, 0.1]} rotation={[0.5, 0, 0]}>
                 <sphereGeometry args={[0.05]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2 * EMISSIVE_SCALE} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.0 * EMISSIVE_SCALE} />
             </mesh>
             {PRACTICAL_LIGHT_INTENSITY > 0 && (
                 <spotLight position={[0, 0.6, 0.1]} target-position={[0, 0, 1]} angle={0.6} penumbra={0.5} intensity={4} distance={15} color={color} />

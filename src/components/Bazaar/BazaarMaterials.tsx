@@ -56,75 +56,75 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
 
         // 2. Create Materials
 
-        // Wall
+        // Wall - Warm sandstone/plaster
         const concreteWall = new THREE.MeshStandardMaterial({
             map: txConcrete,
             normalMap: txConcreteNormal,
-            color: "#888",
+            color: "#d6c6b9", // Warm sandstone
             roughness: 0.9,
             metalness: 0.1,
         });
 
         const concreteWallRight = concreteWall.clone();
-        concreteWallRight.color.set("#bbb");
-        concreteWallRight.envMapIntensity = 1.2;
+        concreteWallRight.color.set("#e6d6c9"); // Lighter sandstone
+        concreteWallRight.envMapIntensity = 0.5; // Reduced reflection
 
-        // Floor
+        // Floor - Dusty worn stone, less "wet"
         const wetFloor = new THREE.MeshStandardMaterial({
             map: txFloor,
             roughnessMap: txFloorRough,
-            color: "#666",
+            color: "#8c857b", // Dusty stone
             roughness: 1.0,
-            metalness: 0.6,
-            envMapIntensity: 1.5,
+            metalness: 0.1, // Reduced wetness
+            envMapIntensity: 0.3, // Subtle bounce only
         });
 
-        // Ground
+        // Ground - Dusty
         const dirtRoad = new THREE.MeshStandardMaterial({
             map: txDirt,
             normalMap: txDirtNormal,
             roughnessMap: txDirtRough,
-            color: "#5a4a3f",
+            color: "#8f7e6b", // Warmer dirt
             roughness: 1.0,
             metalness: 0,
-            envMapIntensity: 0.2,
+            envMapIntensity: 0.1,
         });
 
-        // Metal
+        // Metal - Warmer reflection
         const metalPanel = new THREE.MeshStandardMaterial({
             map: txMetal,
             roughnessMap: txMetalRough,
-            color: "#aaa",
-            roughness: 1.0,
-            metalness: 0.8,
-            envMapIntensity: 1.2
+            color: "#b0a69e", // Slight warm tint to metal
+            roughness: 0.7,
+            metalness: 0.6,
+            envMapIntensity: 0.8
         });
 
-        // Dark Metal (for cables, grim) - reuse metal texture but darker
+        // Dark Metal
         const darkMetal = new THREE.MeshStandardMaterial({
-            map: txMetal, // Reuse map for detail
+            map: txMetal,
             roughnessMap: txMetalRough,
-            color: "#333",
-            roughness: 0.8,
-            metalness: 0.5,
+            color: "#3e3b38", // Warmer dark grey
+            roughness: 0.9,
+            metalness: 0.3,
         });
 
-        // Wood Crate
+        // Wood Crate - Warm Oak
         const woodCrate = new THREE.MeshStandardMaterial({
             map: txWood,
             roughnessMap: txWoodRough,
-            color: "#8d6e63",
+            color: "#a68b6c", // Warm oak/sand
             roughness: 1.0,
             metalness: 0.0,
         });
 
-        // Cloth
+        // Cloth - Worn, dusty
         const cloth = new THREE.MeshStandardMaterial({
             map: txCloth,
             normalMap: txClothNormal,
-            color: "#fff",
-            roughness: 0.9,
-            metalness: 0.05,
+            color: "#e6dcc3", // Off-white/cream
+            roughness: 1.0,
+            metalness: 0.0,
             side: THREE.DoubleSide
         });
 
@@ -132,9 +132,9 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
         const rustPipe = new THREE.MeshStandardMaterial({
             map: txRust,
             roughnessMap: txRustRough,
-            color: "#aaa",
+            color: "#a67c52", // Warmer rust
             roughness: 1.0,
-            metalness: 0.6,
+            metalness: 0.4,
         });
 
         return {

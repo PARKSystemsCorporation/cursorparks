@@ -27,45 +27,49 @@ export default function MarketAtmosphere() {
     const p = phase;
     const isTwilight = p > TWILIGHT_START;
     const twilightBlend = isTwilight ? (p - TWILIGHT_START) / (1 - TWILIGHT_START) : 0;
-    const skyColor = isTwilight ? "#4a5a7a" : "#87CEEB";
-    // Depth Fog: Warm particulate tone instead of pure blue
-    const fogColor = isTwilight ? "#2a2420" : "#aaccff";
-    const sunX = isTwilight ? 2 : 5;
-    const sunY = isTwilight ? 8 : 28;
-    const sunZ = isTwilight ? -4 : 8;
+    // Afternoon Light: Warm amber sun, cream/brown fill
+    const sunColor = "#ffb76b";
+    const skyColor = "#ffeedd"; // Pale warm cream
+    const groundColor = "#d4b483"; // Dusty brown
+    const fogColor = "#eacca7"; // Warm beige fog
 
-    // Increased ambient for better fill in shadows (since texture maps are darker)
-    const ambientWarmth = 0.7 + twilightBlend * 0.1;
-    // Reduced sun intensity to prevent washout and look less "gamey"
-    const sunIntensity = isTwilight ? 0.4 : 1.2;
+    // Position: High and angled for 4-5PM shadows
+    const sunPosition: [number, number, number] = [15, 25, 10];
 
     return (
         <>
-            <color attach="background" args={[skyColor]} />
-            {/* Haze: Start closer (8) for depth, end at 45 (cutoff) */}
-            <fog attach="fog" args={[fogColor, 8, 45]} />
-            <Sky
-                sunPosition={[sunX, sunY, sunZ]}
-                turbidity={isTwilight ? 10 : 2}
-                rayleigh={isTwilight ? 0.5 : 0.8}
-                mieCoefficient={isTwilight ? 0.05 : 0.01}
-            />
-            <ambientLight intensity={ambientWarmth} color="#fff0dd" />
+            <color attach="background" args={["#f0e0d0"]} />
+            {/* Fog: Low density, warm, starts near to layer depth */}
+            <fogexp2 attach="fog" args={[fogColor, 0.015]} />
+
+            <ambientLight intensity={0.4} color="#ffeebb" />
+
             <directionalLight
-                position={[sunX, sunY, sunZ]}
-                intensity={sunIntensity}
-                color="#fff5e6"
+                position={sunPosition}
+                intensity={3.5}
+                color={sunColor}
                 castShadow
-                shadow-mapSize={[2048, 2048]} // Optimized shadow map
-                shadow-bias={-0.0001}
-                shadow-normalBias={0.02}
-                shadow-camera-far={65}
-                shadow-camera-left={-20}
-                shadow-camera-right={20}
-                shadow-camera-top={24}
-                shadow-camera-bottom={-20}
+                shadow-mapSize={[2048, 2048]}
+                shadow-bias={-0.0005}
+                shadow-normalBias={0.04}
+                shadow-camera-far={80}
+                shadow-camera-left={-30}
+                shadow-camera-right={30}
+                shadow-camera-top={30}
+                shadow-camera-bottom={-30}
             />
-            <hemisphereLight args={[isTwilight ? "#445566" : "#88aaff", "#332211", isTwilight ? 1.0 : 0.8]} />
+
+            {/* Hemisphere fill to lift blacks with warm tones */}
+            <hemisphereLight args={[skyColor, groundColor, 0.6]} />
+
+            {/* Sun visual (optional, reusing Sky if desired, but custom color might be needed) */}
+            <Sky
+                sunPosition={sunPosition}
+                turbidity={8}
+                rayleigh={0.3} // Lower rayleigh for less blue, more styling
+                mieCoefficient={0.005}
+                mieDirectionalG={0.7}
+            />
         </>
     );
 }
