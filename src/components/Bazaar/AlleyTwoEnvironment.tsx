@@ -1,4 +1,4 @@
-import { useRef, useMemo, type ReactNode } from "react";
+import { useRef, useMemo, type ReactNode, useLayoutEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useBazaarMaterials } from "./BazaarMaterials";
@@ -45,9 +45,16 @@ function WallBlock({
 }) {
     const { concreteWall } = useBazaarMaterials();
     const mat = material ?? concreteWall;
+    // Optimization: Hollow out / thin walls
+    // If a dimension is exactly 2 (standard wall thickness here), reduce it to 0.1
+    const optimizedSize: [number, number, number] = [
+        Math.abs(size[0] - 2) < 0.1 ? 0.1 : size[0],
+        size[1],
+        Math.abs(size[2] - 2) < 0.1 ? 0.1 : size[2]
+    ];
     return (
         <mesh position={position} rotation={[0, 0, 0]} receiveShadow castShadow material={mat}>
-            <boxGeometry args={size} />
+            <boxGeometry args={optimizedSize} />
         </mesh>
     );
 }
@@ -109,27 +116,12 @@ function Cables() {
     return (
         <group>
             <mesh>
-                <tubeGeometry args={[curve1, 20, 0.02, 8, false]} />
+                <tubeGeometry args={[curve1, 12, 0.02, 3, false]} />
                 <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
             </mesh>
             <mesh>
-                <tubeGeometry args={[curve2, 20, 0.025, 8, false]} />
+                <tubeGeometry args={[curve2, 12, 0.025, 3, false]} />
                 <meshStandardMaterial color="#000000" roughness={0.9} />
-            </mesh>
-        </group>
-    );
-}
-
-function WindowAC({ x, y, z, tilt = 0 }: { x: number; y: number; z: number; tilt?: number }) {
-    const isLeft = x < 0;
-    const rotY = isLeft ? Math.PI / 2 : -Math.PI / 2;
-    return (
-        <group position={[x, y, z]} rotation={[tilt, rotY, 0]}>
-            <mesh castShadow material={MAT_METAL}>
-                <boxGeometry args={[0.45, 0.3, 0.25]} />
-            </mesh>
-            <mesh position={[0, 0, 0.14]} material={MAT_DARK}>
-                <circleGeometry args={[0.1, 12]} />
             </mesh>
         </group>
     );
@@ -142,11 +134,45 @@ const WINDOW_AC_POSITIONS: { x: number; y: number; z: number; tilt?: number }[] 
 ];
 
 function WindowACs() {
+    const meshRef = useRef<THREE.InstancedMesh>(null);
+    const fanRef = useRef<THREE.InstancedMesh>(null);
+    const count = WINDOW_AC_POSITIONS.length;
+
+    useLayoutEffect(() => {
+        if (!meshRef.current || !fanRef.current) return;
+        const tempObj = new THREE.Object3D();
+
+        WINDOW_AC_POSITIONS.forEach((p, i) => {
+            const isLeft = p.x < 0;
+            const rotY = isLeft ? Math.PI / 2 : -Math.PI / 2;
+            const tilt = p.tilt ?? (i % 3 === 0 ? 0.04 : 0);
+
+            // Box
+            tempObj.position.set(p.x, p.y, p.z);
+            tempObj.rotation.set(tilt, rotY, 0);
+            tempObj.updateMatrix();
+            meshRef.current!.setMatrixAt(i, tempObj.matrix);
+
+            // Fan
+            tempObj.translateZ(0.14);
+            tempObj.updateMatrix();
+            fanRef.current!.setMatrixAt(i, tempObj.matrix);
+        });
+
+        meshRef.current.instanceMatrix.needsUpdate = true;
+        fanRef.current.instanceMatrix.needsUpdate = true;
+    }, []);
+
     return (
         <group>
-            {WINDOW_AC_POSITIONS.map((p, i) => (
-                <WindowAC key={i} x={p.x} y={p.y} z={p.z} tilt={p.tilt ?? (i % 3 === 0 ? 0.04 : 0)} />
-            ))}
+            <instancedMesh ref={meshRef} args={[undefined, undefined, count]} castShadow>
+                <boxGeometry args={[0.45, 0.3, 0.25]} />
+                <primitive object={MAT_METAL} />
+            </instancedMesh>
+            <instancedMesh ref={fanRef} args={[undefined, undefined, count]}>
+                <circleGeometry args={[0.1, 8]} />
+                <primitive object={MAT_DARK} />
+            </instancedMesh>
         </group>
     );
 }

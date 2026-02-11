@@ -178,7 +178,7 @@ export function RealisticVendorBody({
     const { skinTone, hairColor, hairStyle, topColor, bottomColor, accessory, posture, build, eyeColor, beard, glasses, mask, goggles, gloves, jewelry, accentMesh } = config;
 
     const buildScale = { slim: { torso: 0.9, limbs: 0.95 }, medium: { torso: 1, limbs: 1 }, stocky: { torso: 1.1, limbs: 1.05 }, muscular: { torso: 1.15, limbs: 1.1 }, tall: { torso: 1, limbs: 1.15 } }[build];
-    const seg = { head: [24, 18], torso: 14, limb: 12, joint: 10 };
+    const seg = { head: [16, 12], torso: 8, limb: 6, joint: 6 };
 
     useFrame(({ clock }) => {
         if (!group.current) return;
@@ -427,7 +427,7 @@ export function RealisticVendorBody({
             )}
             {jewelry && (
                 <mesh position={[0.28, 0.88, 0.08]} rotation={[0, 0, Math.PI / 2]}>
-                    <torusGeometry args={[0.04, 0.008, 8, 16]} />
+                    <torusGeometry args={[0.04, 0.008, 6, 8]} />
                     <meshStandardMaterial color="#ffd700" metalness={0.9} roughness={0.2} />
                 </mesh>
             )}

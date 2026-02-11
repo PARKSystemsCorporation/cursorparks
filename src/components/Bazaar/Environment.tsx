@@ -1,4 +1,4 @@
-import { useRef, useMemo, type ReactNode } from "react";
+import { useRef, useMemo, type ReactNode, useLayoutEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
@@ -44,11 +44,11 @@ function Cables() {
     return (
         <group>
             <mesh>
-                <tubeGeometry args={[curve1, 20, 0.02, 8, false]} />
+                <tubeGeometry args={[curve1, 12, 0.02, 3, false]} />
                 <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
             </mesh>
             <mesh>
-                <tubeGeometry args={[curve2, 20, 0.03, 8, false]} />
+                <tubeGeometry args={[curve2, 12, 0.03, 3, false]} />
                 <meshStandardMaterial color="#000000" roughness={0.9} />
             </mesh>
         </group>
@@ -127,27 +127,46 @@ const WINDOW_AC_POSITIONS: { x: number; y: number; z: number; tilt?: number }[] 
     { x: -4.05, y: 5, z: -2 }, { x: 4.05, y: 2.5, z: -1 }, { x: -4.05, y: 8.5, z: 1 }, { x: 4.05, y: 3, z: -5 },
 ].filter((p) => p.z >= Z_CUTOFF);
 
-function WindowAC({ x, y, z, tilt = 0 }: { x: number; y: number; z: number; tilt?: number }) {
-    const isLeft = x < 0;
-    const rotY = isLeft ? Math.PI / 2 : -Math.PI / 2;
-    return (
-        <group position={[x, y, z]} rotation={[tilt, rotY, 0]}>
-            <mesh castShadow material={MAT_METAL_DARK}>
-                <boxGeometry args={[0.5, 0.35, 0.28]} />
-            </mesh>
-            <mesh position={[0, 0, 0.15]} material={MAT_DARK}>
-                <circleGeometry args={[0.12, 12]} />
-            </mesh>
-        </group>
-    );
-}
-
 function WindowACs() {
+    const meshRef = useRef<THREE.InstancedMesh>(null);
+    const fanRef = useRef<THREE.InstancedMesh>(null);
+    const count = WINDOW_AC_POSITIONS.length;
+
+    useLayoutEffect(() => {
+        if (!meshRef.current || !fanRef.current) return;
+        const tempObj = new THREE.Object3D();
+
+        WINDOW_AC_POSITIONS.forEach((p, i) => {
+            const isLeft = p.x < 0;
+            const rotY = isLeft ? Math.PI / 2 : -Math.PI / 2;
+            const tilt = p.tilt ?? (i % 3 === 0 ? 0.04 : 0);
+
+            // Box body
+            tempObj.position.set(p.x, p.y, p.z);
+            tempObj.rotation.set(tilt, rotY, 0);
+            tempObj.updateMatrix();
+            meshRef.current!.setMatrixAt(i, tempObj.matrix);
+
+            // Fan circle (local offset)
+            tempObj.translateZ(0.15);
+            tempObj.updateMatrix();
+            fanRef.current!.setMatrixAt(i, tempObj.matrix);
+        });
+
+        meshRef.current.instanceMatrix.needsUpdate = true;
+        fanRef.current.instanceMatrix.needsUpdate = true;
+    }, []);
+
     return (
         <group>
-            {WINDOW_AC_POSITIONS.map((p, i) => (
-                <WindowAC key={i} x={p.x} y={p.y} z={p.z} tilt={p.tilt ?? (i % 3 === 0 ? 0.04 : 0)} />
-            ))}
+            <instancedMesh ref={meshRef} args={[undefined, undefined, count]} castShadow>
+                <boxGeometry args={[0.5, 0.35, 0.28]} />
+                <primitive object={MAT_METAL_DARK} />
+            </instancedMesh>
+            <instancedMesh ref={fanRef} args={[undefined, undefined, count]}>
+                <circleGeometry args={[0.12, 8]} />
+                <primitive object={MAT_DARK} />
+            </instancedMesh>
         </group>
     );
 }
@@ -165,7 +184,7 @@ function HangingBlanket({ y, z, width, height, color }: { y: number; z: number; 
     return (
         <group position={[0, y, z]}>
             <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.015, 0.015, 7.6, 8]} />
+                <cylinderGeometry args={[0.015, 0.015, 7.6, 4]} />
                 <meshStandardMaterial color="#2a2520" roughness={0.9} />
             </mesh>
             <mesh ref={meshRef} position={[0, -height / 2, 0]} rotation={[0, 0, Math.PI / 2]} receiveShadow castShadow>
@@ -210,7 +229,7 @@ function Clothesline({ y, z }: { y: number; z: number }) {
     return (
         <group position={[0, y, z]}>
             <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.01, 0.01, 7.6, 6]} />
+                <cylinderGeometry args={[0.01, 0.01, 7.6, 4]} />
                 <meshStandardMaterial color="#1a1a1a" roughness={1} />
             </mesh>
             {clothes.map((c, i) => (
@@ -220,21 +239,12 @@ function Clothesline({ y, z }: { y: number; z: number }) {
                             <mesh castShadow material={MAT_DARKER}>
                                 <boxGeometry args={[0.35, 0.45, 0.04]} />
                             </mesh>
-                            <mesh position={[-0.18, -0.2, 0]} material={MAT_DARK}>
-                                <boxGeometry args={[0.12, 0.25, 0.03]} />
-                            </mesh>
-                            <mesh position={[0.18, -0.2, 0]} material={MAT_DARK}>
-                                <boxGeometry args={[0.12, 0.25, 0.03]} />
-                            </mesh>
                         </>
                     )}
                     {c.type === "pants" && (
                         <>
-                            <mesh position={[-0.1, -0.35, 0]} castShadow material={MAT_DARKER}>
-                                <boxGeometry args={[0.15, 0.5, 0.04]} />
-                            </mesh>
-                            <mesh position={[0.1, -0.35, 0]} castShadow material={MAT_DARKER}>
-                                <boxGeometry args={[0.15, 0.5, 0.04]} />
+                            <mesh position={[0, -0.35, 0]} castShadow material={MAT_DARKER}>
+                                <boxGeometry args={[0.25, 0.5, 0.04]} />
                             </mesh>
                         </>
                     )}
@@ -267,9 +277,17 @@ function Clotheslines() {
 function WallBlock({ position, size, rotation = [0, 0, 0], material }: { position: [number, number, number], size: [number, number, number], rotation?: [number, number, number], material?: THREE.MeshStandardMaterial }) {
     const { concreteWall } = useBazaarMaterials();
     const mat = material ?? concreteWall;
+    // Optimization: Hollow out / thin walls
+    // If a dimension is exactly 2 (standard wall thickness here), reduce it to 0.1
+    const optimizedSize: [number, number, number] = [
+        Math.abs(size[0] - 2) < 0.1 ? 0.1 : size[0],
+        size[1],
+        Math.abs(size[2] - 2) < 0.1 ? 0.1 : size[2]
+    ];
+
     return (
         <mesh position={position} rotation={rotation} receiveShadow castShadow material={mat}>
-            <boxGeometry args={size} />
+            <boxGeometry args={optimizedSize} />
         </mesh>
     );
 }
