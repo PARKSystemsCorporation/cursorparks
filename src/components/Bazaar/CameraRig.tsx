@@ -56,18 +56,18 @@ export default function CameraRig({ targetVendor, onExit }: { targetVendor: stri
     }, [targetVendor, onExit]);
 
     // Vendor Focus Positions (Strictly clamped to Y=1.7)
+    // Hawker: [-3.3, 0, 2.5] -> Cam: [-2, 1.7, 1.2] (left wall, near entrance)
     // Broker: [-2.2, 1.4, -2.5] -> Cam: [-1.2, 1.7, -0.5]
     // Barker: [2.5, 0, -5] -> Cam: [1.5, 1.7, -3.5]
     // Gamemaster: [-2.5, 0, -9] -> Cam: [-1.2, 1.7, -7.0]
-    // Gatekeeper: [0, 0, -14] -> Cam: [0, 1.7, -11.5]
 
     useEffect(() => {
         let x = 0, y = 1.7, z = 6; // Default
 
-        if (targetVendor === "broker") { x = -1.2; y = 1.7; z = -0.5; }
+        if (targetVendor === "hawker") { x = -2; y = 1.7; z = 1.2; }
+        else if (targetVendor === "broker") { x = -1.2; y = 1.7; z = -0.5; }
         else if (targetVendor === "barker") { x = 1.5; y = 1.7; z = -3.5; }
         else if (targetVendor === "gamemaster") { x = -1.2; y = 1.7; z = -7.0; }
-        else if (targetVendor === "gatekeeper") { x = 0; y = 1.7; z = -11.5; }
 
         gsap.to(camera.position, {
             x, y, z,
@@ -108,10 +108,10 @@ export default function CameraRig({ targetVendor, onExit }: { targetVendor: stri
         );
 
         // If locked to a vendor, we should look AT them, plus noise
+        if (targetVendor === "hawker") targetPoint.set(-3.3, 1.5, 2.5 + noiseX);
         if (targetVendor === "broker") targetPoint.set(-2.5, 1.5, -2.5 + noiseX);
         if (targetVendor === "barker") targetPoint.set(2.5, 1.5, -5 + noiseX);
         if (targetVendor === "gamemaster") targetPoint.set(-2.5, 1.5, -9 + noiseX);
-        if (targetVendor === "gatekeeper") targetPoint.set(0, 1.6, -14 + noiseX);
 
         // Apply noise to Y as well
         targetPoint.y += noiseY;

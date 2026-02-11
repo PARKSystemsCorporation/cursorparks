@@ -172,10 +172,10 @@ export default function BazaarScene() {
         // Command parsing for local feedback (immediate)
         if (text.startsWith("/")) {
             const cmd = text.slice(1).toLowerCase();
-            if (cmd.startsWith("broker")) setTargetVendor("broker");
+            if (cmd.startsWith("hawker")) setTargetVendor("hawker");
+            else if (cmd.startsWith("broker")) setTargetVendor("broker");
             else if (cmd.startsWith("barker")) setTargetVendor("barker");
             else if (cmd.startsWith("gamemaster") || cmd === "gm") setTargetVendor("gamemaster");
-            else if (cmd.startsWith("gatekeeper")) setTargetVendor("gatekeeper");
             else if (cmd === "reset" || cmd === "back") setTargetVendor(null);
         }
 

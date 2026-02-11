@@ -10,6 +10,12 @@ import VendorProfileCard from "./VendorProfileCard";
 // --- Archetypes ---
 const VENDORS = [
     {
+        id: "hawker", name: "THE HAWKER", color: "#cc3300",
+        position: [-3.3, 0, 2.5],
+        shouts: ["HEY! YOU! Over here!", "Don't just walk by!", "BEST DEALS— right here!", "WAKE UP! Look alive!", "You look like you need what I got!"],
+        shoutInterval: 3500
+    },
+    {
         id: "broker", name: "THE BROKER", color: "#3a506b",
         position: [-2.5, 0, -2.5],
         shouts: ["Autonomous little bots — built and hustled.", "Need a bot? I've got runners.", "Custom agents, micro to macro."],
@@ -26,12 +32,6 @@ const VENDORS = [
         position: [-2.5, 0, -9],
         shouts: ["Roll the dice.", "All part of the game.", "Win or lose, you play."],
         shoutInterval: 10000
-    },
-    {
-        id: "gatekeeper", name: "GATEKEEPER", color: "#555555",
-        position: [0, 0, -14],
-        shouts: ["None shall pass... unpaid.", "The void watches.", "Halt."],
-        shoutInterval: 12000
     }
 ] as const;
 
