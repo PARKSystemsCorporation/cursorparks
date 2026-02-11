@@ -1,213 +1,178 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Canvas, useThree } from "@react-three/fiber";
-import { useCallback, useEffect, useState, useRef, Suspense } from "react";
+import { Canvas, useFrame, useThree, extend } from "@react-three/fiber";
+import { Suspense, useEffect, useRef, useMemo } from "react";
 import * as THREE from "three";
-import { Environment as DreiEnvironment } from "@react-three/drei";
-import BazaarSet from "./Environment";
-import Vendor from "./Vendor";
-import Crowd from "./Crowd";
-import CameraRig from "./CameraRig";
-import InputBar from "./InputBar";
-import "./BazaarLanding.css";
-import { EffectComposer, ToneMapping, SMAA, Bloom } from "@react-three/postprocessing";
-import CameraPresence from "./CameraPresence";
-import LedSign from "./LedSign";
-import ScrapSign from "./ScrapSign";
-import { BazaarMaterialsProvider } from "./BazaarMaterials";
-import NeonSign from "./NeonSign";
-import LedBar from "./LedBar";
-import AlleyLight from "./AlleyLight";
-import MarketAtmosphere from "./MarketAtmosphere";
-import MarketSoundscape from "./MarketSoundscape";
-import DustParticulates from "./DustParticulates";
+import { EffectComposer, ToneMapping, SMAA, Vignette, Noise } from "@react-three/postprocessing";
+import { AlleyGeometry } from "./AlleyGeometry";
+import { AlleyEnding } from "./AlleyEnding";
+import { AlleySurfaceBreakupLayer } from "./AlleySurfaceBreakupLayer";
+import { ContactShadowSystem } from "./ContactShadowSystem";
+import { EnvironmentalMicroMotion } from "./EnvironmentalMicroMotion";
+import { SpatialAudioZones } from "./SpatialAudioZones";
+import { BazaarMaterialsProvider } from "./BazaarMaterials"; // Keep provider for safety
 
-// --- Market configuration ---
-const CONFIG = {
-    // NIGHT MODE: Dark, atmospheric, blue-tinted
-    fog: { color: "#050a14", near: 10, far: 45 },
-    lights: {
-        // Very dim ambient - mostly darkness
-        ambient: { intensity: 0.15, color: "#112244" },
-        // "Moon" or city glow - Cool, soft, from above/behind
-        sun: { intensity: 0.8, color: "#88ccff", position: [-5, 20, -10] as [number, number, number] },
-        // Ground bounce vs Sky - Dark contrast
-        hemisphere: { sky: "#0a1525", ground: "#020205", intensity: 0.4 },
-    },
-    // Camera config moved to CameraPresence
-    postprocessing: {
-        exposure: 1.5, // Bright, sunlit exposure
-        toneMapping: THREE.ACESFilmicToneMapping,
-    },
-    shadow: {
-        mapSize: 4096,
-        normalBias: 0.02,
-        cameraFar: 65,
-        cameraLeft: -20,
-        cameraRight: 20,
-        cameraTop: 24,
-        cameraBottom: -20,
-    },
-};
 
-function ShadowMapSetup() {
-    const { gl } = useThree();
-    useEffect(() => {
-        gl.shadowMap.type = THREE.PCFSoftShadowMap;
-        gl.shadowMap.needsUpdate = true;
-    }, [gl]);
-    return null;
+// --- Human Camera Rig ---
+function HumanCameraRig() {
+    const { camera } = useThree();
+    const targetPos = useRef(new THREE.Vector3(0, 1.65, 0));
+    const lookAtPos = useRef(new THREE.Vector3(0, 1.5, -10));
+    const sway = useRef(new THREE.Vector2(0, 0));
+
+    useFrame((state) => {
+        const time = state.clock.getElapsedTime();
+        const t = time * 0.5;
+
+        // 1. Idle Body Sway (breathing/balance)
+        sway.current.x = Math.sin(t) * 0.05;
+        sway.current.y = Math.cos(t * 1.4) * 0.03;
+
+        // 2. Head Bob (micro)
+        const bob = Math.sin(t * 4) * 0.005;
+
+        // 3. Forward Drift (very slow auto-walk)
+        // We stop at -25 (portal)
+        if (targetPos.current.z > -25) {
+            targetPos.current.z -= 0.008; // Very slow drift
+        }
+
+        // Apply
+        camera.position.x += (targetPos.current.x + sway.current.x - camera.position.x) * 0.05;
+        camera.position.y += (targetPos.current.y + sway.current.y + bob - camera.position.y) * 0.05;
+        camera.position.z += (targetPos.current.z - camera.position.z) * 0.05;
+
+        // Look Behavior (Focus shifting)
+        // Look ahead but wander slightly
+        const wanderX = Math.sin(time * 0.3) * 2;
+        const wanderY = Math.cos(time * 0.2) * 1.0;
+
+        const idealLookAt = new THREE.Vector3(
+            wanderX,
+            1.5 + wanderY,
+            camera.position.z - 10
+        );
+
+        // Smooth look
+        lookAtPos.current.lerp(idealLookAt, 0.02);
+        camera.lookAt(lookAtPos.current);
+    });
+
+    return <></>;
 }
 
-function SceneContent({ messages, targetVendor, onShout, onEnterAlleyTwo }: { messages: any[], targetVendor: string | null, onShout: (t: string) => void, onEnterAlleyTwo?: () => void }) {
+// --- Depth Grading / Fog ---
+function DepthGrading() {
+    return (
+        <fogExp2 attach="fog" args={['#050810', 0.035]} /> // Dark blue-black fog, dense enough to hide end
+    );
+}
+
+// --- Props (Instanced Placeholder) ---
+function AlleyProps() {
+    // Placeholder instanced mesh for crates
+    return (
+        <instancedMesh args={[undefined, undefined, 10]} position={[0, 0.5, 0]} castShadow receiveShadow>
+            <boxGeometry args={[0.8, 0.8, 0.8]} />
+            <meshStandardMaterial color="#5c4033" roughness={0.9} />
+            {/* We would layout positions here in a real implementation using a layout array */}
+            {/* For now manually placing a few for the "Grounding Test" */}
+            <group>
+                <mesh position={[-1.2, 0.4, -4]} castShadow receiveShadow>
+                    <boxGeometry args={[0.8, 0.8, 0.8]} />
+                    <meshStandardMaterial color="#5c4033" roughness={0.9} />
+                </mesh>
+                <mesh position={[1.2, 0.6, -8]} rotation={[0, 0.5, 0]} castShadow receiveShadow>
+                    <boxGeometry args={[1.0, 1.2, 1.0]} />
+                    <meshStandardMaterial color="#4a4a55" roughness={0.6} metalness={0.4} />
+                </mesh>
+            </group>
+        </instancedMesh>
+    );
+}
+
+// --- Lighting Rig ---
+function AlleyLighting() {
+    // Layered Lighting
+    // 1. Ambient (Base fill, very low)
+    // 2. Hemisphere (Sky/Ground contrast)
+    // 3. Practicals (Warm localized)
+    // 4. Portal Glow (End urge)
+
     return (
         <>
-            <ShadowMapSetup />
-            <CameraPresence />
-            <MarketAtmosphere />
-            <DustParticulates />
+            <ambientLight intensity={0.2} color="#102040" />
+            <hemisphereLight args={['#102040', '#050a10', 0.4]} />
 
-            <DreiEnvironment preset="park" background={false} environmentIntensity={1.2} />
+            {/* Practical 1: Start */}
+            <pointLight position={[0, 4, -2]} intensity={2} color="#ffaa55" distance={8} decay={2} castShadow stroke-shadow-bias={-0.001} />
 
-            <BazaarSet onEnterPortal={onEnterAlleyTwo} />
-            <Vendor setTarget={onShout} targetId={targetVendor} />
-            <Crowd messages={messages} />
+            {/* Practical 2: Mid */}
+            <pointLight position={[1, 4, -12]} intensity={1.5} color="#ffcc88" distance={10} decay={2} castShadow />
 
-            <LedSign />
-            <ScrapSign />
+            {/* Practical 3: Deep */}
+            <pointLight position={[-1, 4, -22]} intensity={1.5} color="#ffaa55" distance={10} decay={2} />
 
-            <NeonSign text="NOODLES" color="#ff0055" position={[6, 4, -8]} rotation={[0, -0.5, 0]} flicker />
-            <NeonSign text="OPEN" color="#00ffcc" position={[-5, 3, -2]} rotation={[0, 0.5, 0]} scale={0.8} />
-            <NeonSign text="CYBER" color="#aa00ff" position={[0, 5, -10]} scale={1.5} />
-
-            <LedBar color="#ff0055" position={[6, 1, -8]} rotation={[0, 0, Math.PI / 2]} length={4} />
-            <LedBar color="#00ffcc" position={[-5, 1, -2]} rotation={[0, 0, Math.PI / 2]} length={3} />
-            <LedBar color="#0088ff" position={[0, 0.2, -5]} length={10} thickness={0.1} />
-
-            <AlleyLight position={[-2, 4, 2]} color="#ffaa00" rotation={[-Math.PI / 3, 0.5, 0]} />
-            <AlleyLight position={[3, 4, 3]} color="#ffaa00" rotation={[-Math.PI / 3, -0.5, 0]} />
-
-            <CameraRig targetVendor={targetVendor} onExit={() => onShout("/back")} />
-
-            <EffectComposer>
-                <SMAA />
-                <Bloom luminanceThreshold={1.5} mipmapBlur intensity={0.2} radius={0.4} />
-                <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
-            </EffectComposer>
+            {/* Portal Curiosity: Blue/Purple cool spill from around the corner at the end */}
+            <rectAreaLight
+                width={2}
+                height={8}
+                color="#4488ff"
+                intensity={5}
+                position={[-5, 3, -32]}
+                lookAt={() => new THREE.Vector3(0, 3, -25)}
+            />
         </>
     );
 }
 
-export type BazaarSceneProps = { onEnterAlleyTwo?: () => void };
 
-export default function BazaarScene({ onEnterAlleyTwo }: BazaarSceneProps = {}) {
-    const [messages, setMessages] = useState<any[]>([]);
-    const socketRef = useRef<any>(null); // Use ref to prevent re-renders on socket changes
-    const [targetVendor, setTargetVendor] = useState<string | null>(null);
-
-    // Initial Message for atmosphere
-    useEffect(() => {
-        setMessages([
-            { id: "init-1", content: "The market is open...", timestamp: Date.now() },
-            { id: "init-2", content: "Don't stare at the shadows.", timestamp: Date.now() }
-        ]);
-    }, []);
-
-    // Socket Connection (Simulated if backend missing for dev)
-    // Uses shared socket singleton - do NOT disconnect on unmount; only remove Bazaar-specific listeners
-    useEffect(() => {
-        const onConnectError = (err: Error) => {
-            console.warn("Bazaar Socket Error:", err.message);
-        };
-        const onConnect = () => {
-            console.log("Connected to Bazaar");
-        };
-        const onBazaarInit = (data: any) => {
-            if (data && data.messages) {
-                setMessages((prev) => [...data.messages, ...prev].slice(0, 50));
-            }
-        };
-        const onBazaarShout = (msg: any) => {
-            setMessages((prev) => [msg, ...prev].slice(0, 50));
-        };
-
-        const initSocket = async () => {
-            const { getSocket } = await import("../../engine/socketClient");
-            const socket = getSocket();
-            socketRef.current = socket;
-
-            socket.on("connect_error", onConnectError);
-            socket.on("connect", onConnect);
-            socket.on("bazaar:init", onBazaarInit);
-            socket.on("bazaar:shout", onBazaarShout);
-        };
-
-        initSocket();
-
-        return () => {
-            const socket = socketRef.current;
-            if (socket) {
-                socket.off("connect_error", onConnectError);
-                socket.off("connect", onConnect);
-                socket.off("bazaar:init", onBazaarInit);
-                socket.off("bazaar:shout", onBazaarShout);
-            }
-        };
-    }, []);
-
-    const handleShout = useCallback((text: string) => {
-        // Command parsing for local feedback (immediate)
-        if (text.startsWith("/")) {
-            const cmd = text.slice(1).toLowerCase();
-            if (cmd.startsWith("hawker")) setTargetVendor("hawker");
-            else if (cmd.startsWith("broker")) setTargetVendor("broker");
-            else if (cmd.startsWith("barker")) setTargetVendor("barker");
-            else if (cmd === "reset" || cmd === "back") setTargetVendor(null);
-        }
-
-        if (socketRef.current && socketRef.current.connected) {
-            socketRef.current.emit("bazaar:shout", { content: text });
-        } else {
-            // Local fallback
-            const msg = { id: Date.now().toString(), content: text, timestamp: Date.now() };
-            setMessages(prev => [msg, ...prev].slice(0, 50));
-        }
-    }, []);
-
-    const onShoutTarget = useCallback((t: string) => setTargetVendor(t), []);
-
+// --- Main Scene ---
+export default function BazaarScene() {
     return (
-        <div className="bazaar-canvas-container">
+        <div style={{ width: '100vw', height: '100vh', background: '#000' }}>
             <Canvas
                 shadows
-                dpr={[1, 1.5]} // Optimized: Capped at 1.5x to save 44% pixel fill rate on retina screens
-                gl={{
-                    antialias: false,
-                    toneMapping: CONFIG.postprocessing.toneMapping,
-                    toneMappingExposure: CONFIG.postprocessing.exposure,
-                    powerPreference: 'default', // Don't force discrete GPU on laptops
-                    stencil: false,
-                    depth: true
-                }}
+                dpr={[1, 1.5]}
+                gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+                camera={{ fov: 60, position: [0, 1.65, 0] }}
             >
-                <BazaarMaterialsProvider>
-                    <Suspense fallback={null}>
-                        <SceneContent
-                            messages={messages}
-                            targetVendor={targetVendor}
-                            onShout={onShoutTarget}
-                            onEnterAlleyTwo={onEnterAlleyTwo}
-                        />
-                    </Suspense>
-                </BazaarMaterialsProvider>
+                <Suspense fallback={null}>
+                    <DepthGrading />
+                    <HumanCameraRig />
+
+                    <AlleyGeometry />
+                    <AlleyEnding />
+                    <AlleySurfaceBreakupLayer />
+                    <ContactShadowSystem />
+                    <EnvironmentalMicroMotion />
+
+                    {/* Props would go here, manually placed for now */}
+                    <AlleyProps />
+
+                    <AlleyLighting />
+                    <SpatialAudioZones />
+
+                    <EffectComposer disableNormalPass>
+                        {/* SMAA for crisp edges without heavy MSAA */}
+                        <SMAA />
+                        {/* Vignette helps focus eye and hide corners */}
+                        <Vignette eskil={false} offset={0.1} darkness={1.1} />
+                        {/* Noise adds texture to darkness, preventing banding */}
+                        <Noise opacity={0.05} />
+                        {/* ToneMapping handled by canvas, but can enforce here if needed */}
+                        <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
+                    </EffectComposer>
+                </Suspense>
             </Canvas>
 
-            {/* Vignette & Grain Overlay (CSS) */}
-            <div className="bazaar-overlay-vignette" />
-
-            <InputBar onShout={handleShout} />
-            <MarketSoundscape />
+            {/* UI Overlays */}
+            <div style={{
+                position: 'absolute', bottom: '20px', left: '20px',
+                color: '#fff', opacity: 0.5, fontFamily: 'monospace', fontSize: '12px'
+            }}>
+                [SIMULATION ACTIVE]
+            </div>
         </div>
     );
 }

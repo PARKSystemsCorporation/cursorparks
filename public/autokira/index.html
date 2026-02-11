@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#07070c">
+  <title>KIRA — AutoKira</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #07070c;
+      --bg2: #0d0d14;
+      --bg3: #13131e;
+      --border: rgba(255,255,255,0.05);
+      --fg: #e6e6f0;
+      --fg-dim: #6b6b80;
+      --fg-dark: #3a3a4d;
+      --violet: #a78bfa;
+      --violet-bg: rgba(167,139,250,0.12);
+      --violet-border: rgba(167,139,250,0.25);
+      --emerald: #6ee7b7;
+      --emerald-bg: rgba(110,231,183,0.12);
+      --sky: #7dd3fc;
+      --sky-bg: rgba(125,211,252,0.10);
+      --amber: #fbbf24;
+      --red: #f87171;
+      --red-bg: rgba(248,113,113,0.10);
+      --cyan: #67e8f9;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%; width: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ─── Layout ─────────────────────────────────── */
+    #app {
+      display: flex; flex-direction: column;
+      height: 100%; max-width: 640px; margin: 0 auto;
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* ─── Header ─────────────────────────────────── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    header .brand { display: flex; align-items: center; gap: 10px; }
+    header h1 { font-size: 17px; font-weight: 700; color: var(--violet); letter-spacing: 1px; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      transition: background 0.3s;
+    }
+    .dot.on { background: var(--emerald); box-shadow: 0 0 6px rgba(110,231,183,0.4); }
+    .dot.off { background: var(--red); }
+    header .meta { font-size: 11px; color: var(--fg-dim); display: flex; gap: 12px; }
+
+    /* ─── Tabs ───────────────────────────────────── */
+    nav {
+      display: flex; border-bottom: 1px solid var(--border);
+      flex-shrink: 0; overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    nav button {
+      background: none; border: none; border-bottom: 2px solid transparent;
+      padding: 10px 16px; font-size: 13px; color: var(--fg-dim);
+      cursor: pointer; transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap; text-transform: capitalize;
+    }
+    nav button:hover { color: #ccc; }
+    nav button.active { color: var(--violet); border-bottom-color: var(--violet); }
+    .badge {
+      font-size: 10px; padding: 1px 6px; border-radius: 99px;
+      margin-left: 6px; vertical-align: middle;
+    }
+    .badge-v { background: var(--violet-bg); color: var(--violet); }
+    .badge-s { background: var(--sky-bg); color: var(--sky); }
+
+    /* ─── Panels (shared) ────────────────────────── */
+    .panel {
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      padding: 12px 16px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .panel::-webkit-scrollbar { width: 4px; }
+    .panel::-webkit-scrollbar-thumb { background: var(--fg-dark); border-radius: 2px; }
+    .empty { text-align: center; color: var(--fg-dim); padding: 60px 0; font-size: 13px; }
+
+    /* ─── Chat ───────────────────────────────────── */
+    .msg { display: flex; margin-bottom: 8px; }
+    .msg.user { justify-content: flex-end; }
+    .msg.kira, .msg.system { justify-content: flex-start; }
+    .bubble {
+      max-width: 85%; border-radius: 16px; padding: 10px 14px;
+      font-size: 14px; line-height: 1.5; white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user .bubble { background: rgba(167,139,250,0.18); color: #ddd0ff; }
+    .msg.kira .bubble { background: var(--bg3); color: var(--fg); }
+    .msg.system .bubble { background: var(--red-bg); color: var(--red); font-size: 12px; }
+    .bubble .label { display: block; font-size: 10px; font-weight: 600; color: var(--violet); margin-bottom: 3px; }
+    .thinking-dot { color: var(--violet); animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+    /* ─── Mode pills ─────────────────────────────── */
+    .modes {
+      display: flex; gap: 6px; padding: 8px 16px;
+      overflow-x: auto; flex-shrink: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mode-pill {
+      padding: 5px 12px; font-size: 12px; border-radius: 99px;
+      border: none; cursor: pointer; white-space: nowrap;
+      background: var(--bg3); color: var(--fg-dim);
+      transition: background 0.2s, color 0.2s;
+    }
+    .mode-pill:hover { background: rgba(255,255,255,0.08); color: #ccc; }
+    .mode-pill.active {
+      background: var(--violet-bg); color: var(--violet);
+      border: 1px solid var(--violet-border);
+    }
+
+    /* ─── Input bar ──────────────────────────────── */
+    .input-bar {
+      padding: 10px 16px; border-top: 1px solid var(--border);
+      display: flex; gap: 8px; flex-shrink: 0;
+    }
+    .input-bar textarea {
+      flex: 1; background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 14px; font-size: 14px;
+      color: var(--fg); resize: none; outline: none;
+      font-family: inherit; line-height: 1.4;
+      transition: border-color 0.2s;
+    }
+    .input-bar textarea:focus { border-color: var(--violet-border); }
+    .input-bar textarea::placeholder { color: var(--fg-dark); }
+    .input-bar textarea:disabled { opacity: 0.35; }
+    .send-btn {
+      background: var(--violet); color: #fff; border: none;
+      border-radius: 12px; padding: 0 16px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.25; cursor: default; }
+
+    /* ─── Events ─────────────────────────────────── */
+    .ev-row { padding: 6px 0; border-bottom: 1px solid var(--border); }
+    .ev-row .top { display: flex; align-items: flex-start; gap: 6px; }
+    .ev-ts { font-size: 10px; color: var(--fg-dark); font-family: monospace; flex-shrink: 0; margin-top: 2px; }
+    .ev-domain { font-size: 12px; font-weight: 600; color: var(--violet); flex-shrink: 0; }
+    .ev-summary { font-size: 13px; line-height: 1.4; }
+    .ev-src { font-size: 10px; color: var(--fg-dark); margin-left: 50px; margin-top: 2px; word-break: break-all; }
+    .ev-src a { color: var(--fg-dim); text-decoration: none; }
+    .ev-src a:hover { text-decoration: underline; }
+
+    /* event colors */
+    .c-learned { color: var(--emerald); }
+    .c-researching, .c-researched { color: var(--sky); }
+    .c-working { color: var(--amber); }
+    .c-completed { color: var(--emerald); font-weight: 600; }
+    .c-failed, .c-error { color: var(--red); }
+    .c-mode_switch { color: var(--violet); }
+    .c-started { color: var(--cyan); }
+    .c-stopped { color: var(--fg-dim); }
+    .c-paused { color: var(--amber); }
+    .c-resumed { color: var(--emerald); }
+
+    /* ─── Thinking ───────────────────────────────── */
+    .think-note { font-size: 12px; color: var(--fg-dim); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 8px; }
+    .think-row { display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.02); font-family: monospace; }
+    .think-ts { font-size: 10px; color: var(--fg-dark); flex-shrink: 0; margin-top: 2px; }
+    .think-text { font-size: 12px; color: rgba(125,211,252,0.6); line-height: 1.5; }
+
+    /* ─── Status ─────────────────────────────────── */
+    .card { background: var(--bg3); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    .card h3 { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--fg-dim); font-weight: 600; margin-bottom: 12px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .stat-label { font-size: 11px; color: var(--fg-dim); }
+    .stat-val { font-size: 14px; font-weight: 500; }
+    .stat-big { font-size: 24px; font-weight: 700; text-align: center; }
+    .stat-sub { font-size: 10px; color: var(--fg-dim); text-align: center; }
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .bar-label { font-size: 12px; color: var(--fg-dim); width: 60px; }
+    .bar-track { flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+    .bar-pct { font-size: 11px; color: var(--fg-dim); width: 32px; text-align: right; }
+    .retry-btn {
+      margin-top: 16px; background: var(--bg3); border: 1px solid var(--border);
+      color: var(--fg-dim); padding: 8px 16px; border-radius: 8px;
+      font-size: 13px; cursor: pointer;
+    }
+    .retry-btn:hover { background: rgba(255,255,255,0.06); color: var(--fg); }
+    .mode-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .mode-btn {
+      padding: 8px 16px; font-size: 13px; border-radius: 8px;
+      border: none; cursor: pointer; text-transform: capitalize;
+      background: var(--bg2); color: var(--fg-dim); transition: all 0.2s;
+    }
+    .mode-btn:hover { background: rgba(255,255,255,0.06); color: #ccc; }
+    .mode-btn.active { background: var(--violet-bg); color: var(--violet); border: 1px solid var(--violet-border); }
+
+    .offline-msg { text-align: center; padding: 60px 20px; }
+    .offline-msg .big { font-size: 36px; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <h1>KIRA</h1>
+      <div class="dot" id="dot"></div>
+      <span id="mode-label" style="font-size:12px;color:var(--fg-dim);">offline</span>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <!-- Tabs -->
+  <nav id="tabs">
+    <button class="active" data-tab="chat">Chat</button>
+    <button data-tab="events">Events<span class="badge badge-v" id="ev-badge" style="display:none"></span></button>
+    <button data-tab="thinking">Thinking<span class="badge badge-s" id="th-badge" style="display:none"></span></button>
+    <button data-tab="status">Status</button>
+  </nav>
+
+  <!-- Chat panel -->
+  <div class="panel" id="p-chat">
+    <div id="chat-msgs"></div>
+  </div>
+  <div class="modes" id="mode-pills" style="display:none"></div>
+  <div class="input-bar" id="input-bar">
+    <textarea id="chat-input" rows="1" placeholder="KIRA is offline" disabled></textarea>
+    <button class="send-btn" id="send-btn" disabled>Send</button>
+  </div>
+
+  <!-- Events panel -->
+  <div class="panel" id="p-events" style="display:none"></div>
+
+  <!-- Thinking panel -->
+  <div class="panel" id="p-thinking" style="display:none">
+    <div class="think-note">KIRA's internal thought process — what it's considering and processing</div>
+    <div id="think-list"></div>
+  </div>
+
+  <!-- Status panel -->
+  <div class="panel" id="p-status" style="display:none"></div>
+</div>
+
+<script>
+// ─── Config ──────────────────────────────────────────
+const API = "http://localhost:7842";
+const WS_URL = "ws://localhost:7842/ws";
+const MODES = ["learning","writing","coding","research","companion"];
+
+// ─── State ───────────────────────────────────────────
+let connected = false;
+let ws = null;
+let status = null;
+let events = [];
+let messages = [];
+let thinking = [];
+let sending = false;
+let currentTab = "chat";
+
+// ─── DOM refs ────────────────────────────────────────
+const $ = (s) => document.querySelector(s);
+const dot = $("#dot");
+const modeLabel = $("#mode-label");
+const metaEl = $("#meta");
+const chatMsgs = $("#chat-msgs");
+const chatInput = $("#chat-input");
+const sendBtn = $("#send-btn");
+const modePills = $("#mode-pills");
+const evBadge = $("#ev-badge");
+const thBadge = $("#th-badge");
+const panels = { chat: $("#p-chat"), events: $("#p-events"), thinking: $("#p-thinking"), status: $("#p-status") };
+
+// ─── Helpers ─────────────────────────────────────────
+function fmtTime(ts) {
+  return new Date(ts * 1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+}
+function esc(s) {
+  const d = document.createElement("div"); d.textContent = s; return d.innerHTML;
+}
+function evColor(type) {
+  return "c-" + (type || "");
+}
+
+// ─── Tabs ────────────────────────────────────────────
+document.querySelectorAll("#tabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    currentTab = btn.dataset.tab;
+    document.querySelectorAll("#tabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    Object.values(panels).forEach(p => p.style.display = "none");
+    panels[currentTab].style.display = "";
+
+    const isChat = currentTab === "chat";
+    $("#input-bar").style.display = isChat ? "" : "none";
+    modePills.style.display = (isChat && connected) ? "" : "none";
+
+    if (currentTab === "events") renderEvents();
+    if (currentTab === "thinking") renderThinking();
+    if (currentTab === "status") renderStatus();
+  });
+});
+
+// ─── Fetch status ────────────────────────────────────
+async function fetchStatus() {
+  try {
+    const r = await fetch(API + "/api/status");
+    if (r.ok) {
+      status = await r.json();
+      connected = true;
+    } else { connected = false; status = null; }
+  } catch { connected = false; status = null; }
+  updateHeader();
+}
+
+// ─── Fetch events ────────────────────────────────────
+async function fetchEvents() {
+  try {
+    const r = await fetch(API + "/api/events?limit=200");
+    if (r.ok) { const d = await r.json(); events = d.events || []; }
+  } catch {}
+}
+
+// ─── WebSocket ───────────────────────────────────────
+function connectWS() {
+  try {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = () => { connected = true; updateHeader(); };
+    ws.onmessage = (ev) => {
+      try {
+        const d = JSON.parse(ev.data);
+        if (d.type === "event") {
+          events.push(d.data);
+          if (events.length > 200) events = events.slice(-200);
+          evBadge.textContent = events.length;
+          evBadge.style.display = "";
+          if (["researching","working","learned","researched"].includes(d.data.type)) {
+            thinking.push({ text: "[" + d.data.domain + "] " + d.data.summary, timestamp: d.data.time });
+            if (thinking.length > 100) thinking = thinking.slice(-100);
+            thBadge.textContent = thinking.length;
+            thBadge.style.display = "";
+          }
+          if (currentTab === "events") renderEvents();
+          if (currentTab === "thinking") renderThinking();
+        } else if (d.type === "chat_response") {
+          messages.push({ role: "kira", content: d.response, ts: Date.now()/1000 });
+          sending = false;
+          renderChat();
+          sendBtn.disabled = false;
+          sendBtn.textContent = "Send";
+        }
+      } catch {}
+    };
+    ws.onclose = () => { connected = false; updateHeader(); setTimeout(connectWS, 5000); };
+    ws.onerror = () => { ws.close(); };
+  } catch { setTimeout(connectWS, 5000); }
+}
+
+// ─── Update header ───────────────────────────────────
+function updateHeader() {
+  dot.className = "dot " + (connected ? "on" : "off");
+  modeLabel.textContent = connected ? (status?.active_mode || "online") : "offline";
+  chatInput.disabled = !connected;
+  chatInput.placeholder = connected ? "Message KIRA..." : "KIRA is offline";
+  sendBtn.disabled = !connected || sending;
+  modePills.style.display = (connected && currentTab === "chat") ? "" : "none";
+
+  if (connected && status) {
+    metaEl.innerHTML =
+      "<span>" + (status.memory?.knowledge_blocks || 0) + " blocks</span>" +
+      "<span>" + (status.research || 0) + " research</span>" +
+      "<span>" + (status.uptime_hours || 0).toFixed(1) + "h</span>";
+  } else {
+    metaEl.innerHTML = "";
+  }
+
+  renderModePills();
+}
+
+// ─── Mode pills ──────────────────────────────────────
+function renderModePills() {
+  modePills.innerHTML = "";
+  if (!connected) return;
+  MODES.forEach(m => {
+    const b = document.createElement("button");
+    b.className = "mode-pill" + (status?.active_mode === m ? " active" : "");
+    b.textContent = m;
+    b.onclick = () => switchMode(m);
+    modePills.appendChild(b);
+  });
+}
+
+async function switchMode(mode) {
+  try {
+    await fetch(API + "/api/mode", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({mode})
+    });
+    await fetchStatus();
+  } catch {}
+}
+
+// ─── Chat ────────────────────────────────────────────
+function renderChat() {
+  let html = "";
+  if (messages.length === 0) {
+    html = '<div class="empty">' +
+      '<p style="font-size:20px;margin-bottom:8px;">KIRA</p>' +
+      '<p>' + (connected ? "Connected. Send a message or switch modes." : "Waiting for connection... Is your computer on?") + '</p></div>';
+  }
+  messages.forEach(m => {
+    const cls = m.role;
+    if (m.role === "kira") {
+      html += '<div class="msg kira"><div class="bubble"><span class="label">KIRA</span>' + esc(m.content) + '</div></div>';
+    } else if (m.role === "user") {
+      html += '<div class="msg user"><div class="bubble">' + esc(m.content) + '</div></div>';
+    } else {
+      html += '<div class="msg system"><div class="bubble">' + esc(m.content) + '</div></div>';
+    }
+  });
+  if (sending) {
+    html += '<div class="msg kira"><div class="bubble"><span class="thinking-dot">Thinking...</span></div></div>';
+  }
+  chatMsgs.innerHTML = html;
+  chatMsgs.parentElement.scrollTop = chatMsgs.parentElement.scrollHeight;
+}
+
+async function sendMessage() {
+  const text = chatInput.value.trim();
+  if (!text || sending) return;
+  messages.push({ role: "user", content: text, ts: Date.now()/1000 });
+  chatInput.value = "";
+  sending = true;
+  sendBtn.disabled = true;
+  sendBtn.textContent = "...";
+  renderChat();
+
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: "chat", message: text }));
+    return;
+  }
+
+  try {
+    const r = await fetch(API + "/api/chat", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ message: text })
+    });
+    if (r.ok) {
+      const d = await r.json();
+      messages.push({ role: "kira", content: d.response, ts: Date.now()/1000 });
+    } else {
+      messages.push({ role: "system", content: "Failed to reach KIRA.", ts: Date.now()/1000 });
+    }
+  } catch {
+    messages.push({ role: "system", content: "Connection failed \u2014 is your computer on?", ts: Date.now()/1000 });
+  }
+  sending = false;
+  sendBtn.disabled = false;
+  sendBtn.textContent = "Send";
+  renderChat();
+}
+
+sendBtn.addEventListener("click", sendMessage);
+chatInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+// ─── Events ──────────────────────────────────────────
+function renderEvents() {
+  const el = panels.events;
+  if (events.length === 0) {
+    el.innerHTML = '<div class="empty">' + (connected ? "No events yet." : "Offline") + '</div>';
+    return;
+  }
+  let html = "";
+  for (let i = events.length - 1; i >= 0; i--) {
+    const e = events[i];
+    html += '<div class="ev-row"><div class="top">' +
+      '<span class="ev-ts">' + fmtTime(e.time) + '</span>' +
+      '<span class="ev-domain">[' + esc(e.domain) + ']</span>' +
+      '<span class="ev-summary ' + evColor(e.type) + '">' + esc(e.summary) + '</span>' +
+      '</div>';
+    if (e.sources && e.sources.length) {
+      e.sources.forEach(u => {
+        html += '<div class="ev-src"><a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u) + '</a></div>';
+      });
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+// ─── Thinking ────────────────────────────────────────
+function renderThinking() {
+  const list = $("#think-list");
+  if (thinking.length === 0) {
+    list.innerHTML = '<div class="empty">' + (connected ? "No thoughts yet." : "Offline") + '</div>';
+    return;
+  }
+  let html = "";
+  for (let i = thinking.length - 1; i >= 0; i--) {
+    const t = thinking[i];
+    html += '<div class="think-row">' +
+      '<span class="think-ts">' + fmtTime(t.timestamp) + '</span>' +
+      '<span class="think-text">' + esc(t.text) + '</span></div>';
+  }
+  list.innerHTML = html;
+}
+
+// ─── Status ──────────────────────────────────────────
+function renderStatus() {
+  const el = panels.status;
+  if (!connected || !status) {
+    el.innerHTML = '<div class="offline-msg">' +
+      '<div class="big" style="color:var(--red);">&#x25CF;</div>' +
+      '<p style="color:var(--fg-dim);font-size:13px;">KIRA is offline &mdash; is your computer on?</p>' +
+      '<p style="color:var(--fg-dark);font-size:11px;margin-top:4px;">KIRA runs at localhost:7842 when active</p>' +
+      '<button class="retry-btn" onclick="fetchStatus();renderStatus();">Retry Connection</button></div>';
+    return;
+  }
+  const s = status;
+  const d = s.drive || {};
+  const wsLabel = ws && ws.readyState === WebSocket.OPEN ? "Live (WebSocket)" : "Connected (REST)";
+
+  function bar(label, val, color) {
+    const pct = Math.round((val||0)*100);
+    return '<div class="bar-row"><span class="bar-label">' + label + '</span>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+      '<span class="bar-pct">' + pct + '%</span></div>';
+  }
+
+  el.innerHTML =
+    '<div class="card"><h3>Connection</h3><div class="grid2">' +
+      '<div><span class="stat-label">Status</span><div class="stat-val" style="color:var(--emerald)">' + wsLabel + '</div></div>' +
+      '<div><span class="stat-label">Mode</span><div class="stat-val" style="color:var(--violet);text-transform:capitalize">' + esc(s.active_mode||"?") + '</div></div>' +
+      '<div><span class="stat-label">Uptime</span><div class="stat-val">' + (s.uptime_hours||0).toFixed(1) + 'h</div></div>' +
+      '<div><span class="stat-label">Current Task</span><div class="stat-val" style="color:var(--fg-dim)">' + esc(s.current_task||"Idle") + '</div></div>' +
+    '</div></div>' +
+
+    '<div class="card"><h3>Learning</h3><div class="grid3">' +
+      '<div><div class="stat-big" style="color:var(--emerald)">' + (s.knowledge||0) + '</div><div class="stat-sub">Knowledge</div></div>' +
+      '<div><div class="stat-big" style="color:var(--sky)">' + (s.research||0) + '</div><div class="stat-sub">Research</div></div>' +
+      '<div><div class="stat-big" style="color:var(--violet)">' + (s.memory?.knowledge_blocks||0) + '</div><div class="stat-sub">Memory</div></div>' +
+    '</div></div>' +
+
+    '<div class="card"><h3>Tasks</h3><div class="grid2">' +
+      '<div><span class="stat-label">Completed</span><div class="stat-val" style="color:var(--emerald)">' + (s.completed||0) + '</div></div>' +
+      '<div><span class="stat-label">Failed</span><div class="stat-val" style="color:var(--red)">' + (s.failed||0) + '</div></div>' +
+    '</div></div>' +
+
+    '<div class="card"><h3>Drive System</h3>' +
+      bar("Curiosity", d.curiosity, "var(--sky)") +
+      bar("Pressure", d.pressure, "var(--red)") +
+      bar("Ambition", d.ambition, "var(--violet)") +
+      bar("Overall", d.overall, "var(--emerald)") +
+    '</div>' +
+
+    '<div class="card"><h3>Switch Mode</h3><div class="mode-grid">' +
+      MODES.map(m => '<button class="mode-btn' + (s.active_mode===m?" active":"") + '" onclick="switchMode(\'' + m + '\')">' + m + '</button>').join("") +
+    '</div></div>';
+}
+
+// ─── Init ────────────────────────────────────────────
+(async function boot() {
+  await fetchStatus();
+  await fetchEvents();
+  renderChat();
+  if (events.length) { evBadge.textContent = events.length; evBadge.style.display = ""; }
+  connectWS();
+  setInterval(() => { fetchStatus(); if (currentTab === "events") fetchEvents(); }, 10000);
+})();
+</script>
+</body>
+</html>
