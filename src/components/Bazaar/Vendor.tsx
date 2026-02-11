@@ -34,42 +34,111 @@ const VENDORS = [
 ] as const;
 
 // --- Procedural Vendor Visuals ---
-// Cloaked figure: Cone body, Sphere head/Hood
-function VendorFigure({ color, isTarget }: { color: string, isTarget: boolean }) {
+// --- Procedural Vendor Visuals ---
+
+// Cyberpunk Character Component
+function CyberHuman({ position, color, isTarget, name, lastShout, shoutOpacity, setTarget, id }: any) {
     const group = useRef<THREE.Group>(null);
 
+    // Idle Animation
     useFrame(({ clock }) => {
         if (!group.current) return;
-        const t = clock.getElapsedTime();
-        // Breathing
-        group.current.scale.y = 1 + Math.sin(t * 2) * 0.01;
-        // Idle sway
-        group.current.rotation.z = Math.sin(t * 1) * 0.02;
+        const t = clock.getElapsedTime() + position[0]; // Offset by pos
+        group.current.position.y = position[1] + Math.sin(t * 1.5) * 0.02; // Breathe
     });
 
     return (
-        <group ref={group}>
-            {/* Body / Cloak */}
+        <group ref={group} position={position} onClick={() => setTarget(id)}>
+            {/* --- GEOMETRY --- */}
+
+            {/* Hood / Cloak Body (Procedural Cloth) */}
             <mesh position={[0, 0.9, 0]} castShadow receiveShadow>
-                <coneGeometry args={[0.6, 1.8, 7]} />
-                <meshStandardMaterial color={color} roughness={0.9} />
+                <cylinderGeometry args={[0.3, 0.45, 1.8, 8]} />
+                <meshStandardMaterial color="#111" roughness={0.9} />
             </mesh>
-            {/* Hood / Head */}
-            <mesh position={[0, 1.6, 0.1]} castShadow>
-                <dodecahedronGeometry args={[0.35, 0]} />
-                <meshStandardMaterial color={new THREE.Color(color).multiplyScalar(0.5)} roughness={1} />
+
+            {/* Head / Hood */}
+            <mesh position={[0, 1.7, 0]} castShadow>
+                <dodecahedronGeometry args={[0.25, 0]} />
+                <meshStandardMaterial color="#1a1a1a" roughness={0.7} />
             </mesh>
-            {/* Shoulders */}
-            <mesh position={[0, 1.4, 0]} castShadow>
-                <cylinderGeometry args={[0.4, 0.5, 0.4]} />
-                <meshStandardMaterial color={color} roughness={0.9} />
+
+            {/* Glowing Tech Visor */}
+            <mesh position={[0, 1.75, 0.18]}>
+                <boxGeometry args={[0.25, 0.05, 0.02]} />
+                <meshBasicMaterial color={color} toneMapped={false} />
             </mesh>
+            <pointLight position={[0, 1.8, 0.3]} distance={1} intensity={1} color={color} decay={2} />
+
+            {/* Tech Collar / Backpack */}
+            <mesh position={[0, 1.45, -0.15]}>
+                <boxGeometry args={[0.5, 0.4, 0.2]} />
+                <meshStandardMaterial color="#333" metalness={0.8} roughness={0.2} />
+            </mesh>
+
+            {/* --- UI ELEMENTS --- */}
+
+            {/* Nameplate */}
+            <Billboard position={[0, 2.3, 0]}>
+                <Text
+                    fontSize={0.12}
+                    color={color}
+                    font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
+                    anchorY="bottom"
+                    outlineWidth={0.01}
+                    outlineColor="#000"
+                    outlineBlur={0.05}
+                >
+                    {name.toUpperCase()}
+                </Text>
+                {/* Tech bar below name */}
+                <mesh position={[0, -0.02, 0]}>
+                    <planeGeometry args={[0.5, 0.005]} />
+                    <meshBasicMaterial color={color} />
+                </mesh>
+            </Billboard>
+
+            {/* Shout Bubble */}
+            {lastShout && shoutOpacity > 0 && (
+                <Billboard position={[0.8, 1.9, 0.5]}>
+                    <Text
+                        fontSize={0.15}
+                        maxWidth={2.5}
+                        color="#ffffff" // White text
+                        fillOpacity={shoutOpacity}
+                        outlineWidth={0.01}
+                        outlineColor="#000"
+                        outlineOpacity={shoutOpacity}
+                        font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
+                        backgroundColor="#000000aa" // Dark tint box
+                        padding={0.1}
+                    >
+                        {lastShout}
+                    </Text>
+                    {/* Connecting Line */}
+                    <mesh position={[-0.8, -0.2, 0]} rotation={[0, 0, 0.5]}>
+                        <planeGeometry args={[0.02, 0.5]} />
+                        <meshBasicMaterial color={color} transparent opacity={shoutOpacity * 0.5} />
+                    </mesh>
+                </Billboard>
+            )}
+
+            {/* Selection Ring */}
+            {isTarget && (
+                <group position={[0, 0.1, 0]}>
+                    <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                        <ringGeometry args={[0.5, 0.55, 32]} />
+                        <meshBasicMaterial color={color} side={THREE.DoubleSide} transparent opacity={0.5} />
+                    </mesh>
+                    <pointLight distance={3} intensity={2} color={color} position={[0, 1, 0]} decay={2} />
+                </group>
+            )}
         </group>
     );
 }
 
-function VendorItem({ id, ...props }: any) {
-    const group = useRef<THREE.Group>(null);
+// Wrapper to handle state logic (shouts)
+function VendorWrapper(props: any) {
     const [lastShout, setLastShout] = useState<string | null>(null);
     const [shoutOpacity, setShoutOpacity] = useState(0);
 
@@ -84,52 +153,14 @@ function VendorItem({ id, ...props }: any) {
         if (shoutOpacity > 0) setShoutOpacity(prev => prev - 0.01);
     });
 
-    const isTarget = props.targetId === id;
-
     return (
-        <group
-            ref={group}
-            position={props.position}
-            onClick={() => props.setTarget(id)}
-        >
-            <VendorFigure color={props.color} isTarget={isTarget} />
-
-            {/* Nameplate */}
-            <Billboard position={[0, 2.2, 0]}>
-                <Text
-                    fontSize={isTarget ? 0.3 : 0.2}
-                    color="#ffffff"
-                    anchorY="bottom"
-                    outlineWidth={0.02}
-                    outlineColor="#000000"
-                >
-                    {props.name}
-                </Text>
-            </Billboard>
-
-            {/* Shout Bubble */}
-            {lastShout && shoutOpacity > 0 && (
-                <Billboard position={[0.8, 1.8, 0.5]}>
-                    <Text
-                        fontSize={0.2}
-                        maxWidth={3}
-                        color="#ffeebb"
-                        fillOpacity={shoutOpacity}
-                        outlineWidth={0.01}
-                        outlineColor="#332200"
-                        outlineOpacity={shoutOpacity}
-                        font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
-                    >
-                        {lastShout}
-                    </Text>
-                </Billboard>
-            )}
-
-            {/* Selection Highlight */}
-            {isTarget && (
-                <pointLight distance={3} intensity={2} color={props.color} position={[0, 1, 1]} decay={2} />
-            )}
-        </group>
+        <CyberHuman
+            {...props}
+            lastShout={lastShout}
+            shoutOpacity={shoutOpacity}
+            isTarget={props.targetId === props.id}
+            setTarget={props.setTarget}
+        />
     );
 }
 
@@ -137,7 +168,7 @@ export default function Vendors({ setTarget, targetId }: { setTarget: (id: strin
     return (
         <group>
             {VENDORS.map((v) => (
-                <VendorItem key={v.id} {...v} setTarget={setTarget} targetId={targetId} />
+                <VendorWrapper key={v.id} {...v} setTarget={setTarget} targetId={targetId} />
             ))}
         </group>
     );
