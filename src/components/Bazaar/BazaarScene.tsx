@@ -90,16 +90,18 @@ export default function BazaarScene() {
             const { io } = await import("socket.io-client");
             // Use relative path or env var in real prod. 
             // Reducing reconnection attempts to stop spam in dev if backend is off
-            const newSocket = io("http://localhost:3001", {
-                transports: ["websocket"],
-                reconnection: false, // Prevent loop/flashing if backend is down
+            // Use relative path to connect to the same origin (server.js serves both app and socket)
+            // matching server.js `path: "/socket"`
+            const newSocket = io({
+                path: "/socket",
+                transports: ["websocket", "polling"], // Allow polling fallback
+                reconnection: true,
                 timeout: 5000,
             });
 
-            newSocket.on("connect_error", () => {
-                // Silently fail or log once to avoid console spam
-                console.warn("Bazaar Backend offline - switching to Simulation Mode");
-                newSocket.disconnect(); // Explicitly disconnect to stop trying
+            newSocket.on("connect_error", (err) => {
+                console.warn("Bazaar Socket Error:", err.message);
+                // Don't disconnect immediately, let it retry
             });
 
             newSocket.on("connect", () => {
