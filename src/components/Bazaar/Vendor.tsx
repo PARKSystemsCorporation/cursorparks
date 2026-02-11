@@ -107,14 +107,23 @@ function CyberHuman({ position, color, isTarget, name, lastShout, shoutOpacity, 
                         color="#ffffff" // White text
                         fillOpacity={shoutOpacity}
                         outlineWidth={0.01}
+                    <Text
+                        fontSize={0.15}
+                        maxWidth={2.5}
+                        color="#ffffff" // White text
+                        fillOpacity={shoutOpacity}
+                        outlineWidth={0.01}
                         outlineColor="#000"
                         outlineOpacity={shoutOpacity}
                         font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
-                        backgroundColor="#000000aa" // Dark tint box
-                        padding={0.1}
                     >
                         {lastShout}
                     </Text>
+                    {/* Text Background Box */}
+                    <mesh position={[0, 0, -0.01]}>
+                        <planeGeometry args={[2.6, 0.4]} />
+                        <meshBasicMaterial color="#000000" transparent opacity={shoutOpacity * 0.7} />
+                    </mesh>
                     {/* Connecting Line */}
                     <mesh position={[-0.8, -0.2, 0]} rotation={[0, 0, 0.5]}>
                         <planeGeometry args={[0.02, 0.5]} />
