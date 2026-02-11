@@ -157,11 +157,17 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
                 <coneGeometry args={[0.8, 2.5, 32, 1, true]} />
                 <meshBasicMaterial color={color} transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
             </mesh>
+            {/* Central Hotspot */}
+            <mesh position={[0, -0.3, 0]}>
+                <sphereGeometry args={[0.2, 16, 16]} />
+                <meshBasicMaterial color={color} transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} />
+            </mesh>
         </group>
     );
 }
 
 function DustSystem() {
+    // Subtle motes
     const count = 200; // Increased density
     return (
         <Instances range={count}>
@@ -179,6 +185,44 @@ function DustSystem() {
                 </Float>
             ))}
         </Instances>
+    );
+}
+
+function Beams() {
+    return (
+        <group>
+            {[0, -4, -8, -12].map((z, i) => (
+                <mesh key={i} position={[0, 4, z]} rotation={[0, 0, 0]} receiveShadow castShadow>
+                    <boxGeometry args={[10, 0.2, 0.2]} />
+                    <meshStandardMaterial color="#3d2914" roughness={1} />
+                </mesh>
+            ))}
+        </group>
+    );
+}
+
+function HangingBanner({ position, rotation, color }: { position: [number, number, number], rotation?: [number, number, number], color: string }) {
+    const ref = useRef<THREE.Mesh>(null);
+    useFrame(({ clock }) => {
+        if (!ref.current) return;
+        const t = clock.getElapsedTime();
+        ref.current.rotation.z = (rotation?.[2] || 0) + Math.sin(t * 2 + position[0]) * 0.05;
+    });
+
+    return (
+        <group position={position} rotation={rotation ? new THREE.Euler(...rotation) : new THREE.Euler()}>
+            <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]}>
+                <cylinderGeometry args={[0.02, 0.02, 1.2]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+            <mesh ref={ref} position={[0, 0, 0]}>
+                <planeGeometry args={[1, 1.5, 5, 5]} />
+                <LayerMaterial lighting="physical" transmission={0} side={THREE.DoubleSide}>
+                    <Depth colorA={color} colorB="#000000" alpha={1} mode="normal" near={0} far={2} origin={[0, 0, 0]} />
+                    <Noise mapping="local" type="cell" scale={0.5} mode="softlight" alpha={0.5} colorA="#ffffff" colorB="#000000" />
+                </LayerMaterial>
+            </mesh>
+        </group>
     );
 }
 
@@ -218,162 +262,10 @@ export default function Environment() {
             <NeonSign text="NO DATA" position={[3.5, 3.5, -3]} rotation={[0, -Math.PI / 2, 0]} color="#ffaa00" size={0.8} />
 
             {/* Overhead Cables (Dense) */}
-            {/* ... (Function calls for wires can be added back if needed, simplifying for token limit) ... */}
+            <Cables />
 
             {/* Lanterns - Warmth details */}
             <Lantern position={[-2, 2.5, -2]} color="#ffaa00" />
-            <Lantern position={[2, 2.5, -5]} color="#ff9000" delay={2} />
-            <Lantern position={[-2, 2.5, -9]} color="#ffbb00" delay={1} />
-            <Lantern position={[0, 2.8, -12]} color="#ffaa00" delay={3} />
-
-            <DustSystem />
-        </group>
-    );
-}
-
-
-function Beams() {
-    return (
-        <group>
-            {[0, -4, -8, -12].map((z, i) => (
-                <mesh key={i} position={[0, 4, z]} rotation={[0, 0, 0]} receiveShadow castShadow>
-                    <boxGeometry args={[10, 0.2, 0.2]} />
-                    <meshStandardMaterial color="#3d2914" roughness={1} />
-                </mesh>
-            ))}
-        </group>
-    );
-}
-
-function Lantern({ position, color, delay = 0 }: { position: [number, number, number], color: string, delay?: number }) {
-    const group = useRef<THREE.Group>(null);
-    const light = useRef<THREE.PointLight>(null);
-
-    useFrame(({ clock }) => {
-        if (!group.current || !light.current) return;
-        const t = clock.getElapsedTime() + delay;
-        // Breeze
-        group.current.rotation.z = Math.sin(t * 1.0) * 0.05;
-        group.current.rotation.x = Math.cos(t * 0.8) * 0.02;
-
-        // Flicker
-        light.current.intensity = 2 + Math.sin(t * 10) * 0.1 + Math.cos(t * 23) * 0.1;
-    });
-
-    return (
-        <group ref={group} position={position}>
-            {/* Rope */}
-            <mesh position={[0, 0.5, 0]}>
-                <cylinderGeometry args={[0.01, 0.01, 1]} />
-                <meshBasicMaterial color="#000" />
-            </mesh>
-            {/* Lantern Body */}
-            <mesh position={[0, -0.2, 0]} castShadow>
-                <cylinderGeometry args={[0.15, 0.1, 0.4, 6]} />
-                <meshStandardMaterial color="#884400" emissive="#ff4400" emissiveIntensity={0.2} roughness={0.6} />
-            </mesh>
-            {/* Light Source */}
-            <pointLight ref={light} color={color} distance={8} decay={2} castShadow shadow-bias={-0.001} />
-
-            {/* Fake Volumetric Glow / God Ray Cone */}
-            <mesh position={[0, -1.0, 0]} rotation={[0, 0, 0]}>
-                <coneGeometry args={[0.8, 2.5, 32, 1, true]} />
-                <meshBasicMaterial color={color} transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
-            </mesh>
-            {/* Central Hotspot */}
-            <mesh position={[0, -0.3, 0]}>
-                <sphereGeometry args={[0.2, 16, 16]} />
-                <meshBasicMaterial color={color} transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} />
-            </mesh>
-        </group>
-    );
-}
-
-function HangingBanner({ position, rotation, color }: { position: [number, number, number], rotation?: [number, number, number], color: string }) {
-    const ref = useRef<THREE.Mesh>(null);
-    useFrame(({ clock }) => {
-        if (!ref.current) return;
-        const t = clock.getElapsedTime();
-        ref.current.rotation.z = (rotation?.[2] || 0) + Math.sin(t * 2 + position[0]) * 0.05;
-    });
-
-    return (
-        <group position={position} rotation={rotation ? new THREE.Euler(...rotation) : new THREE.Euler()}>
-            <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]}>
-                <cylinderGeometry args={[0.02, 0.02, 1.2]} />
-                <meshStandardMaterial color="#333" />
-            </mesh>
-            <mesh ref={ref} position={[0, 0, 0]}>
-                <planeGeometry args={[1, 1.5, 5, 5]} />
-                <LayerMaterial lighting="physical" transmission={0} side={THREE.DoubleSide}>
-                    <Depth colorA={color} colorB="#000000" alpha={1} mode="normal" near={0} far={2} origin={[0, 0, 0]} />
-                    <Noise mapping="local" type="cell" scale={0.5} mode="softlight" alpha={0.5} colorA="#ffffff" colorB="#000000" />
-                </LayerMaterial>
-            </mesh>
-        </group>
-    );
-}
-
-function DustSystem() {
-    // Subtle motes
-    const count = 150;
-    return (
-        <Instances range={count}>
-            <sphereGeometry args={[0.02, 4, 4]} />
-            <meshBasicMaterial color="#aaa" transparent opacity={0.4} blending={THREE.AdditiveBlending} />
-            {Array.from({ length: count }).map((_, i) => (
-                <Float key={i} speed={0.5} rotationIntensity={1} floatIntensity={2} floatingRange={[-1, 1]}>
-                    <group position={[
-                        (Math.random() - 0.5) * 8,
-                        (Math.random()) * 3 + 0.5,
-                        (Math.random() - 0.5) * 15 - 5
-                    ]}>
-                        <Instance />
-                    </group>
-                </Float>
-            ))}
-        </Instances>
-    );
-}
-
-export default function Environment() {
-    return (
-        <group>
-            {/* Ground - Physical wet cobblestone feel via Lamina */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-                <planeGeometry args={[20, 60]} />
-                <LayerMaterial lighting="physical" color="#1a1816" roughness={0.4} metalness={0.2}>
-                    <Depth colorA="#101015" colorB="#202025" alpha={1} mode="normal" near={0} far={10} origin={[0, 0, 0]} />
-                    {/* Cobblestone Pattern Simulation via Noise */}
-                    <Noise mapping="local" type="cell" scale={0.5} mode="softlight" alpha={0.2} />
-                    <Noise mapping="local" type="perlin" scale={0.2} mode="overlay" alpha={0.3} />
-                </LayerMaterial>
-            </mesh>
-
-            {/* Narrow Alley Walls - Plaster/Grunge */}
-            <mesh position={[-3.5, 4, -10]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-                <planeGeometry args={[40, 8]} />
-                <LayerMaterial lighting="standard" color="#222020" roughness={0.9}>
-                    <Depth colorA="#151515" colorB="#303030" alpha={1} mode="normal" near={0} far={6} origin={[0, -2, 0]} />
-                    <Noise mapping="world" type="white" scale={100} mode="overlay" alpha={0.1} />
-                    <Noise mapping="world" type="perlin" scale={2} mode="softlight" alpha={0.3} />
-                </LayerMaterial>
-            </mesh>
-            <mesh position={[3.5, 4, -10]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
-                <planeGeometry args={[40, 8]} />
-                <LayerMaterial lighting="standard" color="#222020" roughness={0.9}>
-                    <Depth colorA="#151515" colorB="#303030" alpha={1} mode="normal" near={0} far={6} origin={[0, -2, 0]} />
-                    <Noise mapping="world" type="white" scale={100} mode="overlay" alpha={0.1} />
-                    <Noise mapping="world" type="perlin" scale={2} mode="softlight" alpha={0.3} />
-                </LayerMaterial>
-            </mesh>
-
-            {/* Props */}
-            <Cables />
-            <Beams />
-
-            {/* Lanterns - Light Sources */}
-            <Lantern position={[-2, 2.5, -2]} color="#ffaa00" delay={0} />
             <Lantern position={[2, 2.5, -5]} color="#ff9000" delay={2} />
             <Lantern position={[-2, 2.5, -9]} color="#ffbb00" delay={1} />
             <Lantern position={[0, 2.8, -12]} color="#ffaa00" delay={3} />
@@ -388,6 +280,7 @@ export default function Environment() {
                 <meshStandardMaterial color="#3d2914" />
             </mesh>
 
+            <Beams />
             <DustSystem />
         </group>
     );
