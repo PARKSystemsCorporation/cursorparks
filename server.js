@@ -27,8 +27,8 @@ db.exec(`
 `);
 
 const insertMessage = db.prepare("INSERT INTO messages (content, x, y, z, timestamp) VALUES (?, ?, ?, ?, ?)");
-const getRecentMessages = db.prepare("SELECT * FROM messages ORDER BY timestamp DESC LIMIT 100");
-const pruneMessages = db.prepare("DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY timestamp DESC LIMIT 100)");
+const getRecentMessages = db.prepare("SELECT * FROM messages ORDER BY timestamp DESC LIMIT 50");
+const pruneMessages = db.prepare("DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY timestamp DESC LIMIT 50)");
 
 app.prepare().then(() => {
   const server = http.createServer((req, res) => {

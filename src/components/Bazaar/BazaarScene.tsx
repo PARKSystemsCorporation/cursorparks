@@ -104,14 +104,16 @@ export default function BazaarScene() {
 
             newSocket.on("connect", () => {
                 console.log("Connected to Bazaar");
-                newSocket.emit("request-history");
+                // newSocket.emit("request-history"); // Handled by bazaar:init automatically on connect
             });
 
-            newSocket.on("chat-history", (history: any[]) => {
-                setMessages(prev => [...history, ...prev].slice(0, 50));
+            newSocket.on("bazaar:init", (data: any) => {
+                if (data && data.messages) {
+                    setMessages(prev => [...data.messages, ...prev].slice(0, 50));
+                }
             });
 
-            newSocket.on("chat-message", (msg: any) => {
+            newSocket.on("bazaar:shout", (msg: any) => {
                 setMessages((prev) => [msg, ...prev].slice(0, 50));
             });
 
@@ -137,7 +139,7 @@ export default function BazaarScene() {
         }
 
         if (socketRef.current && socketRef.current.connected) {
-            socketRef.current.emit("chat-message", text);
+            socketRef.current.emit("bazaar:shout", { content: text });
         } else {
             // Local fallback
             const msg = { id: Date.now().toString(), content: text, timestamp: Date.now() };
