@@ -226,6 +226,81 @@ function HangingBanner({ position, rotation, color }: { position: [number, numbe
     );
 }
 
+function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position: [number, number, number], color?: string, intensity?: number }) {
+    const group = useRef<THREE.Group>(null);
+    useFrame(({ clock }) => {
+        if (!group.current) return;
+        // Sway
+        group.current.rotation.z = Math.sin(clock.getElapsedTime() * 2 + position[0]) * 0.05;
+    });
+
+    return (
+        <group ref={group} position={position}>
+            {/* Wire */}
+            <mesh position={[0, 0.5, 0]}>
+                <cylinderGeometry args={[0.005, 0.005, 1]} />
+                <meshBasicMaterial color="#111" />
+            </mesh>
+            {/* Socket */}
+            <mesh position={[0, 0.1, 0]}>
+                <cylinderGeometry args={[0.03, 0.03, 0.1]} />
+                <meshStandardMaterial color="#222" />
+            </mesh>
+            {/* Bulb */}
+            <mesh position={[0, 0, 0]}>
+                <sphereGeometry args={[0.05, 16, 16]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} />
+            </mesh>
+            <pointLight distance={6} decay={2} color={color} intensity={intensity} castShadow />
+            {/* Glow Sprite */}
+            <mesh position={[0, 0, 0]}>
+                <planeGeometry args={[0.8, 0.8]} />
+                <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+            </mesh>
+        </group>
+    );
+}
+
+function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { position: [number, number, number], rotation?: [number, number, number], color?: string }) {
+    return (
+        <group position={position} rotation={new THREE.Euler(...rotation)}>
+            {/* Base */}
+            <mesh position={[0, 0.05, 0]}>
+                <cylinderGeometry args={[0.1, 0.15, 0.1]} />
+                <meshStandardMaterial color="#222" />
+            </mesh>
+            {/* Stem */}
+            <mesh position={[0, 0.3, 0]}>
+                <cylinderGeometry args={[0.02, 0.02, 0.6]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+            {/* Shade */}
+            <mesh position={[0, 0.6, 0.1]} rotation={[0.5, 0, 0]}>
+                <coneGeometry args={[0.15, 0.3, 16, 1, true]} />
+                <meshStandardMaterial color="#444" side={THREE.DoubleSide} />
+            </mesh>
+            {/* Bulb */}
+            <mesh position={[0, 0.55, 0.1]} rotation={[0.5, 0, 0]}>
+                <sphereGeometry args={[0.05]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+            </mesh>
+            <spotLight position={[0, 0.6, 0.1]} target-position={[0, 0, 1]} angle={0.6} penumbra={0.5} intensity={4} distance={5} color={color} castShadow />
+        </group>
+    );
+}
+
+function FloorGlow({ position, color = "#0055ff", length = 2 }: { position: [number, number, number], color?: string, length?: number }) {
+    return (
+        <group position={position}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+                <planeGeometry args={[0.1, length]} />
+                <meshBasicMaterial color={color} toneMapped={false} />
+            </mesh>
+            <pointLight position={[0, 0.2, 0]} distance={2} decay={2} color={color} intensity={0.5} />
+        </group>
+    );
+}
+
 export default function Environment() {
     return (
         <group>
@@ -264,11 +339,25 @@ export default function Environment() {
             {/* Overhead Cables (Dense) */}
             <Cables />
 
-            {/* Lanterns - Warmth details */}
-            <Lantern position={[-2, 2.5, -2]} color="#ffaa00" />
-            <Lantern position={[2, 2.5, -5]} color="#ff9000" delay={2} />
-            <Lantern position={[-2, 2.5, -9]} color="#ffbb00" delay={1} />
-            <Lantern position={[0, 2.8, -12]} color="#ffaa00" delay={3} />
+            {/* --- MOTIVATED LIGHTING --- */}
+
+            {/* Rhythm: Hanging Bulbs down the center */}
+            {[-2, -5, -8, -11, -14].map((z, i) => (
+                <HangingBulb key={`bulb-${z}`} position={[Math.sin(z) * 0.5, 3.5, z]} color="#ffaa55" intensity={2} />
+            ))}
+
+            {/* Lanterns - Warmth details - Spaced out */}
+            <Lantern position={[-2.5, 2.5, -3]} color="#ff6600" />
+            <Lantern position={[2.5, 2.8, -7]} color="#ff4400" delay={2} />
+            <Lantern position={[-2.5, 2.2, -10]} color="#ff5500" delay={1} />
+
+            {/* Stall Lamps - practical task lighting on crates/stalls */}
+            <StallLamp position={[-2.5, 1.0, -1]} rotation={[0, -0.5, 0]} color="#aaffaa" />
+            <StallLamp position={[2.5, 1.0, -9]} rotation={[0, 2.5, 0]} color="#ffaaaa" />
+
+            {/* Floor Glows - Guiding lines */}
+            <FloorGlow position={[-3.8, 0, -5]} color="#00ffff" length={10} />
+            <FloorGlow position={[3.8, 0, -8]} color="#ff00ff" length={8} />
 
             {/* Banners */}
             <HangingBanner position={[-2.8, 2.5, -3]} rotation={[0, Math.PI / 2, 0]} color="#551111" />
