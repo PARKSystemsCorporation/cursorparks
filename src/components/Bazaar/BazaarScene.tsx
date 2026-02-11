@@ -14,21 +14,22 @@ import "./BazaarLanding.css";
 import { EffectComposer, Bloom, Noise, Vignette, ToneMapping } from "@react-three/postprocessing";
 import LedSign from "./LedSign";
 import ScrapSign from "./ScrapSign";
+import { BazaarMaterialsProvider } from "./BazaarMaterials";
 
 // --- Configuration ---
 const CONFIG = {
-    fog: { color: "#060610", near: 2, far: 30 }, // Deeper void
+    fog: { color: "#060610", near: 5, far: 50 }, // Deeper void, pushed back for visibility
     lights: {
-        ambient: { intensity: 0.3, color: "#1a1a2e" }, // Darker ambient for contrast
-        moon: { intensity: 4, color: "#4d66cc", position: [10, 20, 10] }, // Cyber blue moon
-        lanterns: { intensity: 12, distance: 15, decay: 2, color: "#ffaa00" }, // Popping warm lights
+        ambient: { intensity: 1.5, color: "#1a1a2e" }, // Much brighter base
+        moon: { intensity: 8, color: "#4d66cc", position: [10, 20, 10] }, // Stronger moon
+        lanterns: { intensity: 12, distance: 15, decay: 2, color: "#ffaa00" }, // Keep warm lights popping
     },
     camera: {
         position: [0, 1.7, 6] as [number, number, number],
-        fov: 60, // Slightly wider for cinematic feel
+        fov: 60,
     },
     postprocessing: {
-        exposure: 1.2,
+        exposure: 1.5, // Brighter
         toneMapping: THREE.ACESFilmicToneMapping
     }
 };
@@ -160,13 +161,15 @@ export default function BazaarScene() {
                 }}
                 camera={CONFIG.camera}
             >
-                <Suspense fallback={null}>
-                    <SceneContent
-                        messages={messages}
-                        targetVendor={targetVendor}
-                        onShout={(t) => setTargetVendor(t)}
-                    />
-                </Suspense>
+                <BazaarMaterialsProvider>
+                    <Suspense fallback={null}>
+                        <SceneContent
+                            messages={messages}
+                            targetVendor={targetVendor}
+                            onShout={(t) => setTargetVendor(t)}
+                        />
+                    </Suspense>
+                </BazaarMaterialsProvider>
             </Canvas>
 
             {/* Vignette & Grain Overlay (CSS) */}

@@ -2,7 +2,7 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Instance, Instances, Float, Text } from "@react-three/drei";
-import { LayerMaterial, Depth, Noise } from "lamina";
+import { useBazaarMaterials } from "./BazaarMaterials";
 
 // --- CYBER ASSETS ---
 
@@ -112,46 +112,37 @@ function WindowGrid() {
 }
 
 function WallBlock({ position, size, rotation = [0, 0, 0] }: { position: [number, number, number], size: [number, number, number], rotation?: [number, number, number] }) {
+    const { concreteWall } = useBazaarMaterials();
     return (
-        <mesh position={position} rotation={new THREE.Euler(...rotation)} receiveShadow castShadow>
+        <mesh position={position} rotation={new THREE.Euler(...rotation)} receiveShadow castShadow material={concreteWall}>
             <boxGeometry args={size} />
-            <LayerMaterial lighting="standard" color="#1a1a1a" roughness={0.8} metalness={0.4}>
-                <Depth colorA="#111" colorB="#333" alpha={1} mode="normal" near={0} far={15} origin={[0, -5, 0]} />
-                <Noise mapping="local" type="cell" scale={0.5} mode="overlay" alpha={0.1} />
-            </LayerMaterial>
         </mesh>
     );
 }
 
-const WallMaterial = new THREE.MeshStandardMaterial({ color: "#222", roughness: 0.8 });
-
 function InternalVendorWall({ position, rotationY = 0 }: { position: [number, number, number], rotationY?: number }) {
+    const { metalPanel, concreteWall } = useBazaarMaterials();
     return (
         <group position={position} rotation={[0, rotationY, 0]}>
             {/* --- SHELL (Recessed Box) --- */}
             {/* Back Wall */}
-            <mesh position={[0, 1.5, -1.8]} receiveShadow>
+            <mesh position={[0, 1.5, -1.8]} receiveShadow material={metalPanel}>
                 <boxGeometry args={[3.8, 3, 0.2]} />
-                <primitive object={WallMaterial} />
             </mesh>
             {/* Ceiling */}
-            <mesh position={[0, 3, -0.5]}>
+            <mesh position={[0, 3, -0.5]} material={metalPanel}>
                 <boxGeometry args={[3.8, 0.2, 3]} />
-                <primitive object={WallMaterial} />
             </mesh>
             {/* Floor */}
-            <mesh position={[0, 0.1, -0.5]}>
+            <mesh position={[0, 0.1, -0.5]} material={concreteWall}>
                 <boxGeometry args={[3.8, 0.2, 3]} />
-                <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
             </mesh>
             {/* Side Walls */}
-            <mesh position={[-1.9, 1.5, -0.5]}>
+            <mesh position={[-1.9, 1.5, -0.5]} material={metalPanel}>
                 <boxGeometry args={[0.2, 3, 3]} />
-                <primitive object={WallMaterial} />
             </mesh>
-            <mesh position={[1.9, 1.5, -0.5]}>
+            <mesh position={[1.9, 1.5, -0.5]} material={metalPanel}>
                 <boxGeometry args={[0.2, 3, 3]} />
-                <primitive object={WallMaterial} />
             </mesh>
 
             {/* --- INTERIOR --- */}
@@ -167,13 +158,11 @@ function InternalVendorWall({ position, rotationY = 0 }: { position: [number, nu
             </mesh>
 
             {/* Back Shelves/Tech */}
-            <mesh position={[-1, 1.8, -1.6]}>
+            <mesh position={[-1, 1.8, -1.6]} material={metalPanel}>
                 <boxGeometry args={[1.5, 0.1, 0.4]} />
-                <meshStandardMaterial color="#333" />
             </mesh>
-            <mesh position={[1, 2.2, -1.6]}>
+            <mesh position={[1, 2.2, -1.6]} material={metalPanel}>
                 <boxGeometry args={[1.5, 0.1, 0.4]} />
-                <meshStandardMaterial color="#333" />
             </mesh>
 
             {/* Overhead Light Strip */}
@@ -199,24 +188,22 @@ function InternalVendorWall({ position, rotationY = 0 }: { position: [number, nu
 function VendorStall({ position, rotationY = 0 }: { position: [number, number, number], rotationY?: number }) {
     // A stall is a "hole" so we build around it, OR we place the interior clutter props.
     // Ideally, the main wall logic handles the hole, this component handles the interior.
+    const { woodCrate, metalPanel, concreteWall } = useBazaarMaterials();
 
     return (
         <group position={position} rotation={[0, rotationY, 0]}>
             {/* Interior Back Wall */}
-            <mesh position={[0, 1.5, -1.8]}>
+            <mesh position={[0, 1.5, -1.8]} material={concreteWall}>
                 <planeGeometry args={[3.8, 3]} />
-                <meshStandardMaterial color="#222" roughness={0.8} />
             </mesh>
             {/* Ceiling */}
-            <mesh position={[0, 3, -1]}>
+            <mesh position={[0, 3, -1]} material={concreteWall}>
                 <boxGeometry args={[3.8, 0.1, 2]} />
-                <meshStandardMaterial color="#333" />
             </mesh>
 
             {/* Counter */}
-            <mesh position={[0, 0.5, 0.5]} castShadow receiveShadow>
+            <mesh position={[0, 0.5, 0.5]} castShadow receiveShadow material={woodCrate}>
                 <boxGeometry args={[3.5, 1, 0.8]} />
-                <meshStandardMaterial color="#442211" roughness={0.6} />
             </mesh>
             {/* Counter LED Strip */}
             <mesh position={[0, 0.9, 0.91]}>
@@ -225,13 +212,11 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
             </mesh>
 
             {/* Shelves */}
-            <mesh position={[0, 1.5, -1.7]}>
+            <mesh position={[0, 1.5, -1.7]} material={metalPanel}>
                 <boxGeometry args={[3.6, 0.1, 0.5]} />
-                <meshStandardMaterial color="#333" />
             </mesh>
-            <mesh position={[0, 2.2, -1.7]}>
+            <mesh position={[0, 2.2, -1.7]} material={metalPanel}>
                 <boxGeometry args={[3.6, 0.1, 0.5]} />
-                <meshStandardMaterial color="#333" />
             </mesh>
             {/* Shelf LED Strips */}
             <mesh position={[0, 1.45, -1.45]}>
@@ -246,17 +231,14 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
             {/* Interior Light - REMOVED -> Baked into emissive strips */}
 
             {/* Clutter - Random boxes */}
-            <mesh position={[-1, 1.7, -1.6]} rotation={[0, 0.2, 0]}>
+            <mesh position={[-1, 1.7, -1.6]} rotation={[0, 0.2, 0]} material={woodCrate}>
                 <boxGeometry args={[0.4, 0.3, 0.3]} />
-                <meshStandardMaterial color="#555" />
             </mesh>
-            <mesh position={[0.5, 1.7, -1.6]} rotation={[0, -0.1, 0]}>
+            <mesh position={[0.5, 1.7, -1.6]} rotation={[0, -0.1, 0]} material={metalPanel}>
                 <boxGeometry args={[0.3, 0.5, 0.3]} />
-                <meshStandardMaterial color="#777" />
             </mesh>
-            <mesh position={[1.2, 0.6, -1.0]} rotation={[0, 0.5, 0]}>
+            <mesh position={[1.2, 0.6, -1.0]} rotation={[0, 0.5, 0]} material={woodCrate}>
                 <boxGeometry args={[0.5, 0.5, 0.5]} />
-                <meshStandardMaterial color="#332211" />
             </mesh>
         </group>
     );
@@ -363,25 +345,22 @@ function ACUnit({ position }: { position: [number, number, number] }) {
 
 function UpperCityLayer() {
     // Dense verticality
+    const { concreteWall, rustPipe } = useBazaarMaterials();
     return (
         <group position={[0, 6, 0]}>
             {/* Left Balconies */}
-            <mesh position={[-3.8, 0, -5]} receiveShadow>
+            <mesh position={[-3.8, 0, -5]} receiveShadow material={concreteWall}>
                 <boxGeometry args={[1, 0.2, 4]} />
-                <meshStandardMaterial color="#222" />
             </mesh>
-            <mesh position={[-3.8, 3, -8]} receiveShadow>
+            <mesh position={[-3.8, 3, -8]} receiveShadow material={concreteWall}>
                 <boxGeometry args={[1, 0.2, 4]} />
-                <meshStandardMaterial color="#222" />
             </mesh>
             {/* Right Pipes */}
-            <mesh position={[3.8, 1, -6]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh position={[3.8, 1, -6]} rotation={[0, 0, Math.PI / 2]} material={rustPipe}>
                 <cylinderGeometry args={[0.1, 0.1, 10]} />
-                <meshStandardMaterial color="#444" roughness={0.3} metalness={0.6} />
             </mesh>
-            <mesh position={[3.6, 2, -6]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh position={[3.6, 2, -6]} rotation={[0, 0, Math.PI / 2]} material={rustPipe}>
                 <cylinderGeometry args={[0.2, 0.2, 10]} />
-                <meshStandardMaterial color="#333" roughness={0.3} metalness={0.6} />
             </mesh>
 
             {/* AC Units Clutter */}
@@ -550,12 +529,12 @@ function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, num
 }
 
 function Beams() {
+    const { woodCrate } = useBazaarMaterials();
     return (
         <group>
             {[0, -4, -8, -12].map((z, i) => (
-                <mesh key={i} position={[0, 4, z]} rotation={[0, 0, 0]} receiveShadow castShadow>
+                <mesh key={i} position={[0, 4, z]} rotation={[0, 0, 0]} receiveShadow castShadow material={woodCrate}>
                     <boxGeometry args={[10, 0.2, 0.2]} />
-                    <meshStandardMaterial color="#3d2914" roughness={1} />
                 </mesh>
             ))}
         </group>
@@ -578,10 +557,7 @@ function HangingBanner({ position, rotation, color }: { position: [number, numbe
             </mesh>
             <mesh ref={ref} position={[0, 0, 0]}>
                 <planeGeometry args={[1, 1.5, 5, 5]} />
-                <LayerMaterial lighting="physical" transmission={0} side={THREE.DoubleSide}>
-                    <Depth colorA={color} colorB="#000000" alpha={1} mode="normal" near={0} far={2} origin={[0, 0, 0]} />
-                    <Noise mapping="local" type="cell" scale={0.5} mode="softlight" alpha={0.5} colorA="#ffffff" colorB="#000000" />
-                </LayerMaterial>
+                <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.8} />
             </mesh>
         </group>
     );
@@ -717,16 +693,23 @@ function MetalBeam({ position }: { position: [number, number, number] }) {
 }
 
 export default function Environment() {
+    const { wetFloor, woodCrate } = useBazaarMaterials();
+
+    // Tiling for floor
+    const tiledFloor = useMemo(() => {
+        const m = wetFloor.clone();
+        if (m.map) { m.map = m.map.clone(); m.map.repeat.set(10, 30); }
+        if (m.roughnessMap) { m.roughnessMap = m.roughnessMap.clone(); m.roughnessMap.repeat.set(10, 30); }
+        // normalMap isn't used in ProceduralTextures logic currently but good to handle if added
+        if (m.normalMap) { m.normalMap = m.normalMap.clone(); m.normalMap.repeat.set(10, 30); }
+        return m;
+    }, [wetFloor]);
+
     return (
         <group>
             {/* Wet Ground - High Metalness/Roughness adjustments */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow material={tiledFloor}>
                 <planeGeometry args={[20, 60]} />
-                <LayerMaterial lighting="physical" color="#050505" roughness={0.7} metalness={0.2}>
-                    <Depth colorA="#000000" colorB="#111116" alpha={1} mode="normal" near={0} far={10} origin={[0, 0, 0]} />
-                    <Noise mapping="local" type="cell" scale={0.6} mode="overlay" alpha={0.2} />
-                    <Noise mapping="local" type="perlin" scale={0.3} mode="add" alpha={0.1} />
-                </LayerMaterial>
             </mesh>
 
             {/* Replaced procedural walls with Constructed Stalls */}
@@ -780,9 +763,8 @@ export default function Environment() {
             <HangingBanner position={[2.8, 2.5, -6]} rotation={[0, -Math.PI / 2, 0]} color="#112233" />
 
             {/* Clutter / Crates */}
-            <mesh position={[-2.5, 0.5, -1]} rotation={[0, 0.2, 0]} castShadow receiveShadow>
+            <mesh position={[-2.5, 0.5, -1]} rotation={[0, 0.2, 0]} castShadow receiveShadow material={woodCrate}>
                 <boxGeometry args={[0.8, 1, 0.8]} />
-                <meshStandardMaterial color="#3d2914" />
             </mesh>
 
             <Beams />
