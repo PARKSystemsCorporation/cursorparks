@@ -14,18 +14,18 @@ import "./BazaarLanding.css";
 
 // --- Configuration ---
 const CONFIG = {
-    fog: { color: "#020205", near: 1, far: 20 }, // Darker, tighter fog
+    fog: { color: "#080815", near: 2, far: 25 }, // Slightly brighter fog, further start
     lights: {
-        ambient: { intensity: 0.2, color: "#1a2030" }, // Deep blue moon fill
-        moon: { intensity: 1.5, color: "#8a96c7", position: [10, 20, 10] }, // Hard moon key
-        lanterns: { intensity: 3, distance: 10, decay: 2, color: "#ff9000" }, // Fire
+        ambient: { intensity: 0.6, color: "#2a3045" }, // Brighter blue fill (was 0.2)
+        moon: { intensity: 3, color: "#9aa6d7", position: [10, 20, 10] }, // Stronger moon key (was 1.5)
+        lanterns: { intensity: 8, distance: 12, decay: 2, color: "#ffaa00" }, // Bright warm practicals (was 3)
     },
     camera: {
         position: [0, 1.7, 6] as [number, number, number],
-        fov: 55, // 55mm lens feel (cinematic, less distortion)
+        fov: 55,
     },
     postprocessing: {
-        exposure: 1.0,
+        exposure: 1.5, // Brighter overall exposure (was 1.0)
         toneMapping: THREE.ACESFilmicToneMapping
     }
 };
@@ -47,7 +47,7 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
                 shadow-mapSize={[1024, 1024]}
             />
             {/* Hemisphere for ground bounce */}
-            <hemisphereLight args={["#1a2030", "#050505", 0.5]} />
+            <hemisphereLight args={["#2a3045", "#050505", 1.0]} />
 
             {/* Physics World */}
             <Physics gravity={[0, -9.8, 0]}>
@@ -79,9 +79,17 @@ export default function BazaarScene() {
     useEffect(() => {
         const initSocket = async () => {
             const { io } = await import("socket.io-client");
+            // Use relative path or env var in real prod. 
+            // Reducing reconnection attempts to stop spam in dev if backend is off
             const newSocket = io("http://localhost:3001", {
                 transports: ["websocket"],
-                reconnectionAttempts: 5,
+                reconnectionAttempts: 1,
+                timeout: 5000,
+            });
+
+            newSocket.on("connect_error", () => {
+                // Silently fail or log once to avoid console spam
+                console.log("Bazaar Backend offline - switching to Simulation Mode");
             });
 
             newSocket.on("connect", () => {
