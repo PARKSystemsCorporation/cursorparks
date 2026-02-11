@@ -5,6 +5,8 @@ import { Instance, Instances, Float, Text } from "@react-three/drei";
 import { LayerMaterial, Depth, Noise } from "lamina";
 import { useBazaarMaterials } from "./BazaarMaterials";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
+import NeonImageSign from "./NeonImageSign";
+import LedBar from "./LedBar";
 
 // --- SHARED MATERIALS (created once, reused across all components) ---
 const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
@@ -621,21 +623,14 @@ function FloorGlow({ position, color = "#0055ff", length = 2 }: { position: [num
                 <planeGeometry args={[0.1, length]} />
                 <meshBasicMaterial color={color} toneMapped={false} />
             </mesh>
-            {/* Opt: Removed light from floor glow */}\n
+            {/* Opt: Removed light from floor glow */}
         </group>
     );
 }
 
-const metalBeamMat = new THREE.MeshStandardMaterial({ color: "#222", roughness: 0.4, metalness: 0.8 });
-
 function MetalBeam({ position }: { position: [number, number, number] }) {
     return (
         <group position={position}>
-            {/* The Beam - Spanning Right to Left */}
-            <mesh rotation={[0, 0, Math.PI / 2]} position={[0, 0, 0]} material={metalBeamMat}>
-                <cylinderGeometry args={[0.15, 0.15, 24]} />
-            </mesh>
-
             {/* The LED Strip Housing */}
             <mesh rotation={[0, 0, Math.PI / 2]} position={[0, -0.16, 0]} material={MAT_BLACK}>
                 <boxGeometry args={[0.3, 22, 0.05]} />
@@ -700,6 +695,17 @@ export default function Environment() {
             <NeonSign text="CYBER" position={[3.5, 5, -8]} rotation={[0, -Math.PI / 2, 0]} color="#0088ff" size={1.5} />
             <NeonSign text="NO DATA" position={[3.5, 3.5, -3]} rotation={[0, -Math.PI / 2, 0]} color="#ffaa00" size={0.8} />
 
+            {/* Ultra-HD neon sign (back-left alley wall) */}
+            <NeonImageSign
+                textureUrl="/textures/signs/neon-sign-ultrahd.png"
+                position={[-4.05, 3.2, -18.5]}
+                rotation={[0, Math.PI / 2, 0]}
+                width={3.2}
+                height={1.6}
+                emissiveIntensity={1.15}
+                lightIntensity={0.35}
+            />
+
             {/* Overhead Cables (Dense) */}
             <Cables />
 
@@ -722,6 +728,15 @@ export default function Environment() {
             {/* Floor Glows - Guiding lines */}
             <FloorGlow position={[-3.8, 0, -5]} color="#00ffff" length={10} />
             <FloorGlow position={[3.8, 0, -8]} color="#ff00ff" length={8} />
+
+            {/* Neon strip along bottom-left wall */}
+            <LedBar
+                color="#ff0055"
+                position={[-4.02, 0.18, -10.0]}
+                rotation={[0, Math.PI / 2, 0]}
+                length={22}
+                thickness={0.08}
+            />
 
             {/* Banners */}
             <HangingBanner position={[-2.8, 2.5, -3]} rotation={[0, Math.PI / 2, 0]} color="#551111" />
