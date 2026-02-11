@@ -11,6 +11,7 @@ import Crowd from "./Crowd";
 import CameraRig from "./CameraRig";
 import InputBar from "./InputBar";
 import "./BazaarLanding.css";
+import { EffectComposer, Bloom, Noise, Vignette, ToneMapping } from "@react-three/postprocessing";
 
 // --- Configuration ---
 const CONFIG = {
@@ -58,6 +59,14 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
 
             {/* Camera Control */}
             <CameraRig targetVendor={targetVendor} />
+
+            {/* Post-Processing Stack */}
+            <EffectComposer>
+                <Bloom luminanceThreshold={1} mipmapBlur intensity={1.5} radius={0.6} />
+                <Noise opacity={0.15} />
+                <Vignette eskil={false} offset={0.1} darkness={0.6} />
+                <ToneMapping adaptive={true} resolution={256} middleGrey={0.6} maxLuminance={16.0} averageLuminance={1.0} adaptationRate={1.0} />
+            </EffectComposer>
         </>
     );
 }
