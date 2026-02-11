@@ -11,7 +11,7 @@ import Crowd from "./Crowd";
 import CameraRig from "./CameraRig";
 import InputBar from "./InputBar";
 import "./BazaarLanding.css";
-import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
+import { EffectComposer, ToneMapping, SMAA, Bloom } from "@react-three/postprocessing";
 import LedSign from "./LedSign";
 import ScrapSign from "./ScrapSign";
 import { BazaarMaterialsProvider } from "./BazaarMaterials";
@@ -23,18 +23,22 @@ import MarketSoundscape from "./MarketSoundscape";
 
 // --- Market configuration ---
 const CONFIG = {
-    fog: { color: "#b8d4e3", near: 18, far: 52 },
+    // NIGHT MODE: Dark, atmospheric, blue-tinted
+    fog: { color: "#050a14", near: 10, far: 45 },
     lights: {
-        ambient: { intensity: 0.62, color: "#ffffff" },
-        sun: { intensity: 2.2, color: "#fff5e6", position: [5, 28, 8] as [number, number, number] },
-        hemisphere: { sky: "#a8c8e8", ground: "#c4a574", intensity: 1.45 },
+        // Very dim ambient - mostly darkness
+        ambient: { intensity: 0.15, color: "#112244" },
+        // "Moon" or city glow - Cool, soft, from above/behind
+        sun: { intensity: 0.8, color: "#88ccff", position: [-5, 20, -10] as [number, number, number] },
+        // Ground bounce vs Sky - Dark contrast
+        hemisphere: { sky: "#0a1525", ground: "#020205", intensity: 0.4 },
     },
     camera: {
         position: [0, 1.7, 6] as [number, number, number],
         fov: 60,
     },
     postprocessing: {
-        exposure: 1.0,
+        exposure: 1.2, // Slightly boost exposure for contrasty look
         toneMapping: THREE.ACESFilmicToneMapping,
     },
     shadow: {
@@ -87,6 +91,7 @@ function SceneContent({ messages, targetVendor, onShout, onEnterAlleyTwo }: { me
 
             <EffectComposer>
                 <SMAA />
+                <Bloom luminanceThreshold={1.1} mipmapBlur intensity={0.8} radius={0.6} />
                 <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
             </EffectComposer>
         </>

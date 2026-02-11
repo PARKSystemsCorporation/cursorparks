@@ -12,24 +12,27 @@ import {
     createDirtRoadRoughness,
     createMetalPanelTexture,
     createWoodCrateTexture,
+    createWoodCrateRoughness,
+    createClothTexture,
     createRustPipeTexture,
 } from "./ProceduralTextures";
 
 type BazaarMaterials = {
     concreteWall: THREE.MeshStandardMaterial;
-    concreteWallRight: THREE.MeshStandardMaterial; // Brighter for sun-lit right side
+    concreteWallRight: THREE.MeshStandardMaterial;
     wetFloor: THREE.MeshStandardMaterial;
     dirtRoad: THREE.MeshStandardMaterial;
     metalPanel: THREE.MeshStandardMaterial;
     woodCrate: THREE.MeshStandardMaterial;
     rustPipe: THREE.MeshStandardMaterial;
+    cloth: THREE.MeshStandardMaterial;
 };
 
 const BazaarMaterialsContext = createContext<BazaarMaterials | null>(null);
 
 export function BazaarMaterialsProvider({ children }: { children: React.ReactNode }) {
     const materials = useMemo(() => {
-        // 1. Generate Textures (Once)
+        // 1. Generate Textures
         const txConcrete = createConcreteWallTexture();
         const txConcreteNormal = createConcreteWallNormal();
 
@@ -41,25 +44,26 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
 
         const txMetal = createMetalPanelTexture();
         const txWood = createWoodCrateTexture();
+        const txWoodRough = createWoodCrateRoughness();
+        const txCloth = createClothTexture();
         const txRust = createRustPipeTexture();
 
         // 2. Create Materials
 
-        // Wall: Grimy concrete
+        // Wall
         const concreteWall = new THREE.MeshStandardMaterial({
             map: txConcrete,
             normalMap: txConcreteNormal,
-            color: "#888", // Tint
+            color: "#888",
             roughness: 0.9,
             metalness: 0.1,
         });
 
-        // Right wall: Brighter (sun-lit side of alley)
         const concreteWallRight = concreteWall.clone();
         concreteWallRight.color.set("#bbb");
         concreteWallRight.envMapIntensity = 1.2;
 
-        // Floor: Wet, dark, reflective in spots (night / alternate)
+        // Floor
         const wetFloor = new THREE.MeshStandardMaterial({
             map: txFloor,
             roughnessMap: txFloorRough,
@@ -69,7 +73,7 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             envMapIntensity: 1.5,
         });
 
-        // Ground: Rough dirt (uneven, pebbly, rutted)
+        // Ground
         const dirtRoad = new THREE.MeshStandardMaterial({
             map: txDirt,
             normalMap: txDirtNormal,
@@ -80,7 +84,7 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             envMapIntensity: 0.2,
         });
 
-        // Metal Panel: Brushed, tech
+        // Metal
         const metalPanel = new THREE.MeshStandardMaterial({
             map: txMetal,
             color: "#aaa",
@@ -88,12 +92,22 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             metalness: 0.8,
         });
 
-        // Wood Crate
+        // Wood Crate (Improved)
         const woodCrate = new THREE.MeshStandardMaterial({
             map: txWood,
-            color: "#a67",
-            roughness: 0.8,
+            roughnessMap: txWoodRough,
+            color: "#8d6e63", // Slightly lighter to show texture
+            roughness: 1.0,
             metalness: 0.0,
+        });
+
+        // Cloth (New)
+        const cloth = new THREE.MeshStandardMaterial({
+            map: txCloth,
+            color: "#fff",
+            roughness: 0.9,
+            metalness: 0.05,
+            side: THREE.DoubleSide
         });
 
         // Rust Pipe
@@ -112,6 +126,7 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             metalPanel,
             woodCrate,
             rustPipe,
+            cloth,
         };
     }, []);
 

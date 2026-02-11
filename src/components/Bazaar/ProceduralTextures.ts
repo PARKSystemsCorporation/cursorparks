@@ -510,3 +510,84 @@ export function createRustPipeTexture() {
 
     return createTextureFromCanvas(canvas);
 }
+
+/**
+ * Wood Crate Roughness - Scratches and varying plank roughness
+ */
+export function createWoodCrateRoughness() {
+    const size = 1024;
+    const canvas = createCanvas(size);
+    const ctx = getContext(canvas);
+
+    // Base rough
+    ctx.fillStyle = "#888";
+    ctx.fillRect(0, 0, size, size);
+
+    // Plank gaps are rougher (lighter/white)
+    ctx.strokeStyle = "#bbb";
+    ctx.lineWidth = 6;
+    for (let i = 0; i < size; i += size / 4) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(size, i);
+        ctx.stroke();
+    }
+
+    // Scratches (darker = smoother? No, standard roughness: 0=smooth/black, 1=rough/white)
+    // We want scratches to be rougher? Or if they expose fresh wood, maybe smoother?
+    // Let's make scratches rough (white).
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 50; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const l = 20 + Math.random() * 50;
+        const ang = (Math.random() - 0.5);
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(ang) * l, y + Math.sin(ang) * l);
+        ctx.stroke();
+    }
+
+    fillNoise(ctx, size, 0.1);
+    return createTextureFromCanvas(canvas);
+}
+
+/**
+ * Cloth Texture - Weave pattern and stains
+ */
+export function createClothTexture() {
+    const size = 1024;
+    const canvas = createCanvas(size);
+    const ctx = getContext(canvas);
+
+    // Base light grey
+    ctx.fillStyle = "#ddd";
+    ctx.fillRect(0, 0, size, size);
+
+    // Weave Pattern
+    ctx.fillStyle = "#ccc";
+    for (let i = 0; i < size; i += 4) {
+        if (i % 8 === 0) ctx.fillRect(0, i, size, 2);
+        ctx.fillRect(i, 0, 2, size);
+    }
+
+    // Dirt/Stains
+    ctx.globalAlpha = 0.3;
+    for (let i = 0; i < 10; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const r = 50 + Math.random() * 150;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0, "#5d4037"); // Brownish
+        grd.addColorStop(1, "transparent");
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
+
+    fillNoise(ctx, size, 0.05);
+    return createTextureFromCanvas(canvas);
+}

@@ -11,11 +11,13 @@ const MAT_DARKER = new THREE.MeshStandardMaterial({ color: "#333" });
 const MAT_METAL = new THREE.MeshStandardMaterial({ color: "#444", roughness: 0.4, metalness: 0.7 });
 
 type AlleyEndingPortalProps = {
+    positionX?: number;
     positionZ?: number;
+    rotationY?: number;
     onEnterPortal?: () => void;
 };
 
-export function AlleyEndingPortal({ positionZ = -28, onEnterPortal }: AlleyEndingPortalProps) {
+export function AlleyEndingPortal({ positionX = 0, positionZ = -28, rotationY = 0, onEnterPortal }: AlleyEndingPortalProps) {
     const group = useRef<THREE.Group>(null);
     const portalRef = useRef<THREE.Mesh>(null);
 
@@ -38,7 +40,7 @@ export function AlleyEndingPortal({ positionZ = -28, onEnterPortal }: AlleyEndin
     const topLintelHeight = totalHeight - openingHeight; // 8
 
     return (
-        <group ref={group} position={[0, 0, positionZ]}>
+        <group ref={group} position={[positionX, 0, positionZ]} rotation={[0, rotationY, 0]}>
             {/* --- BACK WALL FRAME (left, right, top) --- */}
             <mesh position={[leftPillarCenterX, totalHeight / 2, 0]} material={MAT_DARK} castShadow receiveShadow>
                 <boxGeometry args={[leftPillarWidth, totalHeight, wallThick]} />

@@ -14,10 +14,15 @@ import CoffeeCart from "./CoffeeCart";
 import JewelryStand from "./JewelryStand";
 import BirdFlyby from "./BirdFlyby";
 
-// Cutoff: hollow everything past this Z (just past Barker). Portal and back wall sit here.
-const Z_CUTOFF = -6;
+// Cutoff: hollow everything past this Z (just past Dead End).
+const Z_CUTOFF = -4.5;
 
-const STRING_LIGHT_POSITIONS: [number, number, number][] = [[-2, 3.8, 0], [0, 3.5, -2], [2, 3.6, -4], [-1, 3.4, -5]];
+const STRING_LIGHT_POSITIONS: [number, number, number][] = [
+    [-2, 2.8, 1],
+    [0, 2.6, -1],
+    [2, 2.7, -3],
+    [-1, 2.5, -3.5]
+];
 
 // --- SHARED MATERIALS (created once, reused across all components) ---
 const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
@@ -197,8 +202,8 @@ function HangingBlanket({ y, z, width, height, color }: { y: number; z: number; 
 
 const FABRIC_COLORS = ["#c47b5b", "#7a9e9f", "#b8956b", "#d4a574", "#8b7355", "#a67c52", "#6b8e9a", "#c9a86c"];
 const BLANKET_LINES = [
-    { y: 3.2, z: -4, w: 2.2, h: 1.4 },
-    { y: 2.2, z: -6, w: 2.4, h: 1.2 },
+    { y: 3.2, z: -1.5, w: 2.2, h: 1.4 },
+    { y: 2.8, z: -3.5, w: 2.4, h: 1.2 },
 ].filter((line) => line.z >= Z_CUTOFF);
 
 function HangingBlankets() {
@@ -261,7 +266,7 @@ function Clothesline({ y, z }: { y: number; z: number }) {
 }
 
 const CLOTHESLINE_POSITIONS = [
-    { y: 2.8, z: -3 },
+    { y: 2.8, z: -2.5 },
 ].filter((p) => p.z >= Z_CUTOFF);
 
 function Clotheslines() {
@@ -418,72 +423,63 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
 const LEFT_WALL_HOLE_Z = { min: -18, max: -6 };
 const LEFT_WALL_HOLE_Y = { min: 2, max: 9 };
 
-// Hawker hole-in-the-wall shop: left wall near entrance, z 0.8–4, y 0.5–2.8
-const HAWKER_HOLE_Z = { min: 0.8, max: 4 };
+// Left wall hole for Hawker: z 1.5–4.5, y 0.5–2.8.
+// The turn is at z < 1.0.
+const HAWKER_HOLE_Z = { min: 1.5, max: 4.5 };
 const HAWKER_HOLE_Y = { min: 0.5, max: 2.8 };
 
-// Right wall hole-in-the-wall vendor (first thing on right): z 0.5–2.5, y 0.8–2.2
+// Right wall hole-in-the-wall vendor: z 0.5–2.5
 const RIGHT_WALL_HOLE_Z = { min: 0.5, max: 2.5 };
 const RIGHT_WALL_HOLE_Y = { min: 0.8, max: 2.2 };
 
-// Full shop stall for Hawker: counter, shelves, neon — vendor stands behind counter. Floor level with alley ground (y=0).
+// Full shop stall for Hawker
 function HawkerStallShop() {
     const { woodCrate, metalPanel, concreteWall } = useBazaarMaterials();
     const holeZ = (HAWKER_HOLE_Z.min + HAWKER_HOLE_Z.max) / 2;
     const holeHeight = HAWKER_HOLE_Y.max - HAWKER_HOLE_Y.min;
-    // Position so bottom of alcove is at alley ground (y=0): group y = half height
+    const holeWidth = HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min;
     const groupY = holeHeight / 2;
     const dimOrange = "#cc6633";
     const orangeIntensity = 0.6 * BAZAAR_BRIGHTNESS * (EMISSIVE_SCALE > 0 ? EMISSIVE_SCALE : 0.6);
 
     return (
         <group position={[-4.5, groupY, holeZ]}>
-            {/* Floor of alcove — level with alley ground */}
+            {/* Floor of alcove */}
             <mesh position={[-0.5, -groupY, 0]} receiveShadow material={concreteWall}>
-                <boxGeometry args={[0.8, 0.08, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.2]} />
+                <boxGeometry args={[0.8, 0.08, holeWidth + 0.2]} />
             </mesh>
-            {/* Back wall of alcove (local -X = into wall) */}
+            {/* Back wall of alcove */}
             <mesh position={[-0.8, 0, 0]} receiveShadow material={metalPanel}>
-                <boxGeometry args={[0.1, holeHeight + 0.2, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.2]} />
+                <boxGeometry args={[0.1, holeHeight + 0.2, holeWidth + 0.2]} />
             </mesh>
             {/* Side walls */}
-            <mesh position={[-0.4, 0, -(HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min) / 2 - 0.05]} material={metalPanel}>
+            <mesh position={[-0.4, 0, -holeWidth / 2 - 0.05]} material={metalPanel}>
                 <boxGeometry args={[0.8, holeHeight + 0.3, 0.1]} />
             </mesh>
-            <mesh position={[-0.4, 0, (HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min) / 2 + 0.05]} material={metalPanel}>
+            <mesh position={[-0.4, 0, holeWidth / 2 + 0.05]} material={metalPanel}>
                 <boxGeometry args={[0.8, holeHeight + 0.3, 0.1]} />
             </mesh>
-            {/* Market counter — prominent wooden counter vendor stands behind (slightly above floor) */}
+            {/* Market counter */}
             <mesh position={[-0.15, 0.15 + 0.04, 0]} castShadow receiveShadow material={woodCrate}>
-                <boxGeometry args={[0.5, 0.9, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min]} />
+                <boxGeometry args={[0.5, 0.9, holeWidth]} />
             </mesh>
-            {/* Counter top with neon strip */}
+            {/* Counter top strip */}
             <mesh position={[-0.15, 0.55 + 0.04, 0]}>
-                <boxGeometry args={[0.02, 0.04, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.1]} />
+                <boxGeometry args={[0.02, 0.04, holeWidth + 0.1]} />
                 <meshStandardMaterial color={dimOrange} emissive={dimOrange} emissiveIntensity={orangeIntensity} />
             </mesh>
-            {/* Shelves behind counter */}
+            {/* Shelves */}
             <mesh position={[-0.5, 0.7 + 0.04, 0]} material={metalPanel}>
-                <boxGeometry args={[0.08, 0.05, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min - 0.4]} />
+                <boxGeometry args={[0.08, 0.05, holeWidth - 0.4]} />
             </mesh>
-            <mesh position={[-0.55, 0.72 + 0.04, 0]}>
-                <boxGeometry args={[0.02, 0.02, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min - 0.5]} />
-                <meshStandardMaterial color={dimOrange} emissive={dimOrange} emissiveIntensity={orangeIntensity} />
-            </mesh>
-            <mesh position={[-0.55, 1.1 + 0.04, 0]} material={metalPanel}>
-                <boxGeometry args={[0.08, 0.05, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min - 0.5]} />
-            </mesh>
-            {/* Neon frame around shop opening */}
+            {/* Neon frame */}
             <mesh position={[0.02, 0, 0]}>
-                <boxGeometry args={[0.04, holeHeight + 0.1, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min + 0.15]} />
+                <boxGeometry args={[0.04, holeHeight + 0.1, holeWidth + 0.15]} />
                 <meshStandardMaterial color={dimOrange} emissive={dimOrange} emissiveIntensity={orangeIntensity} />
             </mesh>
-            {/* Clutter on counter */}
+            {/* Clutter */}
             <mesh position={[-0.15, 0.5 + 0.04, -0.8]} rotation={[0, 0.2, 0]} material={woodCrate}>
                 <boxGeometry args={[0.25, 0.2, 0.2]} />
-            </mesh>
-            <mesh position={[-0.15, 0.52 + 0.04, 0.5]} rotation={[0, -0.1, 0]} material={metalPanel}>
-                <boxGeometry args={[0.2, 0.15, 0.15]} />
             </mesh>
             {PRACTICAL_LIGHT_INTENSITY > 0 && (
                 <pointLight color={dimOrange} intensity={1} distance={3} decay={2} position={[-0.3, 0.5, 0]} />
@@ -494,55 +490,19 @@ function HawkerStallShop() {
 
 function HoleInWallVendor() {
     const { metalPanel, concreteWall } = useBazaarMaterials();
-    // Dim blue neon for daytime — visible but washed out
     const dimBlueIntensity = 0.45 * BAZAAR_BRIGHTNESS * (EMISSIVE_SCALE > 0 ? EMISSIVE_SCALE : 0.6);
     const dimBlue = "#4488dd";
 
     return (
         <group position={[3.95, RIGHT_WALL_HOLE_Y.min + (RIGHT_WALL_HOLE_Y.max - RIGHT_WALL_HOLE_Y.min) / 2, RIGHT_WALL_HOLE_Z.min + (RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min) / 2]}>
-            {/* Recessed alcove: back wall + sides, facing -X (into alley) */}
-            {/* Back wall of alcove */}
             <mesh position={[0.5, 0, 0]} receiveShadow material={metalPanel}>
                 <boxGeometry args={[0.1, RIGHT_WALL_HOLE_Y.max - RIGHT_WALL_HOLE_Y.min + 0.2, RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min + 0.2]} />
             </mesh>
-            {/* Side walls */}
-            <mesh position={[0.25, 0, -(RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min) / 2 - 0.05]} material={metalPanel}>
-                <boxGeometry args={[0.5, RIGHT_WALL_HOLE_Y.max - RIGHT_WALL_HOLE_Y.min + 0.3, 0.1]} />
-            </mesh>
-            <mesh position={[0.25, 0, (RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min) / 2 + 0.05]} material={metalPanel}>
-                <boxGeometry args={[0.5, RIGHT_WALL_HOLE_Y.max - RIGHT_WALL_HOLE_Y.min + 0.3, 0.1]} />
-            </mesh>
-            {/* Counter sill */}
             <mesh position={[0.2, -0.35, 0]} castShadow receiveShadow material={concreteWall}>
                 <boxGeometry args={[0.4, 0.15, RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min]} />
             </mesh>
-            {/* Neon outline — frame the hole (blue, dim for day) */}
-            {/* Top bar */}
             <mesh position={[0.02, (RIGHT_WALL_HOLE_Y.max - RIGHT_WALL_HOLE_Y.min) / 2 + 0.05, 0]}>
                 <boxGeometry args={[0.04, 0.06, RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min + 0.15]} />
-                <meshStandardMaterial color={dimBlue} emissive={dimBlue} emissiveIntensity={dimBlueIntensity} />
-            </mesh>
-            {/* Left vertical */}
-            <mesh position={[0.02, 0, -(RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min) / 2 - 0.04]}>
-                <boxGeometry args={[0.04, RIGHT_WALL_HOLE_Y.max - RIGHT_WALL_HOLE_Y.min, 0.06]} />
-                <meshStandardMaterial color={dimBlue} emissive={dimBlue} emissiveIntensity={dimBlueIntensity} />
-            </mesh>
-            {/* Right vertical */}
-            <mesh position={[0.02, 0, (RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min) / 2 + 0.04]}>
-                <boxGeometry args={[0.04, RIGHT_WALL_HOLE_Y.max - RIGHT_WALL_HOLE_Y.min, 0.06]} />
-                <meshStandardMaterial color={dimBlue} emissive={dimBlue} emissiveIntensity={dimBlueIntensity} />
-            </mesh>
-            {/* Bottom bar */}
-            <mesh position={[0.02, -(RIGHT_WALL_HOLE_Y.max - RIGHT_WALL_HOLE_Y.min) / 2 - 0.05, 0]}>
-                <boxGeometry args={[0.04, 0.06, RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min + 0.15]} />
-                <meshStandardMaterial color={dimBlue} emissive={dimBlue} emissiveIntensity={dimBlueIntensity} />
-            </mesh>
-            {/* Shelf with blue strip inside */}
-            <mesh position={[0.3, 0.2, 0]} material={metalPanel}>
-                <boxGeometry args={[0.08, 0.05, RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min - 0.2]} />
-            </mesh>
-            <mesh position={[0.35, 0.22, 0]}>
-                <boxGeometry args={[0.02, 0.02, RIGHT_WALL_HOLE_Z.max - RIGHT_WALL_HOLE_Z.min - 0.3]} />
                 <meshStandardMaterial color={dimBlue} emissive={dimBlue} emissiveIntensity={dimBlueIntensity} />
             </mesh>
             {PRACTICAL_LIGHT_INTENSITY > 0 && (
@@ -553,37 +513,84 @@ function HoleInWallVendor() {
 }
 
 function ConstructedWalls({ onEnterPortal }: { onEnterPortal?: () => void }) {
-    // Tall canyon walls (height 20); hollowed at Z_CUTOFF — back wall and portal at -7 / -6.5
     const wallH = 20;
-    const wallY = wallH / 2; // center at 10 so floor at 0
-    const { concreteWallRight } = useBazaarMaterials();
-    const backWallZ = -7;
+    const wallY = wallH / 2;
+    const { concreteWallRight, concreteWall } = useBazaarMaterials();
+
+    // DEAD END WALL at z = -4.5 (Close enough to feel like a stop)
+    const deadEndZ = -4.5;
+
+    // LEFT TURN CORRIDOR:
+    // Starts at x = -4, extends to x = -15
+    // Width (z) = 4 units approximately (z = -2 to z = 2)
+    const corridorCenterZ = 0;
+    const corridorWidth = 4;
+
+    // CORNER WALL (The wall that forces you to turn left inside the corridor logic)
+    // Actually, the main left wall is broken.
+    // Segment 1 (Entry): From Camera (z=10) to z=1.5 (Start of Hawker)
+    // There is a wall BEHIND Hawker? No, Hawker IS the wall.
+    // The Hawker stall is at z=[1.5, 4.5].
+    // So the "Left Turn" must be AFTER Hawker (smaller z) OR Before?
+    // "Walk forward... then curve LEFT behind the stall".
+    // "Behind" relative to camera usually means "past" it.
+    // So we walk past Hawker (on our left), then TURN LEFT.
+    // Hawker z = [1.5, 4.5].
+    // Turn is at z < 1.5. Let's say z = [-2, 1].
 
     return (
         <group>
-            {/* --- LEFT WALL (x = -4) — Hawker hole + Broker; ends at cutoff (no deep hole) --- */}
-            <WallBlock position={[-4, wallY, -0.85]} size={[2, wallH, 3.3]} /> {/* left of Hawker hole */}
-            <WallBlock position={[-4, wallY, 4.75]} size={[2, wallH, 1.5]} /> {/* right of Hawker hole */}
-            <WallBlock position={[-4, HAWKER_HOLE_Y.min / 2, (HAWKER_HOLE_Z.min + HAWKER_HOLE_Z.max) / 2]} size={[2, HAWKER_HOLE_Y.min, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min]} /> {/* below Hawker hole */}
-            <WallBlock position={[-4, (HAWKER_HOLE_Y.max + wallH) / 2, (HAWKER_HOLE_Z.min + HAWKER_HOLE_Z.max) / 2]} size={[2, wallH - HAWKER_HOLE_Y.max, HAWKER_HOLE_Z.max - HAWKER_HOLE_Z.min]} /> {/* above Hawker hole */}
-            <WallBlock position={[-4, wallY, (Z_CUTOFF - 1 + backWallZ) / 2]} size={[2, wallH, backWallZ - Z_CUTOFF + 2]} /> {/* from cutoff to back wall */}
-            <WallBlock position={[-4, 13, -2.5]} size={[2, 12, 4]} /> {/* Above Broker */}
-
-            {/* --- RIGHT WALL (x = 4) — hole-in-the-wall vendor; ends at cutoff --- */}
-            <WallBlock position={[4, wallY, -2.25]} size={[2, wallH, 5.5]} material={concreteWallRight} /> {/* left of hole */}
-            <WallBlock position={[4, wallY, 3.75]} size={[2, wallH, 2.5]} material={concreteWallRight} /> {/* right of hole */}
-            <WallBlock position={[4, RIGHT_WALL_HOLE_Y.min / 2, 1.5]} size={[2, RIGHT_WALL_HOLE_Y.min, 2]} material={concreteWallRight} /> {/* below hole */}
-            <WallBlock position={[4, (RIGHT_WALL_HOLE_Y.max + wallH) / 2, 1.5]} size={[2, wallH - RIGHT_WALL_HOLE_Y.max, 2]} material={concreteWallRight} /> {/* above hole */}
-            <WallBlock position={[4, wallY, (Z_CUTOFF - 1 + backWallZ) / 2]} size={[2, wallH, backWallZ - Z_CUTOFF + 2]} material={concreteWallRight} />
-            <WallBlock position={[4, 13, -5]} size={[2, 12, 4]} material={concreteWallRight} /> {/* Above Barker */}
+            {/* --- RIGHT WALL (x = 4) — Straight solid wall --- */}
+            {/* From back (z=-20) to front (z=10) */}
+            <WallBlock position={[4, wallY, 0]} size={[2, wallH, 30]} material={concreteWallRight} />
             <HoleInWallVendor />
 
-            {/* --- HAWKER SHOP (left wall hole) --- */}
+            {/* --- DEAD END WALL (Front) --- */}
+            {/* Blocks the path at z = deadEndZ. Spans from x=-4 to x=4 */}
+            <WallBlock position={[0, wallY, deadEndZ]} size={[10, wallH, 2]} material={concreteWall} />
+
+            {/* --- LEFT WALL SEGMENTS --- */}
+
+            {/* 1. Entry Segment (Camera side) */}
+            {/* From z=10 down to maybe z=4.5 (Start of Hawker) */}
+            {/* Hawker is at z=[1.5, 4.5] approx. centered at 3. */}
+            {/* Let's make wall from z=4.5 to z=15 */}
+            <WallBlock position={[-4, wallY, 9.75]} size={[2, wallH, 10.5]} material={concreteWall} />
+
+            {/* 2. Hawker Section */}
+            {/* Wall above and below Hawker hole */}
+            {/* Hole z = [1.5, 4.5] */}
+            <WallBlock position={[-4, HAWKER_HOLE_Y.min / 2, 3]} size={[2, HAWKER_HOLE_Y.min, 3]} material={concreteWall} />
+            <WallBlock position={[-4, (HAWKER_HOLE_Y.max + wallH) / 2, 3]} size={[2, wallH - HAWKER_HOLE_Y.max, 3]} material={concreteWall} />
+
+            {/* 3. The CORNER POST (Occlusion) */}
+            {/* Between Hawker (z=1.5) and the Turn (starts at z=1?). */}
+            {/* Actually, let's just create the corner at z=1.5. */}
+
+            {/* --- LEFT CORRIDOR (The Turn) --- */}
+            {/* Floor for left corridor */}
+            <mesh position={[-10, 0, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                <planeGeometry args={[12, 6]} />
+                <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
+            </mesh>
+
+            {/* Side Walls of Left Corridor */}
+            {/* Back side of corridor (towards camera Z) -> z=2 approx */}
+            <WallBlock position={[-10, wallY, 2.5]} size={[14, wallH, 2]} material={concreteWall} />
+
+            {/* Front side of corridor (towards dead end Z) -> z=-2 approx */}
+            <WallBlock position={[-10, wallY, -2.5]} size={[14, wallH, 2]} material={concreteWall} />
+
+            {/* Far end of left corridor */}
+            <AlleyEndingPortal positionZ={0} positionX={-16} rotationY={Math.PI / 2} onEnterPortal={onEnterPortal} />
+
+            {/* --- HAWKER SHOP --- */}
             <HawkerStallShop />
 
-            {/* --- BACK WALL + PORTAL at cutoff --- */}
-            <WallBlock position={[0, wallY, backWallZ]} size={[10, wallH, 2]} />
-            <AlleyEndingPortal positionZ={-6.5} onEnterPortal={onEnterPortal} />
+            {/* Corner geometry cleanup */}
+            {/* Small pillar to softern the corner transition at x=-4, z=1.5 */}
+            <WallBlock position={[-4, wallY, 1.25]} size={[2.2, wallH, 0.5]} material={concreteWall} />
+
         </group>
     );
 }
@@ -797,26 +804,94 @@ function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, num
                 <meshStandardMaterial color="#8d6e63" />
             </mesh>
 
-            {/* Canvas Roof (Pyramid/Tilted) */}
-            <mesh position={[0, 2.4, 0]}>
-                <coneGeometry args={[1.3, 0.8, 4]} />
-                <meshStandardMaterial color="#2e3c50" roughness={1} side={THREE.DoubleSide} />
+            {/* Overhang */}
+            <mesh position={[0, 2.8, 0]} rotation={[0, 0, 0.1]} receiveShadow>
+                <boxGeometry args={[2, 0.1, 1.5]} />
+                <meshStandardMaterial color="#4e342e" roughness={0.9} />
             </mesh>
-
-            {/* Food Props */}
-            <mesh position={[0.2, 0.85, 0.2]}>
-                <boxGeometry args={[0.3, 0.1, 0.3]} />
-                <meshStandardMaterial color="#ff5722" />
-            </mesh>
-            <mesh position={[-0.2, 0.85, -0.1]}>
-                <cylinderGeometry args={[0.1, 0.15, 0.2]} />
-                <meshStandardMaterial color="#795548" />
-            </mesh>
-
-            {/* Integrated Light - Opt: Removed PointLight */}
         </group>
     );
 }
+
+function RandomCrates() {
+    // Scaffold geometric noise
+    const crates = useMemo(() => {
+        const out = [];
+        for (let i = 0; i < 15; i++) {
+            const x = (Math.random() - 0.5) * 6;
+            const z = -4 + (Math.random() * 8); // Spread along alley
+            // Avoid mid path
+            if (x > -1.5 && x < 1.5) continue;
+            // Avoid clipping walls
+            if (x < -3.5 || x > 3.5) continue;
+
+            const s = 0.3 + Math.random() * 0.4;
+            const rot = Math.random() * Math.PI;
+            out.push(
+                <mesh key={i} position={[x, s / 2, z]} rotation={[0, rot, 0]} castShadow receiveShadow>
+                    <boxGeometry args={[s, s, s]} />
+                    <meshStandardMaterial color={Math.random() > 0.5 ? "#5d4037" : "#3e2723"} roughness={0.8} />
+                </mesh>
+            )
+        }
+        return out;
+    }, []);
+    return <group>{crates}</group>;
+}
+
+function PaperScraps() {
+    // Scattered white quads on ground
+    const scraps = useMemo(() => {
+        const out = [];
+        for (let i = 0; i < 40; i++) {
+            const x = (Math.random() - 0.5) * 8;
+            const z = -6 + Math.random() * 8;
+            if (Math.abs(x) < 2) continue; // Keep center clear
+
+            const r = Math.random() * Math.PI;
+            const scale = 0.05 + Math.random() * 0.1;
+
+            out.push(
+                <mesh key={i} position={[x, 0.01 + i * 0.0001, z]} rotation={[-Math.PI / 2, 0, r]} receiveShadow>
+                    <planeGeometry args={[scale, scale * 1.4]} />
+                    <meshStandardMaterial color="#ddd" roughness={0.9} side={THREE.DoubleSide} />
+                </mesh>
+            );
+        }
+        return out;
+    }, []);
+    return <group>{scraps}</group>;
+}
+
+function SteamVents() {
+    // Rotating semi-transparent planes to simulate steam rising from vents
+    const vents = useRef<THREE.Group>(null);
+    useFrame(({ clock }) => {
+        if (!vents.current) return;
+        const t = clock.getElapsedTime();
+        vents.current.children.forEach((child, i) => {
+            const mesh = child as THREE.Mesh;
+            const offset = i * 2;
+            mesh.position.y = 0.5 + Math.sin(t * 1.5 + offset) * 0.2;
+            mesh.rotation.z += 0.005;
+            (mesh.material as THREE.MeshStandardMaterial).opacity = 0.3 + Math.sin(t * 2 + offset) * 0.15;
+        });
+    });
+
+    return (
+        <group ref={vents}>
+            <mesh position={[-3.5, 0.5, -2]} rotation={[0, 0, 0]}>
+                <planeGeometry args={[0.5, 1.5]} />
+                <meshStandardMaterial color="#88aaff" transparent opacity={0.3} depthWrite={false} side={THREE.DoubleSide} />
+            </mesh>
+            <mesh position={[3.5, 0.5, -4]} rotation={[0, Math.PI, 0]}>
+                <planeGeometry args={[0.6, 2.0]} />
+                <meshStandardMaterial color="#88aaff" transparent opacity={0.3} depthWrite={false} side={THREE.DoubleSide} />
+            </mesh>
+        </group>
+    );
+}
+
 
 const beamMat = new THREE.MeshStandardMaterial({ color: "#3d2914", roughness: 1 });
 
@@ -1037,6 +1112,7 @@ export default function Environment({ onEnterPortal }: { onEnterPortal?: () => v
             <mesh position={[-2.5, 0.5, -1]} rotation={[0, 0.2, 0]} castShadow receiveShadow material={woodCrate}>
                 <boxGeometry args={[0.8, 1, 0.8]} />
             </mesh>
+            <RandomCrates />
 
             <Beams />
 
@@ -1049,7 +1125,51 @@ export default function Environment({ onEnterPortal }: { onEnterPortal?: () => v
                 <boxGeometry args={[0.6, 0.5, 0.5]} />
             </mesh>
 
+            <PaperScraps />
+            <SteamVents />
+
+            {/* Angled Signs */}
+            <ProtrudingSign text="REPAIR" position={[-3.9, 3.5, 1]} color="#ff00cc" />
+            <ProtrudingSign text="NOODLES" position={[-3.9, 3.2, -1.5]} color="#ffaa00" />
+            <ProtrudingSign text="PARTS" position={[3.9, 3.0, -3.5]} color="#00ccff" />
+
+            <CityBackground />
+
             {/* Removed DustSystem for optimization */}
         </group>
     );
+}
+
+function CityBackground() {
+    // Distant dark shapes to suggest depth beyond the walls
+    const buildings = useMemo(() => {
+        const out = [];
+        for (let i = 0; i < 20; i++) {
+            const x = (Math.random() - 0.5) * 40;
+            const z = -20 - Math.random() * 30; // Far back
+            const h = 10 + Math.random() * 30;
+            const w = 4 + Math.random() * 8;
+
+            out.push(
+                <mesh key={i} position={[x, h / 2 - 5, z]}>
+                    <boxGeometry args={[w, h, w]} />
+                    <meshBasicMaterial color="#020408" fog={true} />
+                </mesh>
+            );
+
+            // Random window lights
+            if (Math.random() > 0.5) {
+                const wx = (Math.random() - 0.5) * (w - 1);
+                const wy = (Math.random() - 0.5) * (h - 2);
+                out.push(
+                    <mesh key={`win-${i}`} position={[x + wx, h / 2 - 5 + wy, z + w / 2 + 0.1]}>
+                        <planeGeometry args={[0.2, 0.4]} />
+                        <meshBasicMaterial color="#ffffcc" />
+                    </mesh>
+                );
+            }
+        }
+        return out;
+    }, []);
+    return <group>{buildings}</group>;
 }
