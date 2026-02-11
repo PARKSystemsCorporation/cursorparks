@@ -38,10 +38,19 @@ const VENDORS = [
 // --- Procedural Vendor Visuals ---
 // --- Procedural Vendor Visuals ---
 
-// Cyberpunk Character Component
-function CyberHuman({ position, color, isTarget, name, lastShout, setTarget, id }: any) {
+interface CyberHumanProps {
+    position: readonly [number, number, number];
+    color: string;
+    isTarget: boolean;
+    name: string;
+    lastShout: string | null;
+    setTarget: (id: string) => void;
+    id: string;
+}
+function CyberHuman({ position, color, isTarget, name, lastShout, setTarget, id }: CyberHumanProps) {
     const group = useRef<THREE.Group>(null);
-    const textRef = useRef<any>(null);
+    type TextRefWithOpacity = THREE.Object3D & { fillOpacity?: number; outlineOpacity?: number };
+const textRef = useRef<TextRefWithOpacity | null>(null);
     const bgRef = useRef<THREE.Mesh>(null);
     const lineRef = useRef<THREE.Mesh>(null);
 
@@ -188,8 +197,8 @@ function CyberHuman({ position, color, isTarget, name, lastShout, setTarget, id 
     );
 }
 
-// Wrapper to handle state logic (shouts)
-function VendorWrapper(props: any) {
+type VendorWithShout = (typeof VENDORS)[number] & { setTarget: (id: string) => void; targetId: string | null };
+function VendorWrapper(props: VendorWithShout) {
     const [lastShout, setLastShout] = useState<string | null>(null);
     // Removed shoutOpacity state to prevent re-renders on every frame
 

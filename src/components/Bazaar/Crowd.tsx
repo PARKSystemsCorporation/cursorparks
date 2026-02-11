@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useMemo, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text, Billboard } from "@react-three/drei";
 import * as THREE from "three";
@@ -10,8 +10,14 @@ interface Message {
     content: string;
 }
 
+// Ref type for drei Text (Troika) - has position + fill/outline opacity
+interface TextMeshRef extends THREE.Object3D {
+    fillOpacity?: number;
+    outlineOpacity?: number;
+}
+
 // Floating Text Component (Pure presentation now)
-const ChatBubble = React.memo(({ message, index, count, bubbleRef }: { message: Message; index: number; count: number; bubbleRef: any }) => {
+const ChatBubble = React.memo(({ message, bubbleRef }: { message: Message; bubbleRef: (el: TextMeshRef | null) => void }) => {
     return (
         <Billboard>
             <Text
@@ -34,9 +40,9 @@ const ChatBubble = React.memo(({ message, index, count, bubbleRef }: { message: 
 });
 ChatBubble.displayName = "ChatBubble";
 
-export default function Crowd({ messages }: { messages: any[] }) {
+export default function Crowd({ messages }: { messages: Message[] }) {
     const recentMessages = messages.slice(-60); // Show more chaos
-    const refs = useRef<Array<any>>([]);
+    const refs = useRef<(TextMeshRef | null)[]>([]);
 
     // Reset refs array when messages change length substantially to avoid stale refs
     // actually, just keep it loose, index-based access is fine
@@ -112,9 +118,7 @@ export default function Crowd({ messages }: { messages: any[] }) {
                 <ChatBubble
                     key={msg.id || i}
                     message={msg}
-                    index={i}
-                    count={recentMessages.length}
-                    bubbleRef={(el: any) => (refs.current[i] = el)}
+                    bubbleRef={(el) => (refs.current[i] = el)}
                 />
             ))}
         </group>

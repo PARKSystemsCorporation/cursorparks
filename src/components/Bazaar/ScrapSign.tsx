@@ -1,13 +1,16 @@
 "use client";
 
 import React, { useRef } from "react";
+import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
 import { EMISSIVE_SCALE } from "./lightingMode";
 
+type TextRefWithOpacity = THREE.Object3D & { fillOpacity?: number };
+
 export default function ScrapSign() {
-    const textRef = useRef<any>(null);
+    const textRef = useRef<TextRefWithOpacity | null>(null);
 
     const frameCount = useRef(0);
 

@@ -17,14 +17,15 @@ interface NeonSignProps {
 }
 
 export default function NeonSign({ text, color, position, rotation = [0, 0, 0], scale = 1, flicker = false }: NeonSignProps) {
-    const textRef = useRef<any>(null);
+    const textRef = useRef<THREE.Mesh | null>(null);
     const lightRef = useRef<THREE.PointLight>(null);
 
     useFrame((state) => {
         if (EMISSIVE_SCALE === 0) return;
         if (flicker && textRef.current && lightRef.current) {
             const intensity = 1 + Math.sin(state.clock.elapsedTime * 20) * 0.1 + (Math.random() > 0.9 ? -0.5 : 0);
-            textRef.current.material.emissiveIntensity = Math.max(0.2, intensity * 2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE);
+            const mat = textRef.current.material as THREE.MeshStandardMaterial;
+            if (mat) mat.emissiveIntensity = Math.max(0.2, intensity * 2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE);
             lightRef.current.intensity = Math.max(0.5, intensity * 1.5 * PRACTICAL_LIGHT_INTENSITY);
         }
     });

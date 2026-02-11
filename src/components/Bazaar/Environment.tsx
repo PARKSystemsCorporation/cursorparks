@@ -171,6 +171,7 @@ function HangingBlanket({ y, z, width, height, color }: { y: number; z: number; 
     );
 }
 
+const FABRIC_COLORS = ["#c47b5b", "#7a9e9f", "#b8956b", "#d4a574", "#8b7355", "#a67c52", "#6b8e9a", "#c9a86c"];
 const BLANKET_LINES = [
     { y: 3.2, z: -4, w: 2.2, h: 1.4 },
     { y: 2.6, z: -9, w: 2.6, h: 1.1 },
@@ -425,7 +426,15 @@ function ConstructedWalls() {
 
 const backingPlateMat = new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.2, metalness: 0.8 });
 
-function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flicker = false }: any) {
+interface NeonSignProps {
+    text: string;
+    position: [number, number, number];
+    color: string;
+    rotation?: [number, number, number];
+    size?: number;
+    flicker?: boolean;
+}
+function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flicker = false }: NeonSignProps) {
     const ref = useRef<THREE.Mesh>(null);
     const frameCount = useRef(0);
     useFrame(({ clock }) => {
@@ -529,7 +538,12 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
     );
 }
 
-function ProtrudingSign({ position, text, color = "#ff00ff" }: any) {
+interface ProtrudingSignProps {
+    position: [number, number, number];
+    text: string;
+    color?: string;
+}
+function ProtrudingSign({ position, text, color = "#ff00ff" }: ProtrudingSignProps) {
     return (
         <group position={position}>
             {/* Mounting Arm */}
@@ -791,6 +805,8 @@ export default function Environment() {
             <WindowGrid />
             <WindowACs />
             <POVLight />
+            <HangingBlankets />
+            <Clotheslines />
 
             {/* Vendor Stalls Interiors - Matched to Vendor Positions */}
             <VendorStall position={[-3.8, 0, -2.5]} rotationY={Math.PI / 2} /> {/* Broker */}

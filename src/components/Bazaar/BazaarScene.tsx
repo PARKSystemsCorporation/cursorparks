@@ -2,7 +2,7 @@
 "use client";
 
 import { Canvas, useThree } from "@react-three/fiber";
-import { useEffect, useState, useRef, Suspense } from "react";
+import { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import * as THREE from "three";
 import { Sky, Environment as DreiEnvironment } from "@react-three/drei";
 import BazaarSet from "./Environment";
@@ -127,42 +127,48 @@ export default function BazaarScene() {
     }, []);
 
     // Socket Connection (Simulated if backend missing for dev)
+    // Uses shared socket singleton - do NOT disconnect on unmount; only remove Bazaar-specific listeners
     useEffect(() => {
+        const onConnectError = (err: Error) => {
+            console.warn("Bazaar Socket Error:", err.message);
+        };
+        const onConnect = () => {
+            console.log("Connected to Bazaar");
+        };
+        const onBazaarInit = (data: any) => {
+            if (data && data.messages) {
+                setMessages((prev) => [...data.messages, ...prev].slice(0, 50));
+            }
+        };
+        const onBazaarShout = (msg: any) => {
+            setMessages((prev) => [msg, ...prev].slice(0, 50));
+        };
+
         const initSocket = async () => {
-            // Optimized: Use shared socket singleton to share connection
             const { getSocket } = await import("../../engine/socketClient");
-            const newSocket = getSocket();
+            const socket = getSocket();
+            socketRef.current = socket;
 
-            newSocket.on("connect_error", (err) => {
-                console.warn("Bazaar Socket Error:", err.message);
-                // Don't disconnect immediately, let it retry
-            });
-
-            newSocket.on("connect", () => {
-                console.log("Connected to Bazaar");
-                // newSocket.emit("request-history"); // Handled by bazaar:init automatically on connect
-            });
-
-            newSocket.on("bazaar:init", (data: any) => {
-                if (data && data.messages) {
-                    setMessages(prev => [...data.messages, ...prev].slice(0, 50));
-                }
-            });
-
-            newSocket.on("bazaar:shout", (msg: any) => {
-                setMessages((prev) => [msg, ...prev].slice(0, 50));
-            });
-
-            socketRef.current = newSocket;
+            socket.on("connect_error", onConnectError);
+            socket.on("connect", onConnect);
+            socket.on("bazaar:init", onBazaarInit);
+            socket.on("bazaar:shout", onBazaarShout);
         };
 
         initSocket();
+
         return () => {
-            if (socketRef.current) socketRef.current.disconnect();
+            const socket = socketRef.current;
+            if (socket) {
+                socket.off("connect_error", onConnectError);
+                socket.off("connect", onConnect);
+                socket.off("bazaar:init", onBazaarInit);
+                socket.off("bazaar:shout", onBazaarShout);
+            }
         };
     }, []);
 
-    const handleShout = (text: string) => {
+    const handleShout = useCallback((text: string) => {
         // Command parsing for local feedback (immediate)
         if (text.startsWith("/")) {
             const cmd = text.slice(1).toLowerCase();
@@ -180,7 +186,9 @@ export default function BazaarScene() {
             const msg = { id: Date.now().toString(), content: text, timestamp: Date.now() };
             setMessages(prev => [msg, ...prev].slice(0, 50));
         }
-    };
+    }, []);
+
+    const onShoutTarget = useCallback((t: string) => setTargetVendor(t), []);
 
     return (
         <div className="bazaar-canvas-container">
@@ -202,7 +210,7 @@ export default function BazaarScene() {
                         <SceneContent
                             messages={messages}
                             targetVendor={targetVendor}
-                            onShout={(t) => setTargetVendor(t)}
+                            onShout={onShoutTarget}
                         />
                     </Suspense>
                 </BazaarMaterialsProvider>
