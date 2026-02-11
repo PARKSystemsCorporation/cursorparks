@@ -15,7 +15,7 @@ import { EffectComposer, Bloom, Noise, Vignette, ToneMapping } from "@react-thre
 
 // --- Configuration ---
 const CONFIG = {
-    fog: { color: "#080815", near: 2, far: 25 }, // Slightly brighter fog, further start
+    fog: { color: "#0b1026", near: 2, far: 25 }, // Lighter city night blue-black
     lights: {
         ambient: { intensity: 0.6, color: "#2a3045" }, // Brighter blue fill (was 0.2)
         moon: { intensity: 3, color: "#9aa6d7", position: [10, 20, 10] }, // Stronger moon key (was 1.5)
@@ -63,7 +63,7 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
             {/* Post-Processing Stack */}
             <EffectComposer>
                 <Bloom luminanceThreshold={1} mipmapBlur intensity={1.5} radius={0.6} />
-                <Noise opacity={0.15} />
+                <Noise opacity={0.05} />
                 <Vignette eskil={false} offset={0.1} darkness={0.6} />
                 <ToneMapping adaptive={true} resolution={256} middleGrey={0.6} maxLuminance={16.0} averageLuminance={1.0} adaptationRate={1.0} />
             </EffectComposer>

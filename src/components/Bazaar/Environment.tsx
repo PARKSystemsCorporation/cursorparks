@@ -70,7 +70,7 @@ function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flick
             {/* Fake Volumetric Glow */}
             <mesh position={[0, 0, 0.1]}>
                 <planeGeometry args={[text.length * 0.4 * size, 1.0 * size]} />
-                <meshBasicMaterial color={color} transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} />
+                <meshBasicMaterial color={color} transparent opacity={0.02} depthWrite={false} blending={THREE.AdditiveBlending} />
             </mesh>
         </group>
     );
@@ -150,17 +150,17 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
                 <meshStandardMaterial color="#884400" emissive="#ff4400" emissiveIntensity={0.2} roughness={0.6} />
             </mesh>
             {/* Light Source */}
-            <pointLight ref={light} color={color} distance={8} decay={2} castShadow shadow-bias={-0.001} />
+            <pointLight ref={light} color={color} distance={18} decay={2} castShadow shadow-bias={-0.001} />
 
             {/* Fake Volumetric Glow / God Ray Cone */}
             <mesh position={[0, -1.0, 0]} rotation={[0, 0, 0]}>
                 <coneGeometry args={[0.8, 2.5, 32, 1, true]} />
-                <meshBasicMaterial color={color} transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+                <meshBasicMaterial color={color} transparent opacity={0.01} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
             </mesh>
             {/* Central Hotspot */}
             <mesh position={[0, -0.3, 0]}>
                 <sphereGeometry args={[0.2, 16, 16]} />
-                <meshBasicMaterial color={color} transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} />
+                <meshBasicMaterial color={color} transparent opacity={0.03} depthWrite={false} blending={THREE.AdditiveBlending} />
             </mesh>
         </group>
     );
@@ -251,11 +251,11 @@ function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position:
                 <sphereGeometry args={[0.05, 16, 16]} />
                 <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} />
             </mesh>
-            <pointLight distance={6} decay={2} color={color} intensity={intensity} castShadow />
+            <pointLight distance={15} decay={2} color={color} intensity={intensity} castShadow />
             {/* Glow Sprite */}
             <mesh position={[0, 0, 0]}>
                 <planeGeometry args={[0.8, 0.8]} />
-                <meshBasicMaterial color={color} transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+                <meshBasicMaterial color={color} transparent opacity={0.03} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
             </mesh>
         </group>
     );
@@ -284,7 +284,7 @@ function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { posi
                 <sphereGeometry args={[0.05]} />
                 <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
             </mesh>
-            <spotLight position={[0, 0.6, 0.1]} target-position={[0, 0, 1]} angle={0.6} penumbra={0.5} intensity={4} distance={5} color={color} castShadow />
+            <spotLight position={[0, 0.6, 0.1]} target-position={[0, 0, 1]} angle={0.6} penumbra={0.5} intensity={4} distance={15} color={color} castShadow />
         </group>
     );
 }
@@ -296,7 +296,7 @@ function FloorGlow({ position, color = "#0055ff", length = 2 }: { position: [num
                 <planeGeometry args={[0.1, length]} />
                 <meshBasicMaterial color={color} toneMapped={false} />
             </mesh>
-            <pointLight position={[0, 0.2, 0]} distance={2} decay={2} color={color} intensity={0.5} />
+            <pointLight position={[0, 0.2, 0]} distance={8} decay={1.5} color={color} intensity={0.5} />
         </group>
     );
 }
