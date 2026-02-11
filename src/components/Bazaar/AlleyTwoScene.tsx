@@ -9,6 +9,7 @@ import AlleyTwoEnvironment from "./AlleyTwoEnvironment";
 import AlleyTwoVendors from "./AlleyTwoVendors";
 import AlleyTwoCameraRig from "./AlleyTwoCameraRig";
 import InputBar from "./InputBar";
+import CodeVendorPopout from "./CodeVendorPopout";
 import "./BazaarLanding.css";
 import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
 import { BazaarMaterialsProvider } from "./BazaarMaterials";
@@ -166,6 +167,7 @@ export default function AlleyTwoScene({ onReturnToAlleyOne }: AlleyTwoSceneProps
                 if (cmd.startsWith("smith")) setTargetVendor("smith");
                 else if (cmd.startsWith("fixer")) setTargetVendor("fixer");
                 else if (cmd.startsWith("merchant")) setTargetVendor("merchant");
+                else if (cmd.startsWith("coder")) setTargetVendor("coder");
                 else if (cmd === "reset" || cmd === "back") setTargetVendor(null);
             }
 
@@ -211,6 +213,10 @@ export default function AlleyTwoScene({ onReturnToAlleyOne }: AlleyTwoSceneProps
             </Canvas>
 
             <div className="bazaar-overlay-vignette" />
+
+            {targetVendor === "coder" && (
+                <CodeVendorPopout onClose={() => setTargetVendor(null)} />
+            )}
 
             <InputBar onShout={handleShout} />
         </div>
