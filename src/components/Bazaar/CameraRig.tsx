@@ -5,9 +5,55 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import gsap from "gsap";
 
-export default function CameraRig({ targetVendor }: { targetVendor: string | null }) {
+export default function CameraRig({ targetVendor, onExit }: { targetVendor: string | null, onExit: () => void }) {
     const { camera } = useThree();
     const mouse = useRef({ x: 0, y: 0 });
+    const touchStartDist = useRef<number>(0);
+
+    // Gestures for "Back" / "Escape"
+    useEffect(() => {
+        if (!targetVendor) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            // Scroll "Down" / Pull Back = Exit
+            if (e.deltaY > 0) {
+                onExit();
+            }
+        };
+
+        const handleTouchStart = (e: TouchEvent) => {
+            if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                touchStartDist.current = Math.sqrt(dx * dx + dy * dy);
+            }
+        };
+
+        const handleTouchMove = (e: TouchEvent) => {
+            if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // Pinch In (Distance decreases) = Zoom Out = Exit
+                // User said "pinch out" but standard "back" is pinch in. 
+                // Adding check for substantial change to avoid accidental triggers.
+                if (touchStartDist.current - dist > 50) {
+                    onExit();
+                }
+            }
+        };
+
+        window.addEventListener("wheel", handleWheel);
+        window.addEventListener("touchstart", handleTouchStart);
+        window.addEventListener("touchmove", handleTouchMove);
+
+        return () => {
+            window.removeEventListener("wheel", handleWheel);
+            window.removeEventListener("touchstart", handleTouchStart);
+            window.removeEventListener("touchmove", handleTouchMove);
+        };
+    }, [targetVendor, onExit]);
 
     // Vendor Focus Positions (Strictly clamped to Y=1.7)
     // Broker: [-2.2, 1.4, -2.5] -> Cam: [-1.2, 1.7, -0.5]

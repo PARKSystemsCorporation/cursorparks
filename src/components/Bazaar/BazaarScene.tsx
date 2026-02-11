@@ -58,7 +58,7 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
             </Physics>
 
             {/* Camera Control */}
-            <CameraRig targetVendor={targetVendor} />
+            <CameraRig targetVendor={targetVendor} onExit={() => onShout("/back")} />
 
             {/* Post-Processing Stack */}
             <EffectComposer>
