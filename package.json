@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "node server.js",
     "build": "next build",
-    "start": "prisma db push && node server.js",
+    "start": "node server.js",
+    "release": "prisma db push",
+    "start:with-db": "prisma db push && node server.js",
     "lint": "next lint",
     "prisma": "prisma",
     "db:push": "prisma db push",

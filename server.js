@@ -3,6 +3,7 @@ const next = require("next");
 const { Server } = require("socket.io");
 const Database = require("better-sqlite3");
 const path = require("path");
+const { execSync } = require("child_process");
 
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
@@ -10,7 +11,7 @@ const handle = app.getRequestHandler();
 
 const PORT = process.env.PORT || 3000;
 
-// Initialize SQLite for Bazaar
+// Initialize SQLite for Bazaar (sync, fast)
 const dbPath = path.join(process.cwd(), "bazaar.db");
 const db = new Database(dbPath);
 
@@ -30,12 +31,38 @@ const insertMessage = db.prepare("INSERT INTO messages (content, x, y, z, timest
 const getRecentMessages = db.prepare("SELECT * FROM messages ORDER BY timestamp DESC LIMIT 50");
 const pruneMessages = db.prepare("DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY timestamp DESC LIMIT 50)");
 
-app.prepare().then(() => {
-  const server = http.createServer((req, res) => {
-    handle(req, res);
-  });
+let isReady = false;
 
-  const io = new Server(server, {
+const server = http.createServer((req, res) => {
+  if (!isReady) {
+    res.writeHead(200);
+    res.end("OK");
+    return;
+  }
+  handle(req, res);
+});
+
+// Listen immediately so the platform doesn't SIGTERM for slow startup
+server.listen(PORT, () => {
+  console.log(`> Listening on http://localhost:${PORT} (warming up...)`);
+});
+
+async function bootstrap() {
+  if (process.env.SKIP_DB_PUSH !== "1") {
+    try {
+      execSync("npx prisma db push --accept-data-loss", { stdio: "inherit", timeout: 60000 });
+    } catch (err) {
+      console.error("prisma db push failed:", err.message);
+      if (process.env.NODE_ENV === "production") process.exit(1);
+      console.warn("Continuing in dev (DB may be out of sync)");
+    }
+  }
+  await app.prepare();
+  isReady = true;
+  console.log(`> Ready on http://localhost:${PORT}`);
+}
+
+const io = new Server(server, {
     path: "/socket",
     cors: { origin: "*" },
     perMessageDeflate: true
@@ -173,10 +200,6 @@ app.prepare().then(() => {
     });
   });
 
-  server.listen(PORT, () => {
-    console.log(`> Ready on http://localhost:${PORT}`);
-  });
-
   function shutdown() {
     console.log("Shutting down...");
     engine.stop();
@@ -187,6 +210,10 @@ app.prepare().then(() => {
     });
     setTimeout(() => process.exit(1), 5000);
   }
-  process.on("SIGTERM", shutdown);
-  process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
+
+bootstrap().catch((err) => {
+  console.error("Bootstrap failed:", err);
+  process.exit(1);
 });
