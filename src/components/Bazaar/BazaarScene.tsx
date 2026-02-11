@@ -15,18 +15,18 @@ import { EffectComposer, Bloom, Noise, Vignette, ToneMapping } from "@react-thre
 
 // --- Configuration ---
 const CONFIG = {
-    fog: { color: "#0b1026", near: 2, far: 25 }, // Lighter city night blue-black
+    fog: { color: "#060610", near: 2, far: 30 }, // Deeper void
     lights: {
-        ambient: { intensity: 0.6, color: "#2a3045" }, // Brighter blue fill (was 0.2)
-        moon: { intensity: 3, color: "#9aa6d7", position: [10, 20, 10] }, // Stronger moon key (was 1.5)
-        lanterns: { intensity: 8, distance: 12, decay: 2, color: "#ffaa00" }, // Bright warm practicals (was 3)
+        ambient: { intensity: 0.3, color: "#1a1a2e" }, // Darker ambient for contrast
+        moon: { intensity: 4, color: "#4d66cc", position: [10, 20, 10] }, // Cyber blue moon
+        lanterns: { intensity: 12, distance: 15, decay: 2, color: "#ffaa00" }, // Popping warm lights
     },
     camera: {
         position: [0, 1.7, 6] as [number, number, number],
-        fov: 55,
+        fov: 60, // Slightly wider for cinematic feel
     },
     postprocessing: {
-        exposure: 1.5, // Brighter overall exposure (was 1.0)
+        exposure: 1.2,
         toneMapping: THREE.ACESFilmicToneMapping
     }
 };
