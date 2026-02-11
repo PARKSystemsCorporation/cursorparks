@@ -74,7 +74,6 @@ function ChatBubble({ message, index, count }: { message: Message; index: number
                 outlineWidth={0.02}
                 outlineColor="#1a1a1a" // Softer outline
                 outlineBlur={0.04} // Smoky edges
-                depthWrite={false} // Transparent sorting
             >
                 {message.content}
             </Text>
