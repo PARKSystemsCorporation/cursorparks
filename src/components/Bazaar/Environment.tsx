@@ -17,9 +17,6 @@ const MAT_BLACK = new THREE.MeshStandardMaterial({ color: "#111" });
 const MAT_METAL_GREY = new THREE.MeshStandardMaterial({ color: "#444", roughness: 0.3, metalness: 0.6 });
 const MAT_METAL_DARK = new THREE.MeshStandardMaterial({ color: "#555", roughness: 0.6, metalness: 0.4 });
 
-// Fabric colors for blankets / clothes (middle-eastern bazaar)
-const FABRIC_COLORS = ["#8B4513", "#654321", "#a0522d", "#cd853f", "#6b4423", "#4a3728", "#8b6914", "#5c4033"];
-
 // --- CYBER ASSETS ---
 
 function Cables() {
@@ -69,7 +66,7 @@ function WindowGrid() {
     // 3 Stories of windows on left and right
     const windows = [];
     const stories = [5, 10, 15]; // Heights
-    const zLocations = [-2, -8, -14];
+    const zLocations = [-2, -8, -14, -20, -26];
 
     // Left Wall Windows (Original)
     for (const y of stories) {
@@ -110,7 +107,8 @@ function WindowGrid() {
     const leftFarStories = [2.5, 5.5, 8.5, 11.5];
     // Row 1: Further down (~ -17)
     // Row 2: After that (~ -21)
-    const leftFarZ = [-17, -21];
+    // Row 3: Extended alley (~ -25)
+    const leftFarZ = [-17, -21, -25];
 
     for (const y of leftFarStories) {
         for (const z of leftFarZ) {
@@ -411,14 +409,19 @@ function ConstructedWalls() {
             <WallBlock position={[-4, wallY, -6]} size={[2, wallH, 4]} />
             <WallBlock position={[-4, wallY, -10.5]} size={[2, wallH, 5]} />
             <WallBlock position={[-4, wallY, -15]} size={[2, wallH, 4]} />
+            <WallBlock position={[-4, wallY, -21.5]} size={[2, wallH, 13]} /> {/* Extended to back */}
             <WallBlock position={[-4, 13, -2.5]} size={[2, 12, 4]} /> {/* Above Broker */}
 
             {/* --- RIGHT WALL (x = 4) — very high --- */}
             <WallBlock position={[4, wallY, 0]} size={[2, wallH, 10]} />
             <WallBlock position={[4, wallY, -13]} size={[2, wallH, 16]} />
+            <WallBlock position={[4, wallY, -20.5]} size={[2, wallH, 15]} /> {/* Extended to back */}
             <WallBlock position={[4, 13, -5]} size={[2, 12, 4]} /> {/* Above Barker */}
 
-            <AlleyEndingPortal positionZ={-18} />
+            {/* --- BACK WALL (z = -29, behind portal) --- */}
+            <WallBlock position={[0, wallY, -29]} size={[10, wallH, 2]} />
+
+            <AlleyEndingPortal positionZ={-28} />
         </group>
     );
 }
@@ -646,7 +649,7 @@ const beamMat = new THREE.MeshStandardMaterial({ color: "#3d2914", roughness: 1 
 function Beams() {
     return (
         <group>
-            {[0, -4, -8, -12].map((z, i) => (
+            {[0, -4, -8, -12, -16, -20, -24].map((z, i) => (
                 <mesh key={i} position={[0, 4, z]} material={beamMat}>
                     <boxGeometry args={[10, 0.2, 0.2]} />
                 </mesh>
@@ -742,17 +745,6 @@ function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { posi
     );
 }
 
-function FloorGlow({ position, color = "#0055ff", length = 2 }: { position: [number, number, number], color?: string, length?: number }) {
-    return (
-        <group position={position}>
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-                <planeGeometry args={[0.1, length]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
-            </mesh>
-        </group>
-    );
-}
-
 function MetalBeam({ position }: { position: [number, number, number] }) {
     return (
         <group position={position}>
@@ -823,7 +815,7 @@ export default function Environment() {
             {/* Ultra-HD neon sign (back-left alley wall) */}
             <NeonImageSign
                 textureUrl="/textures/signs/neon-sign-ultrahd.png"
-                position={[-4.05, 3.2, -18.5]}
+                position={[-4.05, 3.2, -27.5]}
                 rotation={[0, Math.PI / 2, 0]}
                 width={3.2}
                 height={1.6}
@@ -834,7 +826,7 @@ export default function Environment() {
             {/* Alley ending gateway signage (hotel-style left, poster right) */}
             <NeonImageSign
                 textureUrl="/textures/signs/alley-hotel.png"
-                position={[-2.8, 4.2, -18.2]}
+                position={[-2.8, 4.2, -27.2]}
                 rotation={[0, Math.PI / 2, 0]}
                 width={2}
                 height={1}
@@ -843,7 +835,7 @@ export default function Environment() {
             />
             <NeonImageSign
                 textureUrl="/textures/signs/alley-poster.png"
-                position={[2.8, 3.8, -18.2]}
+                position={[2.8, 3.8, -27.2]}
                 rotation={[0, -Math.PI / 2, 0]}
                 width={1.8}
                 height={1.2}
@@ -854,14 +846,10 @@ export default function Environment() {
             {/* Overhead Cables (Dense) */}
             <Cables />
 
-            {/* Middle-eastern bazaar: blankets and clotheslines across alley */}
-            <HangingBlankets />
-            <Clotheslines />
-
             {/* --- MOTIVATED LIGHTING --- */}
 
             {/* Rhythm: Hanging Bulbs down the center */}
-            {[-2, -5, -8, -11, -14].map((z) => (
+            {[-2, -5, -8, -11, -14, -17, -20, -23, -26].map((z) => (
                 <HangingBulb key={`bulb-${z}`} position={[Math.sin(z) * 0.5, 3.5, z]} color="#ffaa55" />
             ))}
 
@@ -873,10 +861,6 @@ export default function Environment() {
             {/* Stall Lamps - practical task lighting on crates/stalls */}
             <StallLamp position={[-2.5, 1.0, -1]} rotation={[0, -0.5, 0]} color="#aaffaa" />
             <StallLamp position={[2.5, 1.0, -9]} rotation={[0, 2.5, 0]} color="#ffaaaa" />
-
-            {/* Floor Glows - Guiding lines */}
-            <FloorGlow position={[-3.8, 0, -5]} color="#00ffff" length={10} />
-            <FloorGlow position={[3.8, 0, -8]} color="#ff00ff" length={8} />
 
             {/* Neon strip along bottom-left wall */}
             <LedBar
