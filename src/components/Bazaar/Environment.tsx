@@ -447,6 +447,119 @@ function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, num
     );
 }
 
+function Beams() {
+    return (
+        <group>
+            {[0, -4, -8, -12].map((z, i) => (
+                <mesh key={i} position={[0, 4, z]} rotation={[0, 0, 0]} receiveShadow castShadow>
+                    <boxGeometry args={[10, 0.2, 0.2]} />
+                    <meshStandardMaterial color="#3d2914" roughness={1} />
+                </mesh>
+            ))}
+        </group>
+    );
+}
+
+function HangingBanner({ position, rotation, color }: { position: [number, number, number], rotation?: [number, number, number], color: string }) {
+    const ref = useRef<THREE.Mesh>(null);
+    useFrame(({ clock }) => {
+        if (!ref.current) return;
+        const t = clock.getElapsedTime();
+        ref.current.rotation.z = (rotation?.[2] || 0) + Math.sin(t * 2 + position[0]) * 0.05;
+    });
+
+    return (
+        <group position={position} rotation={rotation ? new THREE.Euler(...rotation) : new THREE.Euler()}>
+            <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]}>
+                <cylinderGeometry args={[0.02, 0.02, 1.2]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+            <mesh ref={ref} position={[0, 0, 0]}>
+                <planeGeometry args={[1, 1.5, 5, 5]} />
+                <LayerMaterial lighting="physical" transmission={0} side={THREE.DoubleSide}>
+                    <Depth colorA={color} colorB="#000000" alpha={1} mode="normal" near={0} far={2} origin={[0, 0, 0]} />
+                    <Noise mapping="local" type="cell" scale={0.5} mode="softlight" alpha={0.5} colorA="#ffffff" colorB="#000000" />
+                </LayerMaterial>
+            </mesh>
+        </group>
+    );
+}
+
+function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position: [number, number, number], color?: string, intensity?: number }) {
+    const group = useRef<THREE.Group>(null);
+    useFrame(({ clock }) => {
+        if (!group.current) return;
+        // Sway
+        group.current.rotation.z = Math.sin(clock.getElapsedTime() * 2 + position[0]) * 0.05;
+    });
+
+    return (
+        <group ref={group} position={position}>
+            {/* Wire */}
+            <mesh position={[0, 0.5, 0]}>
+                <cylinderGeometry args={[0.005, 0.005, 1]} />
+                <meshBasicMaterial color="#111" />
+            </mesh>
+            {/* Socket */}
+            <mesh position={[0, 0.1, 0]}>
+                <cylinderGeometry args={[0.03, 0.03, 0.1]} />
+                <meshStandardMaterial color="#222" />
+            </mesh>
+            {/* Bulb */}
+            <mesh position={[0, 0, 0]}>
+                <sphereGeometry args={[0.05, 16, 16]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} />
+            </mesh>
+            <pointLight distance={15} decay={2} color={color} intensity={intensity} />
+            {/* Glow Sprite */}
+            <mesh position={[0, 0, 0]}>
+                <planeGeometry args={[0.8, 0.8]} />
+                <meshBasicMaterial color={color} transparent opacity={0.03} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+            </mesh>
+        </group>
+    );
+}
+
+function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { position: [number, number, number], rotation?: [number, number, number], color?: string }) {
+    return (
+        <group position={position} rotation={new THREE.Euler(...rotation)}>
+            {/* Base */}
+            <mesh position={[0, 0.05, 0]}>
+                <cylinderGeometry args={[0.1, 0.15, 0.1]} />
+                <meshStandardMaterial color="#222" />
+            </mesh>
+            {/* Stem */}
+            <mesh position={[0, 0.3, 0]}>
+                <cylinderGeometry args={[0.02, 0.02, 0.6]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+            {/* Shade */}
+            <mesh position={[0, 0.6, 0.1]} rotation={[0.5, 0, 0]}>
+                <coneGeometry args={[0.15, 0.3, 16, 1, true]} />
+                <meshStandardMaterial color="#444" side={THREE.DoubleSide} />
+            </mesh>
+            {/* Bulb */}
+            <mesh position={[0, 0.55, 0.1]} rotation={[0.5, 0, 0]}>
+                <sphereGeometry args={[0.05]} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+            </mesh>
+            <spotLight position={[0, 0.6, 0.1]} target-position={[0, 0, 1]} angle={0.6} penumbra={0.5} intensity={4} distance={15} color={color} />
+        </group>
+    );
+}
+
+function FloorGlow({ position, color = "#0055ff", length = 2 }: { position: [number, number, number], color?: string, length?: number }) {
+    return (
+        <group position={position}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+                <planeGeometry args={[0.1, length]} />
+                <meshBasicMaterial color={color} toneMapped={false} />
+            </mesh>
+            <pointLight position={[0, 0.2, 0]} distance={8} decay={1.5} color={color} intensity={0.5} />
+        </group>
+    );
+}
+
 function MetalBeam() {
     return (
         <group position={[0, 3, -5]}>
