@@ -11,7 +11,7 @@ import Crowd from "./Crowd";
 import CameraRig from "./CameraRig";
 import InputBar from "./InputBar";
 import "./BazaarLanding.css";
-import { EffectComposer, Bloom, Noise, Vignette, ToneMapping } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, Vignette, ToneMapping, SMAA } from "@react-three/postprocessing";
 import LedSign from "./LedSign";
 import ScrapSign from "./ScrapSign";
 import { BazaarMaterialsProvider } from "./BazaarMaterials";
@@ -48,11 +48,8 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
                 intensity={CONFIG.lights.moon.intensity}
                 color={CONFIG.lights.moon.color}
                 castShadow
-                shadow-mapSize={[1024, 1024]}
+                shadow-mapSize={[2048, 2048]}
             />
-            {/* Hemisphere for ground bounce */}
-            <hemisphereLight args={["#2a3045", "#050505", 1.0]} />
-
             {/* Hemisphere for ground bounce */}
             <hemisphereLight args={["#2a3045", "#050505", 1.0]} />
 
@@ -69,7 +66,8 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
 
             {/* Post-Processing Stack - Clean HD */}
             <EffectComposer>
-                <Bloom luminanceThreshold={1} mipmapBlur intensity={1.5} radius={0.6} />
+                <SMAA />
+                <Bloom luminanceThreshold={1.2} mipmapBlur intensity={1.2} radius={0.5} />
                 <Vignette eskil={false} offset={0.1} darkness={0.6} />
                 <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
             </EffectComposer>
@@ -153,9 +151,10 @@ export default function BazaarScene() {
                 shadows
                 dpr={[1, 1.5]} // Optimized: Capped at 1.5x to save 44% pixel fill rate on retina screens
                 gl={{
-                    antialias: true, // Clean lines
+                    antialias: false, // Handled by SMAA post-process instead (cheaper)
                     toneMapping: CONFIG.postprocessing.toneMapping,
                     toneMappingExposure: CONFIG.postprocessing.exposure,
+                    powerPreference: 'default', // Don't force discrete GPU on laptops
                     stencil: false,
                     depth: true
                 }}

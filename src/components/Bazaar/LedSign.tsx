@@ -8,9 +8,12 @@ import * as THREE from "three";
 export default function LedSign() {
     const textRef = useRef<any>(null);
 
+    const frameCount = useRef(0);
+
     useFrame((state) => {
+        frameCount.current++;
+        if (frameCount.current % 3 !== 0) return; // Throttle to every 3rd frame
         if (textRef.current) {
-            // Subtle flicker effect for realism
             textRef.current.fillOpacity = 0.9 + Math.sin(state.clock.elapsedTime * 10) * 0.1;
         }
     });
@@ -36,15 +39,6 @@ export default function LedSign() {
                     toneMapped={false}
                 />
             </Text>
-
-            {/* Radiant Light */}
-            <pointLight
-                position={[0, 0, 0.5]}
-                intensity={10}
-                distance={10}
-                color="#39ff14"
-                decay={2}
-            />
         </group>
     );
 }

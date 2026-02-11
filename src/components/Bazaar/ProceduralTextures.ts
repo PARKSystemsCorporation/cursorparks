@@ -12,45 +12,42 @@ function getContext(canvas: HTMLCanvasElement) {
     return canvas.getContext("2d")!;
 }
 
-// Helper to create a noise pattern
+// Fixed noise function — uses direct pixel manipulation for proper fine-grain detail
 function fillNoise(ctx: CanvasRenderingContext2D, size: number, alpha: number = 0.1) {
     const imageData = ctx.getImageData(0, 0, size, size);
     const data = imageData.data;
+    const strength = Math.round(alpha * 255);
     for (let i = 0; i < data.length; i += 4) {
-        const val = Math.random() * 255;
-        // Blend random noise with existing pixel
-        // We only touch alpha or overlay it? Simple noise overlay:
-        // If we want pure noise we modify RGB. If we want overlay we use globalAlpha before drawing.
-        // Here we manipulate pixels directly for speed.
-        // But direct pixel manipulation is tricky for blending.
-        // Let's use fillRect with small random rects for "blocky" noise or just use canvas drawing.
+        const noise = (Math.random() - 0.5) * strength;
+        data[i] = Math.max(0, Math.min(255, data[i] + noise));     // R
+        data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise)); // G
+        data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise)); // B
+        // Alpha unchanged
     }
-    // Easier: Draw random tiny rectangles
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    for (let i = 0; i < size * size / 100; i++) {
-        ctx.fillStyle = Math.random() > 0.5 ? "#000" : "#fff";
-        ctx.fillRect(Math.random() * size, Math.random() * size, 2, 2);
-    }
-    ctx.restore();
+    ctx.putImageData(imageData, 0, 0);
 }
+
+const MAX_ANISOTROPY = 4; // Safe default, works on all GPUs
 
 function createTextureFromCanvas(canvas: HTMLCanvasElement) {
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    // texture.minFilter = THREE.LinearMipmapLinearFilter; // Default
+    texture.generateMipmaps = true;
+    texture.minFilter = THREE.LinearMipmapLinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.anisotropy = MAX_ANISOTROPY;
     return texture;
 }
 
 // --- GENERATORS ---
 
 /**
- * Grimy Concrete Wall
+ * Grimy Concrete Wall — 2048px for HD close-up quality
  * Dark grey, panel lines, water stains, rust drips.
  */
 export function createConcreteWallTexture() {
-    const size = 1024;
+    const size = 2048;
     const canvas = createCanvas(size);
     const ctx = getContext(canvas);
 
@@ -61,15 +58,13 @@ export function createConcreteWallTexture() {
     // Noise/Grime
     fillNoise(ctx, size, 0.05);
 
-    // Panel lines (every 256px)
+    // Panel lines (every 512px at 2048)
     ctx.strokeStyle = "#111";
     ctx.lineWidth = 4;
     ctx.beginPath();
-    for (let i = 0; i <= size; i += 256) {
-        // Horizontal
+    for (let i = 0; i <= size; i += 512) {
         ctx.moveTo(0, i);
         ctx.lineTo(size, i);
-        // Vertical
         ctx.moveTo(i, 0);
         ctx.lineTo(i, size);
     }
@@ -79,20 +74,20 @@ export function createConcreteWallTexture() {
     ctx.globalCompositeOperation = "multiply";
     for (let i = 0; i < 20; i++) {
         const x = Math.random() * size;
-        const w = 50 + Math.random() * 100;
-        const h = 200 + Math.random() * 400;
+        const w = 100 + Math.random() * 200;
+        const h = 400 + Math.random() * 800;
         const grd = ctx.createLinearGradient(x, 0, x, h);
-        grd.addColorStop(0, "rgba(20, 10, 5, 0.5)"); // Rust top
-        grd.addColorStop(1, "rgba(20, 10, 5, 0)");   // Fade out
+        grd.addColorStop(0, "rgba(20, 10, 5, 0.5)");
+        grd.addColorStop(1, "rgba(20, 10, 5, 0)");
         ctx.fillStyle = grd;
         ctx.fillRect(x - w / 2, 0, w, h);
     }
 
     // Random grime patches
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 15; i++) {
         const x = Math.random() * size;
         const y = Math.random() * size;
-        const r = 50 + Math.random() * 100;
+        const r = 100 + Math.random() * 200;
         const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
         grd.addColorStop(0, "rgba(0,0,0,0.6)");
         grd.addColorStop(1, "rgba(0,0,0,0)");
@@ -106,11 +101,11 @@ export function createConcreteWallTexture() {
 
     // Rivets at intersections
     ctx.fillStyle = "#151515";
-    for (let i = 0; i <= size; i += 256) {
-        for (let j = 0; j <= size; j += 256) {
+    for (let i = 0; i <= size; i += 512) {
+        for (let j = 0; j <= size; j += 512) {
             if (i > 0 && i < size && j > 0 && j < size) {
                 ctx.beginPath();
-                ctx.arc(i, j, 6, 0, Math.PI * 2);
+                ctx.arc(i, j, 8, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -120,24 +115,10 @@ export function createConcreteWallTexture() {
 }
 
 /**
- * Concrete Normal Map
- * Generates height -> normal map-like appearance (purple/blue).
- * We'll simulate it by drawing the height map in greyscale where white=high, black=low,
- * but wait, Three.js wants an actual normal map (RGB = XYZ vector).
- * Simulating a real normal map on 2D canvas is hard.
- * Trick: We can just use a "bump map" approach but save it as a normal map color? 
- * Or actually, for Procedural simple approach, we can define "High" areas as lighter and convert to Normal,
- * OR we just draw the "Edges" with specific colors.
- * 
- * Easier approach for "Good Texture Pack" without heavy math:
- * Just draw the panels and rivets as a Bump Map (greyscale) and use `bumpMap` property instead of `normalMap`.
- * It's cheaper and easier to generate. The implementation plan said "normal map", but `bumpMap` is valid too.
- * However, let's try to fake a Normal Map for better lighting reaction.
- * 
- * Standard Normal: Flat = (128, 128, 255) -> #8080ff
+ * Concrete Normal Map — 2048px to match diffuse
  */
 export function createConcreteWallNormal() {
-    const size = 1024;
+    const size = 2048;
     const canvas = createCanvas(size);
     const ctx = getContext(canvas);
 
@@ -145,57 +126,44 @@ export function createConcreteWallNormal() {
     ctx.fillStyle = "#8080ff";
     ctx.fillRect(0, 0, size, size);
 
-    // Panel grooves (Deep = dark logic? No, Normal map logic: bevels)
-    // Simple fake: Draw spacing lines.
-    // Actually, let's switch to Bump Map generation if we want easy proceduralism.
-    // But let's stick to the plan: Normal Map.
-    // We can draw "bevels".
-    // Left side of groove: faces left (Red < 128)
-    // Right side of groove: faces right (Red > 128)
-    // Top side of groove: faces up (Green > 128)
-    // Bottom side of groove: faces down (Green < 128)
-
     const drawGroove = (x: number, y: number, w: number, h: number) => {
-        // Vertical groove
         if (h > w) {
-            // Left edge faces right (Red > 128) -> #ff80ff
             ctx.fillStyle = "#ff80ff";
             ctx.fillRect(x, y, w / 2, h);
-            // Right edge faces left (Red < 128) -> #0080ff
             ctx.fillStyle = "#0080ff";
             ctx.fillRect(x + w / 2, y, w / 2, h);
         } else {
-            // Horizontal groove
-            // Top edge faces down (Green < 128) -> #8000ff
             ctx.fillStyle = "#8000ff";
             ctx.fillRect(x, y, w, h / 2);
-            // Bottom edge faces up (Green > 128) -> #80ffff
             ctx.fillStyle = "#80ffff";
             ctx.fillRect(x, y + h / 2, w, h / 2);
         }
     };
 
-    for (let i = 0; i <= size; i += 256) {
-        drawGroove(0, i - 2, size, 4); // Horiz
-        drawGroove(i - 2, 0, 4, size); // Vert
+    for (let i = 0; i <= size; i += 512) {
+        drawGroove(0, i - 3, size, 6);
+        drawGroove(i - 3, 0, 6, size);
     }
 
-    // Noise for surface roughness
-    // Speckle with slight variations from #8080ff
-    // ctx.globalAlpha = 0.1;
-    // fillNoise(ctx, size, 0.05); // This might look too noisy as normal. Skip for now.
+    // Add subtle surface variation noise to normal map
+    const imageData = ctx.getImageData(0, 0, size, size);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        // Only add very slight noise to R and G channels (normal X/Y)
+        data[i] = Math.max(0, Math.min(255, data[i] + (Math.random() - 0.5) * 6));
+        data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + (Math.random() - 0.5) * 6));
+    }
+    ctx.putImageData(imageData, 0, 0);
 
     return createTextureFromCanvas(canvas);
 }
 
 
 /**
- * Wet Floor
- * Dark, reflective, puddles (in roughness map?), oil stains.
- * returns Diffuse.
+ * Wet Floor — 2048px for close-up ground detail
  */
 export function createWetFloorTexture() {
-    const size = 1024;
+    const size = 2048;
     const canvas = createCanvas(size);
     const ctx = getContext(canvas);
 
@@ -206,11 +174,11 @@ export function createWetFloorTexture() {
     // Noise
     fillNoise(ctx, size, 0.1);
 
-    // Grids/Tiles (smaller)
-    ctx.strokeStyle = "#080808"; // Darker gaps
+    // Grids/Tiles
+    ctx.strokeStyle = "#080808";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    const tileSize = 64;
+    const tileSize = 128; // Scaled for 2048
     for (let i = 0; i <= size; i += tileSize) {
         ctx.moveTo(0, i);
         ctx.lineTo(size, i);
@@ -219,13 +187,12 @@ export function createWetFloorTexture() {
     }
     ctx.stroke();
 
-    // Oil Stains (Rainbow or just dark?)
-    // Dark patches
+    // Oil Stains
     ctx.globalAlpha = 0.4;
     for (let i = 0; i < 15; i++) {
         const x = Math.random() * size;
         const y = Math.random() * size;
-        const r = 50 + Math.random() * 150;
+        const r = 100 + Math.random() * 300;
         const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
         grd.addColorStop(0, "#000");
         grd.addColorStop(1, "transparent");
@@ -240,28 +207,26 @@ export function createWetFloorTexture() {
 }
 
 /**
- * Wet Floor Roughness Map
- * Black = Smooth (Wet/Puddle), White = Rough (Dry).
+ * Wet Floor Roughness Map — 2048px
  */
 export function createWetFloorRoughness() {
-    const size = 1024;
+    const size = 2048;
     const canvas = createCanvas(size);
     const ctx = getContext(canvas);
 
-    // Base roughness (Semi-rough concrete) -> Grey
+    // Base roughness
     ctx.fillStyle = "#666";
     ctx.fillRect(0, 0, size, size);
 
-    // Puddles -> Black (Smooth)
-    for (let i = 0; i < 10; i++) {
+    // Puddles → Black (Smooth)
+    for (let i = 0; i < 12; i++) {
         const x = Math.random() * size;
         const y = Math.random() * size;
-        // Irregular blobs would be better, but circles are fast
-        const r = 100 + Math.random() * 200;
+        const r = 200 + Math.random() * 400;
         const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
-        grd.addColorStop(0, "#000");      // Wet center
-        grd.addColorStop(0.7, "#222");    // Wet edge
-        grd.addColorStop(1, "transparent");// Dry
+        grd.addColorStop(0, "#000");
+        grd.addColorStop(0.7, "#222");
+        grd.addColorStop(1, "transparent");
         ctx.fillStyle = grd;
         ctx.beginPath();
         ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -275,11 +240,10 @@ export function createWetFloorRoughness() {
 }
 
 /**
- * Metal Tech Panel
- * Brushed metal look with rivets.
+ * Metal Tech Panel — 1024px (up from 512)
  */
 export function createMetalPanelTexture() {
-    const size = 512;
+    const size = 1024;
     const canvas = createCanvas(size);
     const ctx = getContext(canvas);
 
@@ -291,39 +255,42 @@ export function createMetalPanelTexture() {
     ctx.globalAlpha = 0.05;
     ctx.fillStyle = "#fff";
     for (let i = 0; i < size; i += 2) {
-        if (Math.random() > 0.5) ctx.fillRect(Math.random() * size, i, Math.random() * 100, 1);
+        if (Math.random() > 0.5) ctx.fillRect(Math.random() * size, i, Math.random() * 200, 1);
     }
     ctx.fillStyle = "#000";
     for (let i = 0; i < size; i += 2) {
-        if (Math.random() > 0.5) ctx.fillRect(Math.random() * size, i, Math.random() * 100, 1);
+        if (Math.random() > 0.5) ctx.fillRect(Math.random() * size, i, Math.random() * 200, 1);
     }
     ctx.globalAlpha = 1.0;
 
     // Tech lines
     ctx.strokeStyle = "#333";
     ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, size - 20, size - 20);
-    ctx.strokeRect(50, 50, size - 100, size - 100);
+    ctx.strokeRect(20, 20, size - 40, size - 40);
+    ctx.strokeRect(100, 100, size - 200, size - 200);
 
     // Rivets
     ctx.fillStyle = "#222";
-    const rivets = [20, size - 20];
+    const rivets = [40, size - 40];
     rivets.forEach(x => {
         rivets.forEach(y => {
             ctx.beginPath();
-            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
             ctx.fill();
         });
     });
+
+    // Fine grain noise
+    fillNoise(ctx, size, 0.03);
 
     return createTextureFromCanvas(canvas);
 }
 
 /**
- * Wood Crate
+ * Wood Crate — 1024px (up from 512)
  */
 export function createWoodCrateTexture() {
-    const size = 512;
+    const size = 1024;
     const canvas = createCanvas(size);
     const ctx = getContext(canvas);
 
@@ -333,7 +300,7 @@ export function createWoodCrateTexture() {
 
     // Planks
     ctx.strokeStyle = "#3e2b22";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = 6;
     for (let i = 0; i < size; i += size / 4) {
         ctx.beginPath();
         ctx.moveTo(0, i);
@@ -347,7 +314,7 @@ export function createWoodCrateTexture() {
     for (let i = 0; i < size * 2; i++) {
         const x = Math.random() * size;
         const y = Math.random() * size;
-        const w = 50 + Math.random() * 100;
+        const w = 50 + Math.random() * 150;
         ctx.fillRect(x, y, w, 2);
     }
     ctx.globalAlpha = 1.0;
@@ -358,19 +325,22 @@ export function createWoodCrateTexture() {
     ctx.rotate(-0.2);
     ctx.strokeStyle = "rgba(200, 200, 200, 0.4)";
     ctx.lineWidth = 8;
-    ctx.strokeRect(-100, -50, 200, 100);
-    ctx.font = "bold 60px monospace";
+    ctx.strokeRect(-120, -60, 240, 120);
+    ctx.font = "bold 72px monospace";
     ctx.fillStyle = "rgba(200,200,200,0.4)";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("FRAGILE", 0, 0);
     ctx.restore();
 
+    // Fine grain noise
+    fillNoise(ctx, size, 0.04);
+
     return createTextureFromCanvas(canvas);
 }
 
 export function createRustPipeTexture() {
-    const size = 512;
+    const size = 1024;
     const canvas = createCanvas(size);
     const ctx = getContext(canvas);
 
@@ -382,7 +352,7 @@ export function createRustPipeTexture() {
     for (let i = 0; i < 30; i++) {
         const x = Math.random() * size;
         const y = Math.random() * size;
-        const r = 20 + Math.random() * 60;
+        const r = 40 + Math.random() * 120;
         const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
         grd.addColorStop(0, "#8b4513");
         grd.addColorStop(0.7, "#cd853f");
@@ -392,6 +362,9 @@ export function createRustPipeTexture() {
         ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fill();
     }
+
+    // Fine grain noise
+    fillNoise(ctx, size, 0.05);
 
     return createTextureFromCanvas(canvas);
 }

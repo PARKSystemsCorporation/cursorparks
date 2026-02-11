@@ -8,9 +8,12 @@ import * as THREE from "three";
 export default function ScrapSign() {
     const textRef = useRef<any>(null);
 
+    const frameCount = useRef(0);
+
     useFrame((state) => {
+        frameCount.current++;
+        if (frameCount.current % 3 !== 0) return; // Throttle to every 3rd frame
         if (textRef.current) {
-            // Slow pulsing effect for blue neon
             textRef.current.fillOpacity = 0.8 + Math.sin(state.clock.elapsedTime * 2) * 0.2;
         }
     });
@@ -37,15 +40,6 @@ export default function ScrapSign() {
                     toneMapped={false}
                 />
             </Text>
-
-            {/* Radiant Blue Light */}
-            <pointLight
-                position={[0, 1.5, 0.5]} // Centered vertically relative to the text height approx
-                intensity={8}
-                distance={8}
-                color="#0088ff"
-                decay={2}
-            />
         </group>
     );
 }

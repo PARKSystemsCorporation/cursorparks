@@ -2,7 +2,16 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Instance, Instances, Float, Text } from "@react-three/drei";
+import { LayerMaterial, Depth, Noise } from "lamina";
 import { useBazaarMaterials } from "./BazaarMaterials";
+
+// --- SHARED MATERIALS (created once, reused across all components) ---
+const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
+const MAT_DARKER = new THREE.MeshStandardMaterial({ color: "#333" });
+const MAT_BLACK = new THREE.MeshStandardMaterial({ color: "#111" });
+const MAT_WOOD_DARK = new THREE.MeshStandardMaterial({ color: "#8d6e63" });
+const MAT_METAL_GREY = new THREE.MeshStandardMaterial({ color: "#444", roughness: 0.3, metalness: 0.6 });
+const MAT_METAL_DARK = new THREE.MeshStandardMaterial({ color: "#555", roughness: 0.6, metalness: 0.4 });
 
 // --- CYBER ASSETS ---
 
@@ -287,13 +296,16 @@ function ConstructedWalls() {
     );
 }
 
+const backingPlateMat = new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.2, metalness: 0.8 });
+
 function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flicker = false }: any) {
     const ref = useRef<THREE.Mesh>(null);
+    const frameCount = useRef(0);
     useFrame(({ clock }) => {
         if (!ref.current || !flicker) return;
-        // Cyber flicker: deterministic noise
+        frameCount.current++;
+        if (frameCount.current % 2 !== 0) return; // Throttle to every 2nd frame
         const t = clock.getElapsedTime();
-        // Use sine wave interference for deterministic flicker
         const noise = Math.sin(t * 20) * Math.sin(t * 7);
         ref.current.visible = noise > -0.8;
     });
@@ -309,20 +321,14 @@ function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flick
                 anchorY="middle"
                 outlineWidth={0.02 * size}
                 outlineColor={color}
-                outlineBlur={0.2} // Glow effect
+                outlineBlur={0.2}
             >
                 {text}
                 <meshBasicMaterial color={color} toneMapped={false} />
             </Text>
             {/* Backing plate */}
-            <mesh position={[0, 0, -0.05]}>
+            <mesh position={[0, 0, -0.05]} material={backingPlateMat}>
                 <planeGeometry args={[text.length * 0.3 * size, 0.8 * size]} />
-                <meshStandardMaterial color="#050505" roughness={0.2} metalness={0.8} />
-            </mesh>
-            {/* Fake Volumetric Glow */}
-            <mesh position={[0, 0, 0.1]}>
-                <planeGeometry args={[text.length * 0.4 * size, 1.0 * size]} />
-                <meshBasicMaterial color={color} transparent opacity={0.02} depthWrite={false} blending={THREE.AdditiveBlending} />
             </mesh>
         </group>
     );
@@ -331,35 +337,31 @@ function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flick
 function ACUnit({ position }: { position: [number, number, number] }) {
     return (
         <group position={position}>
-            <mesh castShadow receiveShadow>
+            <mesh material={MAT_METAL_DARK}>
                 <boxGeometry args={[0.8, 0.6, 0.4]} />
-                <meshStandardMaterial color="#555" roughness={0.6} metalness={0.4} />
             </mesh>
-            <mesh position={[0, 0, 0.21]}>
+            <mesh position={[0, 0, 0.21]} material={MAT_DARK}>
                 <circleGeometry args={[0.25, 16]} />
-                <meshStandardMaterial color="#222" />
             </mesh>
         </group>
     );
 }
 
 function UpperCityLayer() {
-    // Dense verticality
-    const { concreteWall, rustPipe } = useBazaarMaterials();
     return (
         <group position={[0, 6, 0]}>
             {/* Left Balconies */}
-            <mesh position={[-3.8, 0, -5]} receiveShadow material={concreteWall}>
+            <mesh position={[-3.8, 0, -5]} material={MAT_DARK}>
                 <boxGeometry args={[1, 0.2, 4]} />
             </mesh>
-            <mesh position={[-3.8, 3, -8]} receiveShadow material={concreteWall}>
+            <mesh position={[-3.8, 3, -8]} material={MAT_DARK}>
                 <boxGeometry args={[1, 0.2, 4]} />
             </mesh>
             {/* Right Pipes */}
-            <mesh position={[3.8, 1, -6]} rotation={[0, 0, Math.PI / 2]} material={rustPipe}>
+            <mesh position={[3.8, 1, -6]} rotation={[0, 0, Math.PI / 2]} material={MAT_METAL_GREY}>
                 <cylinderGeometry args={[0.1, 0.1, 10]} />
             </mesh>
-            <mesh position={[3.6, 2, -6]} rotation={[0, 0, Math.PI / 2]} material={rustPipe}>
+            <mesh position={[3.6, 2, -6]} rotation={[0, 0, Math.PI / 2]} material={MAT_DARKER}>
                 <cylinderGeometry args={[0.2, 0.2, 10]} />
             </mesh>
 
@@ -373,17 +375,15 @@ function UpperCityLayer() {
 
 function Lantern({ position, color, delay = 0 }: { position: [number, number, number], color: string, delay?: number }) {
     const group = useRef<THREE.Group>(null);
-    const light = useRef<THREE.PointLight>(null);
+    const frameCount = useRef(0);
 
     useFrame(({ clock }) => {
-        if (!group.current || !light.current) return;
+        if (!group.current) return;
+        frameCount.current++;
+        if (frameCount.current % 2 !== 0) return; // Throttle to every 2nd frame
         const t = clock.getElapsedTime() + delay;
-        // Breeze
         group.current.rotation.z = Math.sin(t * 1.0) * 0.05;
         group.current.rotation.x = Math.cos(t * 0.8) * 0.02;
-
-        // Flicker
-        light.current.intensity = 2 + Math.sin(t * 10) * 0.1 + Math.cos(t * 23) * 0.1;
     });
 
     return (
@@ -394,22 +394,9 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
                 <meshBasicMaterial color="#000" />
             </mesh>
             {/* Lantern Body */}
-            <mesh position={[0, -0.2, 0]} castShadow>
+            <mesh position={[0, -0.2, 0]}>
                 <cylinderGeometry args={[0.15, 0.1, 0.4, 6]} />
-                <meshStandardMaterial color="#884400" emissive="#ff4400" emissiveIntensity={0.2} roughness={0.6} />
-            </mesh>
-            {/* Light Source - No Shadow for GPU Perf */}
-            <pointLight ref={light} color={color} distance={25} decay={2} />
-
-            {/* Volumetric Light Cone - Extends to ground */}
-            <mesh position={[0, -1.2, 0]} rotation={[0, 0, 0]}>
-                <coneGeometry args={[1.5, 3.5, 32, 1, true]} />
-                <meshBasicMaterial color={color} transparent opacity={0.008} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
-            </mesh>
-            {/* Central Hotspot */}
-            <mesh position={[0, -0.3, 0]}>
-                <sphereGeometry args={[0.15, 16, 16]} />
-                <meshBasicMaterial color={color} transparent opacity={0.015} depthWrite={false} blending={THREE.AdditiveBlending} />
+                <meshStandardMaterial color="#884400" emissive={color} emissiveIntensity={0.5} roughness={0.6} toneMapped={false} />
             </mesh>
         </group>
     );
@@ -453,7 +440,7 @@ function ProtrudingSign({ position, text, color = "#ff00ff" }: any) {
                 {text}
                 <meshBasicMaterial color={color} toneMapped={false} />
             </Text>
-            {/* Glow - Opt: Removed PointLight, relying on Bloom from emissive text */}\n
+            {/* Glow - Opt: Removed PointLight, relying on Bloom from emissive text */}
         </group>
     );
 }
@@ -462,7 +449,7 @@ function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, num
     return (
         <group position={position} rotation={new THREE.Euler(...rotation)}>
             {/* Cart Base */}
-            <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
+            <mesh position={[0, 0.4, 0]} receiveShadow>
                 <boxGeometry args={[1.5, 0.8, 1]} />
                 <meshStandardMaterial color="#5d4037" roughness={0.8} />
             </mesh>
@@ -523,17 +510,18 @@ function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, num
                 <meshStandardMaterial color="#795548" />
             </mesh>
 
-            {/* Integrated Light - Opt: Removed PointLight */}\n
+            {/* Integrated Light - Opt: Removed PointLight */}
         </group>
     );
 }
 
+const beamMat = new THREE.MeshStandardMaterial({ color: "#3d2914", roughness: 1 });
+
 function Beams() {
-    const { woodCrate } = useBazaarMaterials();
     return (
         <group>
             {[0, -4, -8, -12].map((z, i) => (
-                <mesh key={i} position={[0, 4, z]} rotation={[0, 0, 0]} receiveShadow castShadow material={woodCrate}>
+                <mesh key={i} position={[0, 4, z]} material={beamMat}>
                     <boxGeometry args={[10, 0.2, 0.2]} />
                 </mesh>
             ))}
@@ -543,21 +531,26 @@ function Beams() {
 
 function HangingBanner({ position, rotation, color }: { position: [number, number, number], rotation?: [number, number, number], color: string }) {
     const ref = useRef<THREE.Mesh>(null);
+    const frameCount = useRef(0);
     useFrame(({ clock }) => {
         if (!ref.current) return;
+        frameCount.current++;
+        if (frameCount.current % 2 !== 0) return; // Throttle to every 2nd frame
         const t = clock.getElapsedTime();
         ref.current.rotation.z = (rotation?.[2] || 0) + Math.sin(t * 2 + position[0]) * 0.05;
     });
 
     return (
         <group position={position} rotation={rotation ? new THREE.Euler(...rotation) : new THREE.Euler()}>
-            <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]} material={MAT_DARKER}>
                 <cylinderGeometry args={[0.02, 0.02, 1.2]} />
-                <meshStandardMaterial color="#333" />
             </mesh>
             <mesh ref={ref} position={[0, 0, 0]}>
                 <planeGeometry args={[1, 1.5, 5, 5]} />
-                <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.8} />
+                <LayerMaterial lighting="physical" transmission={0} side={THREE.DoubleSide}>
+                    <Depth colorA={color} colorB="#000000" alpha={1} mode="normal" near={0} far={2} origin={[0, 0, 0]} />
+                    <Noise mapping="local" type="cell" scale={0.5} mode="softlight" alpha={0.5} colorA="#ffffff" colorB="#000000" />
+                </LayerMaterial>
             </mesh>
         </group>
     );
@@ -565,9 +558,11 @@ function HangingBanner({ position, rotation, color }: { position: [number, numbe
 
 function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position: [number, number, number], color?: string, intensity?: number }) {
     const group = useRef<THREE.Group>(null);
+    const frameCount = useRef(0);
     useFrame(({ clock }) => {
         if (!group.current) return;
-        // Sway
+        frameCount.current++;
+        if (frameCount.current % 2 !== 0) return; // Throttle to every 2nd frame
         group.current.rotation.z = Math.sin(clock.getElapsedTime() * 2 + position[0]) * 0.05;
     });
 
@@ -579,25 +574,13 @@ function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position:
                 <meshBasicMaterial color="#111" />
             </mesh>
             {/* Socket */}
-            <mesh position={[0, 0.1, 0]}>
+            <mesh position={[0, 0.1, 0]} material={MAT_DARK}>
                 <cylinderGeometry args={[0.03, 0.03, 0.1]} />
-                <meshStandardMaterial color="#222" />
             </mesh>
-            {/* Bulb */}
+            {/* Bulb — emissive + Bloom handles glow */}
             <mesh position={[0, 0, 0]}>
                 <sphereGeometry args={[0.05, 16, 16]} />
                 <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} toneMapped={false} />
-            </mesh>
-            {/* Opt: Removed light, using emissive bloom */}
-            {/* Volumetric Light Cone - Extends to ground */}
-            <mesh position={[0, -1.5, 0]}>
-                <coneGeometry args={[1.2, 4, 32, 1, true]} />
-                <meshBasicMaterial color={color} transparent opacity={0.008} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
-            </mesh>
-            {/* Glow Sprite - More transparent */}
-            <mesh position={[0, 0, 0]}>
-                <planeGeometry args={[0.6, 0.6]} />
-                <meshBasicMaterial color={color} transparent opacity={0.015} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
             </mesh>
         </group>
     );
@@ -643,24 +626,22 @@ function FloorGlow({ position, color = "#0055ff", length = 2 }: { position: [num
     );
 }
 
+const metalBeamMat = new THREE.MeshStandardMaterial({ color: "#222", roughness: 0.4, metalness: 0.8 });
+
 function MetalBeam({ position }: { position: [number, number, number] }) {
     return (
         <group position={position}>
             {/* The Beam - Spanning Right to Left */}
-            <mesh rotation={[0, 0, Math.PI / 2]} position={[0, 0, 0]} castShadow receiveShadow>
+            <mesh rotation={[0, 0, Math.PI / 2]} position={[0, 0, 0]} material={metalBeamMat}>
                 <cylinderGeometry args={[0.15, 0.15, 24]} />
-                <meshStandardMaterial color="#222" roughness={0.4} metalness={0.8} />
             </mesh>
 
-            {/* The LED Strip Housing - Extended */}
-            <mesh rotation={[0, 0, Math.PI / 2]} position={[0, -0.16, 0]}>
+            {/* The LED Strip Housing */}
+            <mesh rotation={[0, 0, Math.PI / 2]} position={[0, -0.16, 0]} material={MAT_BLACK}>
                 <boxGeometry args={[0.3, 22, 0.05]} />
-                <meshStandardMaterial color="#111" />
             </mesh>
 
-            {/* The Light Source (Pink/Blue hue) */}
-
-            {/* Main Downward Spot - Extended angle/distance for coverage */}
+            {/* Main Downward Spot */}
             <spotLight
                 position={[0, -0.2, 0]}
                 color="#bb88ff"
@@ -668,26 +649,10 @@ function MetalBeam({ position }: { position: [number, number, number] }) {
                 distance={25}
                 angle={1.2}
                 penumbra={1}
-                castShadow
             />
 
-            {/* Volumetric Beam Simulation - More Transparent */}
-            <mesh position={[0, -5, 0]} rotation={[0, 0, 0]}>
-                <coneGeometry args={[3, 12, 32, 1, true]} />
-                <meshBasicMaterial
-                    color="#bb88ff"
-                    transparent
-                    opacity={0.015}
-                    depthWrite={false}
-                    side={THREE.DoubleSide}
-                    blending={THREE.AdditiveBlending}
-                />
-            </mesh>
-
-            {/* Linear Glow Points - Spread out */}
-            <pointLight position={[-8, -0.5, 0]} color="#0088ff" intensity={1} distance={10} decay={2} />
-            <pointLight position={[8, -0.5, 0]} color="#ff44aa" intensity={1} distance={10} decay={2} />
-            <pointLight position={[0, -0.5, 0]} color="#aa44ff" intensity={1} distance={10} decay={2} />
+            {/* Single centered accent light (merged from 3) */}
+            <pointLight position={[0, -0.5, 0]} color="#9966dd" intensity={2} distance={15} decay={2} />
         </group>
     );
 }
