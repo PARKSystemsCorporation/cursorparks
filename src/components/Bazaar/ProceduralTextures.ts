@@ -240,26 +240,26 @@ export function createWetFloorRoughness() {
 }
 
 /**
- * Dirt Road — 2048px, dusty brown base, ruts, patches, small stones (daylight ground)
+ * Dirt Road — 2048px, rough uneven dirt, clumps, stones, ruts
  */
 export function createDirtRoadTexture() {
     const size = 2048;
     const canvas = createCanvas(size);
     const ctx = getContext(canvas);
 
-    // Base dusty dirt (warm brown-grey)
-    ctx.fillStyle = "#6b5b4f";
+    // Base rough dirt (darker, more varied)
+    ctx.fillStyle = "#5a4a3f";
     ctx.fillRect(0, 0, size, size);
 
-    fillNoise(ctx, size, 0.12);
+    fillNoise(ctx, size, 0.18);
 
-    // Lighter dust patches
-    for (let i = 0; i < 25; i++) {
+    // Coarse clumps (darker dirt chunks)
+    for (let i = 0; i < 80; i++) {
         const x = Math.random() * size;
         const y = Math.random() * size;
-        const r = 80 + Math.random() * 200;
+        const r = 15 + Math.random() * 60;
         const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
-        grd.addColorStop(0, "rgba(140, 120, 100, 0.5)");
+        grd.addColorStop(0, "rgba(45, 35, 28, 0.8)");
         grd.addColorStop(1, "transparent");
         ctx.fillStyle = grd;
         ctx.beginPath();
@@ -267,20 +267,70 @@ export function createDirtRoadTexture() {
         ctx.fill();
     }
 
-    // Darker ruts / compacted tracks (elongated along road axis)
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = "#4a4035";
-    for (let i = 0; i < 12; i++) {
+    // Lighter sandy/loose patches
+    for (let i = 0; i < 35; i++) {
+        const x = Math.random() * size;
         const y = Math.random() * size;
-        const w = size * (0.3 + Math.random() * 0.4);
-        const h = 40 + Math.random() * 80;
+        const r = 40 + Math.random() * 120;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0, "rgba(120, 100, 80, 0.4)");
+        grd.addColorStop(1, "transparent");
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Dark ruts / compacted tracks
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = "#3a3028";
+    for (let i = 0; i < 15; i++) {
+        const y = Math.random() * size;
+        const w = size * (0.25 + Math.random() * 0.45);
+        const h = 50 + Math.random() * 100;
         ctx.fillRect(Math.random() * (size - w), y, w, h);
     }
     ctx.globalAlpha = 1;
 
-    // Small stones (dark spots)
+    // Pebbles and small stones (more, varied sizes)
     ctx.fillStyle = "#3d352a";
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 350; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const r = 1.5 + Math.random() * 8;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    fillNoise(ctx, size, 0.1);
+    return createTextureFromCanvas(canvas);
+}
+
+/**
+ * Dirt Road Normal — bumpy irregular surface, stones, pits
+ */
+export function createDirtRoadNormal() {
+    const size = 2048;
+    const canvas = createCanvas(size);
+    const ctx = getContext(canvas);
+
+    ctx.fillStyle = "#8080ff";
+    ctx.fillRect(0, 0, size, size);
+
+    // Fine grain bumps (use imageData for subtle variation)
+    const imageData = ctx.getImageData(0, 0, size, size);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+        const n = (Math.random() - 0.5) * 40;
+        data[i] = Math.max(0, Math.min(255, 128 + n));
+        data[i + 1] = Math.max(0, Math.min(255, 128 - n * 0.5));
+    }
+    ctx.putImageData(imageData, 0, 0);
+
+    // Pebbles as slight bumps (lighter = raised)
+    ctx.fillStyle = "rgba(140, 130, 255, 0.15)";
+    for (let i = 0; i < 250; i++) {
         const x = Math.random() * size;
         const y = Math.random() * size;
         const r = 2 + Math.random() * 6;
@@ -289,32 +339,45 @@ export function createDirtRoadTexture() {
         ctx.fill();
     }
 
-    fillNoise(ctx, size, 0.06);
+    fillNoise(ctx, size, 0.04);
     return createTextureFromCanvas(canvas);
 }
 
 /**
- * Dirt Road Roughness — high roughness, slightly smoother in compacted tracks
+ * Dirt Road Roughness — very high roughness, irregular, pebble areas roughest
  */
 export function createDirtRoadRoughness() {
     const size = 2048;
     const canvas = createCanvas(size);
     const ctx = getContext(canvas);
 
-    ctx.fillStyle = "#88"; // High roughness base
+    ctx.fillStyle = "#99"; // Very high roughness base
     ctx.fillRect(0, 0, size, size);
 
-    // Slightly smoother (darker) compacted tracks
-    ctx.globalAlpha = 0.3;
-    ctx.fillStyle = "#55";
-    for (let i = 0; i < 15; i++) {
+    // Rougher patches (lighter = more rough)
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = "#cc";
+    for (let i = 0; i < 60; i++) {
+        const x = Math.random() * size;
         const y = Math.random() * size;
-        const w = size * (0.25 + Math.random() * 0.5);
-        const h = 50 + Math.random() * 100;
+        const r = 30 + Math.random() * 80;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Slightly smoother (darker) compacted tracks
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "#44";
+    for (let i = 0; i < 18; i++) {
+        const y = Math.random() * size;
+        const w = size * (0.2 + Math.random() * 0.55);
+        const h = 60 + Math.random() * 120;
         ctx.fillRect(Math.random() * (size - w), y, w, h);
     }
     ctx.globalAlpha = 1;
-    fillNoise(ctx, size, 0.15);
+    fillNoise(ctx, size, 0.2);
     return createTextureFromCanvas(canvas);
 }
 

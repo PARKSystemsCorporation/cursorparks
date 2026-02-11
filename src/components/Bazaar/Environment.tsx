@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, type ReactNode } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Instance, Instances, Float, Text } from "@react-three/drei";
@@ -62,64 +62,69 @@ function POVLight() {
     );
 }
 
+// Index-based pseudo-random for stable per-position values (avoids Math.random() in render)
+const pseudoRandom = (seed: number) => ((seed * 0.61803) % 1);
+const STEAM_POSITIONS: [number, number, number][] = Array.from({ length: 10 }, (_, i) => [
+    (pseudoRandom(i) - 0.5) * 0.5, 1, 0
+]);
+
 function WindowGrid() {
-    // 3 Stories of windows on left and right
-    const windows = [];
-    const stories = [5, 10, 15]; // Heights
-    const zLocations = [-2, -8, -14, -20, -26];
+    const windows = useMemo(() => {
+        const out: ReactNode[] = [];
+        const stories = [5, 10, 15];
+        const zLocations = [-2, -8, -14, -20, -26];
 
-    // Left Wall Windows (Original)
-    for (const y of stories) {
-        for (const z of zLocations) {
-            windows.push(
-                <mesh key={`l-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
-                    <planeGeometry args={[1.5, 2]} />
-                    <meshStandardMaterial color="#ffaa55" emissive="#ffddaa" emissiveIntensity={(1.5 + Math.random()) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} toneMapped={EMISSIVE_SCALE === 0} />
-                </mesh>
-            )
-            windows.push(
-                <mesh key={`r-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
-                    <planeGeometry args={[1.5, 2]} />
-                    <meshStandardMaterial color="#55aaff" emissive="#aaddee" emissiveIntensity={(1.5 + Math.random()) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} toneMapped={EMISSIVE_SCALE === 0} />
-                </mesh>
-            )
+        for (const y of stories) {
+            for (const z of zLocations) {
+                const seedL = y * 100 + z;
+                const seedR = seedL + 1000;
+                out.push(
+                    <mesh key={`l-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
+                        <planeGeometry args={[1.5, 2]} />
+                        <meshStandardMaterial color="#ffcc77" emissive="#ffeecc" emissiveIntensity={(1.5 + pseudoRandom(seedL)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE + 0.45} toneMapped={EMISSIVE_SCALE === 0} />
+                    </mesh>
+                );
+                out.push(
+                    <mesh key={`r-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
+                        <planeGeometry args={[1.5, 2]} />
+                        <meshStandardMaterial color="#88ccff" emissive="#cceeff" emissiveIntensity={(1.5 + pseudoRandom(seedR)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE + 0.65} toneMapped={EMISSIVE_SCALE === 0} />
+                    </mesh>
+                );
+            }
         }
-    }
 
-    // --- NEW WINDOWS ---
+        const rightImmediateStories = [2.5, 5.5, 8.5, 11.5];
+        const rightImmediateZ = [-1, 1];
 
-    // 1. Right side - Immediate (Start 1 story high aka ~2.5, go higher)
-    const rightImmediateStories = [2.5, 5.5, 8.5, 11.5];
-    const rightImmediateZ = [-1, 1]; // Close to camera (z=6 is camera, 0 is start)
-
-    for (const y of rightImmediateStories) {
-        for (const z of rightImmediateZ) {
-            windows.push(
-                <mesh key={`r-new-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
-                    <planeGeometry args={[1.2, 1.8]} />
-                    <meshStandardMaterial color="#00ffaa" emissive="#aaffcc" emissiveIntensity={(2 + Math.random()) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} toneMapped={EMISSIVE_SCALE === 0} />
-                </mesh>
-            )
+        for (const y of rightImmediateStories) {
+            for (const z of rightImmediateZ) {
+                const seed = 2000 + y * 100 + z;
+                out.push(
+                    <mesh key={`r-new-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
+                        <planeGeometry args={[1.2, 1.8]} />
+                        <meshStandardMaterial color="#55ffcc" emissive="#ccffdd" emissiveIntensity={(2 + pseudoRandom(seed)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE + 0.7} toneMapped={EMISSIVE_SCALE === 0} />
+                    </mesh>
+                );
+            }
         }
-    }
 
-    // 2. Left side - Further down (z < -14)
-    const leftFarStories = [2.5, 5.5, 8.5, 11.5];
-    // Row 1: Further down (~ -17)
-    // Row 2: After that (~ -21)
-    // Row 3: Extended alley (~ -25)
-    const leftFarZ = [-17, -21, -25];
+        const leftFarStories = [2.5, 5.5, 8.5, 11.5];
+        const leftFarZ = [-17, -21, -25];
 
-    for (const y of leftFarStories) {
-        for (const z of leftFarZ) {
-            windows.push(
-                <mesh key={`l-new-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
-                    <planeGeometry args={[1.2, 1.8]} />
-                    <meshStandardMaterial color="#ff5555" emissive="#ffaaaa" emissiveIntensity={(2 + Math.random()) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} toneMapped={EMISSIVE_SCALE === 0} />
-                </mesh>
-            )
+        for (const y of leftFarStories) {
+            for (const z of leftFarZ) {
+                const seed = 3000 + y * 100 + z;
+                out.push(
+                    <mesh key={`l-new-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
+                        <planeGeometry args={[1.2, 1.8]} />
+                        <meshStandardMaterial color="#ff7777" emissive="#ffcccc" emissiveIntensity={(2 + pseudoRandom(seed)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE + 0.5} toneMapped={EMISSIVE_SCALE === 0} />
+                    </mesh>
+                );
+            }
         }
-    }
+
+        return out;
+    }, []);
 
     return <group>{windows}</group>;
 }
@@ -264,10 +269,11 @@ function Clotheslines() {
     );
 }
 
-function WallBlock({ position, size, rotation = [0, 0, 0] }: { position: [number, number, number], size: [number, number, number], rotation?: [number, number, number] }) {
+function WallBlock({ position, size, rotation = [0, 0, 0], material }: { position: [number, number, number], size: [number, number, number], rotation?: [number, number, number], material?: THREE.MeshStandardMaterial }) {
     const { concreteWall } = useBazaarMaterials();
+    const mat = material ?? concreteWall;
     return (
-        <mesh position={position} rotation={new THREE.Euler(...rotation)} receiveShadow castShadow material={concreteWall}>
+        <mesh position={position} rotation={rotation} receiveShadow castShadow material={mat}>
             <boxGeometry args={size} />
         </mesh>
     );
@@ -395,26 +401,31 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
     );
 }
 
+// Left wall hole: 12 units wide (z) by 7 units high (y), centered z=-12, y=2..9
+const LEFT_WALL_HOLE_Z = { min: -18, max: -6 };
+const LEFT_WALL_HOLE_Y = { min: 2, max: 9 };
+
 function ConstructedWalls() {
     // Tall canyon walls (height 20) so sun comes in from above but is obstructed; holes for vendors
     const wallH = 20;
     const wallY = wallH / 2; // center at 10 so floor at 0
+    const { concreteWallRight } = useBazaarMaterials();
 
     return (
         <group>
-            {/* --- LEFT WALL (x = -4) — very high --- */}
+            {/* --- LEFT WALL (x = -4) — with 12×7 hole --- */}
             <WallBlock position={[-4, wallY, 1.5]} size={[2, wallH, 8]} />
-            <WallBlock position={[-4, wallY, -6]} size={[2, wallH, 4]} />
-            <WallBlock position={[-4, wallY, -10.5]} size={[2, wallH, 5]} />
-            <WallBlock position={[-4, wallY, -15]} size={[2, wallH, 4]} />
-            <WallBlock position={[-4, wallY, -21.5]} size={[2, wallH, 13]} /> {/* Extended to back */}
+            <WallBlock position={[-4, wallY, -4.25]} size={[2, wallH, 3.5]} /> {/* right of hole */}
+            <WallBlock position={[-4, (LEFT_WALL_HOLE_Y.min + 0) / 2, (LEFT_WALL_HOLE_Z.min + LEFT_WALL_HOLE_Z.max) / 2]} size={[2, LEFT_WALL_HOLE_Y.min, LEFT_WALL_HOLE_Z.max - LEFT_WALL_HOLE_Z.min]} /> {/* below hole */}
+            <WallBlock position={[-4, (LEFT_WALL_HOLE_Y.max + wallH) / 2, (LEFT_WALL_HOLE_Z.min + LEFT_WALL_HOLE_Z.max) / 2]} size={[2, wallH - LEFT_WALL_HOLE_Y.max, LEFT_WALL_HOLE_Z.max - LEFT_WALL_HOLE_Z.min]} /> {/* above hole */}
+            <WallBlock position={[-4, wallY, -23]} size={[2, wallH, 10]} /> {/* left of hole */}
             <WallBlock position={[-4, 13, -2.5]} size={[2, 12, 4]} /> {/* Above Broker */}
 
-            {/* --- RIGHT WALL (x = 4) — very high --- */}
-            <WallBlock position={[4, wallY, 0]} size={[2, wallH, 10]} />
-            <WallBlock position={[4, wallY, -13]} size={[2, wallH, 16]} />
-            <WallBlock position={[4, wallY, -20.5]} size={[2, wallH, 15]} /> {/* Extended to back */}
-            <WallBlock position={[4, 13, -5]} size={[2, 12, 4]} /> {/* Above Barker */}
+            {/* --- RIGHT WALL (x = 4) — sun-lit, brighter --- */}
+            <WallBlock position={[4, wallY, 0]} size={[2, wallH, 10]} material={concreteWallRight} />
+            <WallBlock position={[4, wallY, -13]} size={[2, wallH, 16]} material={concreteWallRight} />
+            <WallBlock position={[4, wallY, -20.5]} size={[2, wallH, 15]} material={concreteWallRight} /> {/* Extended to back */}
+            <WallBlock position={[4, 13, -5]} size={[2, 12, 4]} material={concreteWallRight} /> {/* Above Barker */}
 
             {/* --- BACK WALL (z = -29, behind portal) --- */}
             <WallBlock position={[0, wallY, -29]} size={[10, wallH, 2]} />
@@ -587,7 +598,7 @@ function ProtrudingSign({ position, text, color = "#ff00ff" }: ProtrudingSignPro
 
 function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, number, number], rotation?: [number, number, number] }) {
     return (
-        <group position={position} rotation={new THREE.Euler(...rotation)}>
+        <group position={position} rotation={rotation}>
             {/* Cart Base */}
             <mesh position={[0, 0.4, 0]} receiveShadow>
                 <boxGeometry args={[1.5, 0.8, 1]} />
@@ -627,13 +638,13 @@ function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, num
                 <meshStandardMaterial color="#2e3c50" roughness={1} side={THREE.DoubleSide} />
             </mesh>
 
-            {/* Steam Emitter (Simple Particles) */}
+            {/* Steam Emitter (Simple Particles) - stable positions via pseudo-random */}
             <Instances range={10}>
                 <sphereGeometry args={[0.1]} />
                 <meshBasicMaterial color="#fff" transparent opacity={0.3} />
-                {Array.from({ length: 10 }).map((_, i) => (
+                {STEAM_POSITIONS.map((pos, i) => (
                     <Float key={i} speed={2} rotationIntensity={0} floatIntensity={5} floatingRange={[1, 3]}>
-                        <group position={[(Math.random() - 0.5) * 0.5, 1, 0]}>
+                        <group position={pos}>
                             <Instance />
                         </group>
                     </Float>
@@ -682,7 +693,7 @@ function HangingBanner({ position, rotation, color }: { position: [number, numbe
     });
 
     return (
-        <group position={position} rotation={rotation ? new THREE.Euler(...rotation) : new THREE.Euler()}>
+        <group position={position} rotation={rotation ?? [0, 0, 0]}>
             <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]} material={MAT_DARKER}>
                 <cylinderGeometry args={[0.02, 0.02, 1.2]} />
             </mesh>
@@ -729,7 +740,7 @@ function HangingBulb({ position, color = "#ffaa00" }: { position: [number, numbe
 
 function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { position: [number, number, number], rotation?: [number, number, number], color?: string }) {
     return (
-        <group position={position} rotation={new THREE.Euler(...rotation)}>
+        <group position={position} rotation={rotation}>
             {/* Base */}
             <mesh position={[0, 0.05, 0]}>
                 <cylinderGeometry args={[0.1, 0.15, 0.1]} />
@@ -795,7 +806,7 @@ export default function Environment() {
 
     return (
         <group>
-            {/* Dirt road ground — dusty, clear visibility, daylight */}
+            {/* Rough dirt ground */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow material={tiledDirt}>
                 <planeGeometry args={[20, 60]} />
             </mesh>

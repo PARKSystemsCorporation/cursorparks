@@ -8,6 +8,7 @@ import {
     createWetFloorTexture,
     createWetFloorRoughness,
     createDirtRoadTexture,
+    createDirtRoadNormal,
     createDirtRoadRoughness,
     createMetalPanelTexture,
     createWoodCrateTexture,
@@ -16,6 +17,7 @@ import {
 
 type BazaarMaterials = {
     concreteWall: THREE.MeshStandardMaterial;
+    concreteWallRight: THREE.MeshStandardMaterial; // Brighter for sun-lit right side
     wetFloor: THREE.MeshStandardMaterial;
     dirtRoad: THREE.MeshStandardMaterial;
     metalPanel: THREE.MeshStandardMaterial;
@@ -34,6 +36,7 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
         const txFloor = createWetFloorTexture();
         const txFloorRough = createWetFloorRoughness();
         const txDirt = createDirtRoadTexture();
+        const txDirtNormal = createDirtRoadNormal();
         const txDirtRough = createDirtRoadRoughness();
 
         const txMetal = createMetalPanelTexture();
@@ -51,6 +54,11 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             metalness: 0.1,
         });
 
+        // Right wall: Brighter (sun-lit side of alley)
+        const concreteWallRight = concreteWall.clone();
+        concreteWallRight.color.set("#bbb");
+        concreteWallRight.envMapIntensity = 1.2;
+
         // Floor: Wet, dark, reflective in spots (night / alternate)
         const wetFloor = new THREE.MeshStandardMaterial({
             map: txFloor,
@@ -61,14 +69,15 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             envMapIntensity: 1.5,
         });
 
-        // Ground: Dusty dirt road (daylight cinematic)
+        // Ground: Rough dirt (uneven, pebbly, rutted)
         const dirtRoad = new THREE.MeshStandardMaterial({
             map: txDirt,
+            normalMap: txDirtNormal,
             roughnessMap: txDirtRough,
-            color: "#6b5b4f",
-            roughness: 0.92,
+            color: "#5a4a3f",
+            roughness: 1.0,
             metalness: 0,
-            envMapIntensity: 0.25,
+            envMapIntensity: 0.2,
         });
 
         // Metal Panel: Brushed, tech
@@ -97,6 +106,7 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
 
         return {
             concreteWall,
+            concreteWallRight,
             wetFloor,
             dirtRoad,
             metalPanel,
