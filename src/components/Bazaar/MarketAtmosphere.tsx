@@ -26,7 +26,7 @@ export default function MarketAtmosphere() {
 
     const p = phase;
     const isTwilight = p > TWILIGHT_START;
-    const twilightBlend = isTwilight ? (p - TWILIGHT_START) / (1 - TWILIGHT_START) : 0;
+    const isTwilight = p > TWILIGHT_START;
     // Afternoon Light: Warm amber sun, cream/brown fill
     const sunColor = "#ffb76b";
     const skyColor = "#ffeedd"; // Pale warm cream
@@ -40,7 +40,7 @@ export default function MarketAtmosphere() {
         <>
             <color attach="background" args={["#f0e0d0"]} />
             {/* Fog: Low density, warm, starts near to layer depth */}
-            <fogexp2 attach="fog" args={[fogColor, 0.015]} />
+            <fogExp2 attach="fog" args={[fogColor, 0.015]} />
 
             <ambientLight intensity={0.4} color="#ffeebb" />
 
