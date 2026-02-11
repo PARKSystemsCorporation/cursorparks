@@ -12,6 +12,7 @@ import CameraRig from "./CameraRig";
 import InputBar from "./InputBar";
 import "./BazaarLanding.css";
 import { EffectComposer, ToneMapping, SMAA, Bloom } from "@react-three/postprocessing";
+import CameraPresence from "./CameraPresence";
 import LedSign from "./LedSign";
 import ScrapSign from "./ScrapSign";
 import { BazaarMaterialsProvider } from "./BazaarMaterials";
@@ -33,10 +34,7 @@ const CONFIG = {
         // Ground bounce vs Sky - Dark contrast
         hemisphere: { sky: "#0a1525", ground: "#020205", intensity: 0.4 },
     },
-    camera: {
-        position: [0, 1.7, 6] as [number, number, number],
-        fov: 60,
-    },
+    // Camera config moved to CameraPresence
     postprocessing: {
         exposure: 1.2, // Slightly boost exposure for contrasty look
         toneMapping: THREE.ACESFilmicToneMapping,
@@ -65,6 +63,7 @@ function SceneContent({ messages, targetVendor, onShout, onEnterAlleyTwo }: { me
     return (
         <>
             <ShadowMapSetup />
+            <CameraPresence />
             <MarketAtmosphere />
 
             <DreiEnvironment preset="park" background={false} environmentIntensity={1.2} />
@@ -91,7 +90,7 @@ function SceneContent({ messages, targetVendor, onShout, onEnterAlleyTwo }: { me
 
             <EffectComposer>
                 <SMAA />
-                <Bloom luminanceThreshold={1.1} mipmapBlur intensity={0.8} radius={0.6} />
+                <Bloom luminanceThreshold={1.2} mipmapBlur intensity={0.4} radius={0.5} />
                 <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
             </EffectComposer>
         </>
@@ -189,7 +188,6 @@ export default function BazaarScene({ onEnterAlleyTwo }: BazaarSceneProps = {}) 
                     stencil: false,
                     depth: true
                 }}
-                camera={CONFIG.camera}
             >
                 <BazaarMaterialsProvider>
                     <Suspense fallback={null}>

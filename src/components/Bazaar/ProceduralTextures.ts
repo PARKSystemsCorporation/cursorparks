@@ -591,3 +591,110 @@ export function createClothTexture() {
     fillNoise(ctx, size, 0.05);
     return createTextureFromCanvas(canvas);
 }
+
+/**
+ * Metal Panel Roughness — scratches and grime
+ */
+export function createMetalPanelRoughness() {
+    const size = 1024;
+    const canvas = createCanvas(size);
+    const ctx = getContext(canvas);
+
+    // Base roughness (smooth metal = dark)
+    ctx.fillStyle = "#444";
+    ctx.fillRect(0, 0, size, size);
+
+    // Scratches (rougher = lighter)
+    ctx.strokeStyle = "#888";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 100; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const l = 10 + Math.random() * 40;
+        const ang = Math.random() * Math.PI;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(ang) * l, y + Math.sin(ang) * l);
+        ctx.stroke();
+    }
+
+    // Grime patches (very rough = white)
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = "#aaa";
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const r = 50 + Math.random() * 150;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    fillNoise(ctx, size, 0.1);
+    return createTextureFromCanvas(canvas);
+}
+
+/**
+ * Rust Pipe Roughness
+ */
+export function createRustPipeRoughness() {
+    const size = 1024;
+    const canvas = createCanvas(size);
+    const ctx = getContext(canvas);
+
+    // Base metal (smoothish)
+    ctx.fillStyle = "#444";
+    ctx.fillRect(0, 0, size, size);
+
+    // Rust patches (rough = lighter)
+    for (let i = 0; i < 30; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const r = 40 + Math.random() * 120;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0, "#ccc"); // Rough center
+        grd.addColorStop(0.7, "#888");
+        grd.addColorStop(1, "transparent"); // Fade to metal
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    fillNoise(ctx, size, 0.2);
+    return createTextureFromCanvas(canvas);
+}
+
+/**
+ * Cloth Normal — Simple weave bump
+ */
+export function createClothNormal() {
+    const size = 1024;
+    const canvas = createCanvas(size);
+    const ctx = getContext(canvas);
+
+    // Flat normal color
+    ctx.fillStyle = "#8080ff";
+    ctx.fillRect(0, 0, size, size);
+
+    // Weave Pattern
+    const stride = 4;
+    for (let i = 0; i < size; i += stride) {
+        for (let j = 0; j < size; j += stride) {
+            // Checkerboard normal perturbation
+            if ((i / stride + j / stride) % 2 === 0) {
+                ctx.fillStyle = "#9090ff"; // Slight bump
+                ctx.fillRect(i, j, stride, stride);
+            } else {
+                ctx.fillStyle = "#7070ff"; // Slight dip
+                ctx.fillRect(i, j, stride, stride);
+            }
+        }
+    }
+
+    // Larger folds (noise)
+    fillNoise(ctx, size, 0.05);
+
+    return createTextureFromCanvas(canvas);
+}

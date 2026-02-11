@@ -1,5 +1,3 @@
-"use client";
-
 import { createContext, useContext, useMemo } from "react";
 import * as THREE from "three";
 import {
@@ -11,10 +9,13 @@ import {
     createDirtRoadNormal,
     createDirtRoadRoughness,
     createMetalPanelTexture,
+    createMetalPanelRoughness,
     createWoodCrateTexture,
     createWoodCrateRoughness,
     createClothTexture,
+    createClothNormal,
     createRustPipeTexture,
+    createRustPipeRoughness,
 } from "./ProceduralTextures";
 
 type BazaarMaterials = {
@@ -26,6 +27,8 @@ type BazaarMaterials = {
     woodCrate: THREE.MeshStandardMaterial;
     rustPipe: THREE.MeshStandardMaterial;
     cloth: THREE.MeshStandardMaterial;
+    // New generic dark material for cables/trim
+    darkMetal: THREE.MeshStandardMaterial;
 };
 
 const BazaarMaterialsContext = createContext<BazaarMaterials | null>(null);
@@ -43,10 +46,13 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
         const txDirtRough = createDirtRoadRoughness();
 
         const txMetal = createMetalPanelTexture();
+        const txMetalRough = createMetalPanelRoughness();
         const txWood = createWoodCrateTexture();
         const txWoodRough = createWoodCrateRoughness();
         const txCloth = createClothTexture();
+        const txClothNormal = createClothNormal();
         const txRust = createRustPipeTexture();
+        const txRustRough = createRustPipeRoughness();
 
         // 2. Create Materials
 
@@ -87,23 +93,35 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
         // Metal
         const metalPanel = new THREE.MeshStandardMaterial({
             map: txMetal,
+            roughnessMap: txMetalRough,
             color: "#aaa",
-            roughness: 0.4,
+            roughness: 1.0,
             metalness: 0.8,
+            envMapIntensity: 1.2
         });
 
-        // Wood Crate (Improved)
+        // Dark Metal (for cables, grim) - reuse metal texture but darker
+        const darkMetal = new THREE.MeshStandardMaterial({
+            map: txMetal, // Reuse map for detail
+            roughnessMap: txMetalRough,
+            color: "#333",
+            roughness: 0.8,
+            metalness: 0.5,
+        });
+
+        // Wood Crate
         const woodCrate = new THREE.MeshStandardMaterial({
             map: txWood,
             roughnessMap: txWoodRough,
-            color: "#8d6e63", // Slightly lighter to show texture
+            color: "#8d6e63",
             roughness: 1.0,
             metalness: 0.0,
         });
 
-        // Cloth (New)
+        // Cloth
         const cloth = new THREE.MeshStandardMaterial({
             map: txCloth,
+            normalMap: txClothNormal,
             color: "#fff",
             roughness: 0.9,
             metalness: 0.05,
@@ -113,8 +131,9 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
         // Rust Pipe
         const rustPipe = new THREE.MeshStandardMaterial({
             map: txRust,
+            roughnessMap: txRustRough,
             color: "#aaa",
-            roughness: 0.9,
+            roughness: 1.0,
             metalness: 0.6,
         });
 
@@ -127,6 +146,7 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             woodCrate,
             rustPipe,
             cloth,
+            darkMetal
         };
     }, []);
 

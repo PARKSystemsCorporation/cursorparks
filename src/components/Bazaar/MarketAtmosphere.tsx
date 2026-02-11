@@ -28,30 +28,36 @@ export default function MarketAtmosphere() {
     const isTwilight = p > TWILIGHT_START;
     const twilightBlend = isTwilight ? (p - TWILIGHT_START) / (1 - TWILIGHT_START) : 0;
     const skyColor = isTwilight ? "#4a5a7a" : "#87CEEB";
-    const fogColor = isTwilight ? "#6b7a94" : "#b8d4e3";
+    // Depth Fog: Warm particulate tone instead of pure blue
+    const fogColor = isTwilight ? "#2a2420" : "#aaccff";
     const sunX = isTwilight ? 2 : 5;
     const sunY = isTwilight ? 8 : 28;
     const sunZ = isTwilight ? -4 : 8;
-    const ambientWarmth = 0.55 + twilightBlend * 0.15;
-    const sunIntensity = isTwilight ? 0.9 : 2.2;
+
+    // Increased ambient for better fill in shadows (since texture maps are darker)
+    const ambientWarmth = 0.7 + twilightBlend * 0.1;
+    // Reduced sun intensity to prevent washout and look less "gamey"
+    const sunIntensity = isTwilight ? 0.4 : 1.2;
 
     return (
         <>
             <color attach="background" args={[skyColor]} />
-            <fog attach="fog" args={[fogColor, 14, 48]} />
+            {/* Haze: Start closer (8) for depth, end at 45 (cutoff) */}
+            <fog attach="fog" args={[fogColor, 8, 45]} />
             <Sky
                 sunPosition={[sunX, sunY, sunZ]}
-                turbidity={isTwilight ? 8 : 4}
-                rayleigh={isTwilight ? 0.8 : 0.5}
-                mieCoefficient={isTwilight ? 0.03 : 0.005}
+                turbidity={isTwilight ? 10 : 2}
+                rayleigh={isTwilight ? 0.5 : 0.8}
+                mieCoefficient={isTwilight ? 0.05 : 0.01}
             />
-            <ambientLight intensity={ambientWarmth} color="#fff5e6" />
+            <ambientLight intensity={ambientWarmth} color="#fff0dd" />
             <directionalLight
                 position={[sunX, sunY, sunZ]}
                 intensity={sunIntensity}
                 color="#fff5e6"
                 castShadow
-                shadow-mapSize={[4096, 4096]}
+                shadow-mapSize={[2048, 2048]} // Optimized shadow map
+                shadow-bias={-0.0001}
                 shadow-normalBias={0.02}
                 shadow-camera-far={65}
                 shadow-camera-left={-20}
@@ -59,7 +65,7 @@ export default function MarketAtmosphere() {
                 shadow-camera-top={24}
                 shadow-camera-bottom={-20}
             />
-            <hemisphereLight args={[isTwilight ? "#8899b0" : "#a8c8e8", "#c4a574", isTwilight ? 1.1 : 1.45]} />
+            <hemisphereLight args={[isTwilight ? "#445566" : "#88aaff", "#332211", isTwilight ? 1.0 : 0.8]} />
         </>
     );
 }

@@ -24,16 +24,13 @@ const STRING_LIGHT_POSITIONS: [number, number, number][] = [
     [-1, 2.5, -3.5]
 ];
 
-// --- SHARED MATERIALS (created once, reused across all components) ---
-const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
-const MAT_DARKER = new THREE.MeshStandardMaterial({ color: "#333" });
-const MAT_BLACK = new THREE.MeshStandardMaterial({ color: "#111" });
-const MAT_METAL_GREY = new THREE.MeshStandardMaterial({ color: "#444", roughness: 0.3, metalness: 0.6 });
-const MAT_METAL_DARK = new THREE.MeshStandardMaterial({ color: "#555", roughness: 0.6, metalness: 0.4 });
+// --- SHARED MATERIALS REMOVED ---
+// All components now use useBazaarMaterials() for textured, realistic materials.
 
 // --- CYBER ASSETS ---
 
 function Cables() {
+    const { darkMetal, rustPipe } = useBazaarMaterials();
     const curve1 = useMemo(() => new THREE.CatmullRomCurve3([
         new THREE.Vector3(-3, 3, 2),
         new THREE.Vector3(0, 2.5, 0),
@@ -48,13 +45,11 @@ function Cables() {
 
     return (
         <group>
-            <mesh>
+            <mesh material={darkMetal}>
                 <tubeGeometry args={[curve1, 12, 0.02, 3, false]} />
-                <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
             </mesh>
-            <mesh>
+            <mesh material={rustPipe}>
                 <tubeGeometry args={[curve2, 12, 0.03, 3, false]} />
-                <meshStandardMaterial color="#000000" roughness={0.9} />
             </mesh>
         </group>
     );
@@ -133,6 +128,7 @@ const WINDOW_AC_POSITIONS: { x: number; y: number; z: number; tilt?: number }[] 
 ].filter((p) => p.z >= Z_CUTOFF);
 
 function WindowACs() {
+    const { metalPanel, darkMetal } = useBazaarMaterials();
     const meshRef = useRef<THREE.InstancedMesh>(null);
     const fanRef = useRef<THREE.InstancedMesh>(null);
     const count = WINDOW_AC_POSITIONS.length;
@@ -166,19 +162,28 @@ function WindowACs() {
         <group>
             <instancedMesh ref={meshRef} args={[undefined, undefined, count]} castShadow>
                 <boxGeometry args={[0.5, 0.35, 0.28]} />
-                <primitive object={MAT_METAL_DARK} />
+                <primitive object={metalPanel} />
             </instancedMesh>
             <instancedMesh ref={fanRef} args={[undefined, undefined, count]}>
                 <circleGeometry args={[0.12, 8]} />
-                <primitive object={MAT_DARK} />
+                <primitive object={darkMetal} />
             </instancedMesh>
         </group>
     );
 }
 
 function HangingBlanket({ y, z, width, height, color }: { y: number; z: number; width: number; height: number; color: string }) {
+    const { cloth, darkMetal } = useBazaarMaterials();
     const meshRef = useRef<THREE.Mesh>(null);
     const frameCount = useRef(0);
+
+    // Create a unique material instance for color
+    const mat = useMemo(() => {
+        const m = cloth.clone();
+        m.color.set(color);
+        return m;
+    }, [cloth, color]);
+
     useFrame(({ clock }) => {
         if (!meshRef.current) return;
         frameCount.current++;
@@ -188,13 +193,11 @@ function HangingBlanket({ y, z, width, height, color }: { y: number; z: number; 
     });
     return (
         <group position={[0, y, z]}>
-            <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]} material={darkMetal}>
                 <cylinderGeometry args={[0.015, 0.015, 7.6, 4]} />
-                <meshStandardMaterial color="#2a2520" roughness={0.9} />
             </mesh>
-            <mesh ref={meshRef} position={[0, -height / 2, 0]} rotation={[0, 0, Math.PI / 2]} receiveShadow castShadow>
+            <mesh ref={meshRef} position={[0, -height / 2, 0]} rotation={[0, 0, Math.PI / 2]} receiveShadow castShadow material={mat}>
                 <planeGeometry args={[width, height]} />
-                <meshStandardMaterial color={color} roughness={0.95} side={THREE.DoubleSide} />
             </mesh>
         </group>
     );
@@ -224,6 +227,7 @@ function HangingBlankets() {
 }
 
 function Clothesline({ y, z }: { y: number; z: number }) {
+    const { cloth, darkMetal } = useBazaarMaterials();
     const clothes = useMemo(() => [
         { x: -2.2, type: "shirt" as const, rot: 0.1 },
         { x: 0, type: "pants" as const, rot: -0.05 },
@@ -231,32 +235,45 @@ function Clothesline({ y, z }: { y: number; z: number }) {
         { x: -0.8, type: "shirt" as const, rot: -0.12 },
         { x: 1.4, type: "towel" as const, rot: 0.06 },
     ], []);
+
+    // Create colored cloth instances
+    const getClothMat = (color: string) => {
+        const m = cloth.clone();
+        m.color.set(color);
+        return m;
+    };
+
+    // Memoize the dark cloth
+    const darkCloth = useMemo(() => {
+        const m = cloth.clone();
+        m.color.set("#333");
+        return m;
+    }, [cloth]);
+
     return (
         <group position={[0, y, z]}>
-            <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+            <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]} material={darkMetal}>
                 <cylinderGeometry args={[0.01, 0.01, 7.6, 4]} />
-                <meshStandardMaterial color="#1a1a1a" roughness={1} />
             </mesh>
             {clothes.map((c, i) => (
                 <group key={i} position={[c.x, -0.15, 0]} rotation={[0, 0, c.rot]}>
                     {c.type === "shirt" && (
                         <>
-                            <mesh castShadow material={MAT_DARKER}>
+                            <mesh castShadow material={darkCloth}>
                                 <boxGeometry args={[0.35, 0.45, 0.04]} />
                             </mesh>
                         </>
                     )}
                     {c.type === "pants" && (
                         <>
-                            <mesh position={[0, -0.35, 0]} castShadow material={MAT_DARKER}>
+                            <mesh position={[0, -0.35, 0]} castShadow material={darkCloth}>
                                 <boxGeometry args={[0.25, 0.5, 0.04]} />
                             </mesh>
                         </>
                     )}
                     {c.type === "towel" && (
-                        <mesh castShadow receiveShadow>
+                        <mesh castShadow receiveShadow material={getClothMat(FABRIC_COLORS[(i + 2) % FABRIC_COLORS.length])}>
                             <planeGeometry args={[0.5, 0.35]} />
-                            <meshStandardMaterial color={FABRIC_COLORS[(i + 2) % FABRIC_COLORS.length]} roughness={0.9} side={THREE.DoubleSide} />
                         </mesh>
                     )}
                 </group>
@@ -595,7 +612,6 @@ function ConstructedWalls({ onEnterPortal }: { onEnterPortal?: () => void }) {
     );
 }
 
-const backingPlateMat = new THREE.MeshStandardMaterial({ color: "#050505", roughness: 0.2, metalness: 0.8 });
 
 function LargeWallLedStrip({ position, rotation, width, height, color }: { position: [number, number, number]; rotation: [number, number, number]; width: number; height: number; color: string }) {
     const intensity = 2.5 * BAZAAR_BRIGHTNESS * (EMISSIVE_SCALE > 0 ? EMISSIVE_SCALE : 0.5);
@@ -623,6 +639,7 @@ interface NeonSignProps {
     flicker?: boolean;
 }
 function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flicker = false }: NeonSignProps) {
+    const { darkMetal } = useBazaarMaterials();
     const ref = useRef<THREE.Mesh>(null);
     const frameCount = useRef(0);
     useFrame(({ clock }) => {
@@ -651,7 +668,7 @@ function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flick
                 <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
             </Text>
             {/* Backing plate */}
-            <mesh position={[0, 0, -0.05]} material={backingPlateMat}>
+            <mesh position={[0, 0, -0.05]} material={darkMetal}>
                 <planeGeometry args={[text.length * 0.3 * size, 0.8 * size]} />
             </mesh>
         </group>
@@ -659,12 +676,13 @@ function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flick
 }
 
 function ACUnit({ position }: { position: [number, number, number] }) {
+    const { metalPanel, darkMetal } = useBazaarMaterials();
     return (
         <group position={position}>
-            <mesh material={MAT_METAL_DARK}>
+            <mesh material={metalPanel}>
                 <boxGeometry args={[0.8, 0.6, 0.4]} />
             </mesh>
-            <mesh position={[0, 0, 0.21]} material={MAT_DARK}>
+            <mesh position={[0, 0, 0.21]} material={darkMetal}>
                 <circleGeometry args={[0.25, 16]} />
             </mesh>
         </group>
@@ -672,17 +690,18 @@ function ACUnit({ position }: { position: [number, number, number] }) {
 }
 
 function UpperCityLayer() {
+    const { darkMetal, metalPanel } = useBazaarMaterials();
     return (
         <group position={[0, 6, 0]}>
             {/* Left Balconies (only up to cutoff) */}
-            <mesh position={[-3.8, 0, -5]} material={MAT_DARK}>
+            <mesh position={[-3.8, 0, -5]} material={darkMetal}>
                 <boxGeometry args={[1, 0.2, 4]} />
             </mesh>
             {/* Right Pipes */}
-            <mesh position={[3.8, 1, -6]} rotation={[0, 0, Math.PI / 2]} material={MAT_METAL_GREY}>
+            <mesh position={[3.8, 1, -6]} rotation={[0, 0, Math.PI / 2]} material={metalPanel}>
                 <cylinderGeometry args={[0.1, 0.1, 10]} />
             </mesh>
-            <mesh position={[3.6, 2, -6]} rotation={[0, 0, Math.PI / 2]} material={MAT_DARKER}>
+            <mesh position={[3.6, 2, -6]} rotation={[0, 0, Math.PI / 2]} material={darkMetal}>
                 <cylinderGeometry args={[0.2, 0.2, 10]} />
             </mesh>
 
@@ -693,6 +712,7 @@ function UpperCityLayer() {
 }
 
 function Lantern({ position, color, delay = 0 }: { position: [number, number, number], color: string, delay?: number }) {
+    const { darkMetal } = useBazaarMaterials();
     const group = useRef<THREE.Group>(null);
     const frameCount = useRef(0);
 
@@ -727,17 +747,16 @@ interface ProtrudingSignProps {
     color?: string;
 }
 function ProtrudingSign({ position, text, color = "#ff00ff" }: ProtrudingSignProps) {
+    const { darkMetal } = useBazaarMaterials();
     return (
         <group position={position}>
             {/* Mounting Arm */}
-            <mesh position={[0, 0, 0]}>
+            <mesh position={[0, 0, 0]} material={darkMetal}>
                 <boxGeometry args={[0.8, 0.1, 0.1]} />
-                <meshStandardMaterial color="#222" />
             </mesh>
             {/* Sign Box */}
-            <mesh position={[0.6, -0.2, 0]}>
+            <mesh position={[0.6, -0.2, 0]} material={darkMetal}>
                 <boxGeometry args={[0.8, 0.4, 0.15]} />
-                <meshStandardMaterial color="#111" />
             </mesh>
             {/* LED Text Front */}
             <Text
@@ -769,51 +788,45 @@ function ProtrudingSign({ position, text, color = "#ff00ff" }: ProtrudingSignPro
 }
 
 function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, number, number], rotation?: [number, number, number] }) {
+    const { woodCrate, darkMetal } = useBazaarMaterials();
     return (
         <group position={position} rotation={rotation}>
             {/* Cart Base */}
-            <mesh position={[0, 0.4, 0]} receiveShadow>
+            <mesh position={[0, 0.4, 0]} receiveShadow material={woodCrate}>
                 <boxGeometry args={[1.5, 0.8, 1]} />
-                <meshStandardMaterial color="#5d4037" roughness={0.8} />
             </mesh>
             {/* Wheels */}
-            <mesh position={[-0.6, 0.2, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[-0.6, 0.2, 0.5]} rotation={[Math.PI / 2, 0, 0]} material={darkMetal}>
                 <cylinderGeometry args={[0.2, 0.2, 0.1]} />
-                <meshStandardMaterial color="#333" />
             </mesh>
-            <mesh position={[0.6, 0.2, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[0.6, 0.2, 0.5]} rotation={[Math.PI / 2, 0, 0]} material={darkMetal}>
                 <cylinderGeometry args={[0.2, 0.2, 0.1]} />
-                <meshStandardMaterial color="#333" />
             </mesh>
 
             {/* Posts */}
-            <mesh position={[-0.7, 1.5, 0.4]}>
+            <mesh position={[-0.7, 1.5, 0.4]} material={woodCrate}>
                 <cylinderGeometry args={[0.03, 0.03, 1.5]} />
-                <meshStandardMaterial color="#8d6e63" />
             </mesh>
-            <mesh position={[0.7, 1.5, 0.4]}>
+            <mesh position={[0.7, 1.5, 0.4]} material={woodCrate}>
                 <cylinderGeometry args={[0.03, 0.03, 1.5]} />
-                <meshStandardMaterial color="#8d6e63" />
             </mesh>
-            <mesh position={[-0.7, 1.5, -0.4]}>
+            <mesh position={[-0.7, 1.5, -0.4]} material={woodCrate}>
                 <cylinderGeometry args={[0.03, 0.03, 1.5]} />
-                <meshStandardMaterial color="#8d6e63" />
             </mesh>
-            <mesh position={[0.7, 1.5, -0.4]}>
+            <mesh position={[0.7, 1.5, -0.4]} material={woodCrate}>
                 <cylinderGeometry args={[0.03, 0.03, 1.5]} />
-                <meshStandardMaterial color="#8d6e63" />
             </mesh>
 
             {/* Overhang */}
-            <mesh position={[0, 2.8, 0]} rotation={[0, 0, 0.1]} receiveShadow>
+            <mesh position={[0, 2.8, 0]} rotation={[0, 0, 0.1]} receiveShadow material={woodCrate}>
                 <boxGeometry args={[2, 0.1, 1.5]} />
-                <meshStandardMaterial color="#4e342e" roughness={0.9} />
             </mesh>
         </group>
     );
 }
 
 function RandomCrates() {
+    const { woodCrate } = useBazaarMaterials();
     // Scaffold geometric noise
     const crates = useMemo(() => {
         const out = [];
@@ -828,18 +841,18 @@ function RandomCrates() {
             const s = 0.3 + Math.random() * 0.4;
             const rot = Math.random() * Math.PI;
             out.push(
-                <mesh key={i} position={[x, s / 2, z]} rotation={[0, rot, 0]} castShadow receiveShadow>
+                <mesh key={i} position={[x, s / 2, z]} rotation={[0, rot, 0]} castShadow receiveShadow material={woodCrate}>
                     <boxGeometry args={[s, s, s]} />
-                    <meshStandardMaterial color={Math.random() > 0.5 ? "#5d4037" : "#3e2723"} roughness={0.8} />
                 </mesh>
             )
         }
         return out;
-    }, []);
+    }, [woodCrate]);
     return <group>{crates}</group>;
 }
 
 function PaperScraps() {
+    const { cloth } = useBazaarMaterials();
     // Scattered white quads on ground
     const scraps = useMemo(() => {
         const out = [];
@@ -852,14 +865,13 @@ function PaperScraps() {
             const scale = 0.05 + Math.random() * 0.1;
 
             out.push(
-                <mesh key={i} position={[x, 0.01 + i * 0.0001, z]} rotation={[-Math.PI / 2, 0, r]} receiveShadow>
+                <mesh key={i} position={[x, 0.01 + i * 0.0001, z]} rotation={[-Math.PI / 2, 0, r]} receiveShadow material={cloth}>
                     <planeGeometry args={[scale, scale * 1.4]} />
-                    <meshStandardMaterial color="#ddd" roughness={0.9} side={THREE.DoubleSide} />
                 </mesh>
             );
         }
         return out;
-    }, []);
+    }, [cloth]);
     return <group>{scraps}</group>;
 }
 
@@ -893,14 +905,14 @@ function SteamVents() {
 }
 
 
-const beamMat = new THREE.MeshStandardMaterial({ color: "#3d2914", roughness: 1 });
 
 function Beams() {
+    const { woodCrate } = useBazaarMaterials();
     // Beams only over left half, only up to Z_CUTOFF
     return (
         <group>
             {[0, -4].filter((z) => z >= Z_CUTOFF).map((z, i) => (
-                <mesh key={i} position={[-2.5, 4, z]} material={beamMat}>
+                <mesh key={i} position={[-2.5, 4, z]} material={woodCrate}>
                     <boxGeometry args={[5, 0.2, 0.2]} />
                 </mesh>
             ))}
@@ -909,6 +921,7 @@ function Beams() {
 }
 
 function HangingBanner({ position, rotation, color }: { position: [number, number, number], rotation?: [number, number, number], color: string }) {
+    const { rustPipe } = useBazaarMaterials();
     const ref = useRef<THREE.Mesh>(null);
     const frameCount = useRef(0);
     useFrame(({ clock }) => {
@@ -921,7 +934,7 @@ function HangingBanner({ position, rotation, color }: { position: [number, numbe
 
     return (
         <group position={position} rotation={rotation ?? [0, 0, 0]}>
-            <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]} material={MAT_DARKER}>
+            <mesh position={[0, 0.75, 0]} rotation={[0, 0, Math.PI / 2]} material={rustPipe}>
                 <cylinderGeometry args={[0.02, 0.02, 1.2]} />
             </mesh>
             <mesh ref={ref} position={[0, 0, 0]}>
@@ -936,6 +949,7 @@ function HangingBanner({ position, rotation, color }: { position: [number, numbe
 }
 
 function HangingBulb({ position, color = "#ffaa00" }: { position: [number, number, number], color?: string }) {
+    const { darkMetal, metalPanel } = useBazaarMaterials();
     const group = useRef<THREE.Group>(null);
     const frameCount = useRef(0);
     useFrame(({ clock }) => {
@@ -953,7 +967,7 @@ function HangingBulb({ position, color = "#ffaa00" }: { position: [number, numbe
                 <meshBasicMaterial color="#111" />
             </mesh>
             {/* Socket */}
-            <mesh position={[0, 0.1, 0]} material={MAT_DARK}>
+            <mesh position={[0, 0.1, 0]} material={darkMetal}>
                 <cylinderGeometry args={[0.03, 0.03, 0.1]} />
             </mesh>
             {/* Bulb */}
@@ -966,22 +980,20 @@ function HangingBulb({ position, color = "#ffaa00" }: { position: [number, numbe
 }
 
 function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { position: [number, number, number], rotation?: [number, number, number], color?: string }) {
+    const { darkMetal, metalPanel } = useBazaarMaterials();
     return (
         <group position={position} rotation={rotation}>
             {/* Base */}
-            <mesh position={[0, 0.05, 0]}>
+            <mesh position={[0, 0.05, 0]} material={darkMetal}>
                 <cylinderGeometry args={[0.1, 0.15, 0.1]} />
-                <meshStandardMaterial color="#222" />
             </mesh>
             {/* Stem */}
-            <mesh position={[0, 0.3, 0]}>
+            <mesh position={[0, 0.3, 0]} material={darkMetal}>
                 <cylinderGeometry args={[0.02, 0.02, 0.6]} />
-                <meshStandardMaterial color="#333" />
             </mesh>
             {/* Shade */}
-            <mesh position={[0, 0.6, 0.1]} rotation={[0.5, 0, 0]}>
+            <mesh position={[0, 0.6, 0.1]} rotation={[0.5, 0, 0]} material={metalPanel}>
                 <coneGeometry args={[0.15, 0.3, 16, 1, true]} />
-                <meshStandardMaterial color="#444" side={THREE.DoubleSide} />
             </mesh>
             {/* Bulb */}
             <mesh position={[0, 0.55, 0.1]} rotation={[0.5, 0, 0]}>
@@ -996,10 +1008,11 @@ function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { posi
 }
 
 function MetalBeam({ position }: { position: [number, number, number] }) {
+    const { darkMetal } = useBazaarMaterials();
     return (
         <group position={position}>
             {/* The LED Strip Housing */}
-            <mesh rotation={[0, 0, Math.PI / 2]} position={[0, -0.16, 0]} material={MAT_BLACK}>
+            <mesh rotation={[0, 0, Math.PI / 2]} position={[0, -0.16, 0]} material={darkMetal}>
                 <boxGeometry args={[0.3, 22, 0.05]} />
             </mesh>
 
