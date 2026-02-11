@@ -139,8 +139,15 @@ function tick() {
 }
 
 function start() {
-  postMessage({ type: "snapshot", payload: { t: Date.now(), price, velocity, volState, spread: 0.1, liquidity: 1, orderBook: makeOrderBook(price, 0.1, 1), bar: currentBar, online: getOnlineCount(Date.now()) } });
+  postMessage({ type: "snapshot", payload: { t: Date.now(), price, velocity, volState, spread: 0.1, liquidity: 1, orderBook: makeOrderBook(price, 0.1, 1), bar: currentBar, bars: [], online: getOnlineCount(Date.now()) } });
   setInterval(tick, TICK_MS);
 }
+
+// Handle incoming delta updates from server (if using shared worker mode)
+self.onmessage = (e) => {
+  if (e.data.type === "server_delta") {
+    // Merge server state if we were syncing (optional, for now we run local sim)
+  }
+};
 
 start();

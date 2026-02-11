@@ -56,7 +56,7 @@ function WindowGrid() {
     const stories = [5, 10, 15]; // Heights
     const zLocations = [-2, -8, -14];
 
-    // Left Wall Windows
+    // Left Wall Windows (Original)
     for (let y of stories) {
         for (let z of zLocations) {
             windows.push(
@@ -74,6 +74,40 @@ function WindowGrid() {
         }
     }
 
+    // --- NEW WINDOWS ---
+
+    // 1. Right side - Immediate (Start 1 story high aka ~2.5, go higher)
+    const rightImmediateStories = [2.5, 5.5, 8.5, 11.5];
+    const rightImmediateZ = [-1, 1]; // Close to camera (z=6 is camera, 0 is start)
+
+    for (let y of rightImmediateStories) {
+        for (let z of rightImmediateZ) {
+            windows.push(
+                <mesh key={`r-new-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
+                    <planeGeometry args={[1.2, 1.8]} />
+                    <meshStandardMaterial color="#00ffaa" emissive="#aaffcc" emissiveIntensity={2 + Math.random()} toneMapped={false} />
+                </mesh>
+            )
+        }
+    }
+
+    // 2. Left side - Further down (z < -14)
+    const leftFarStories = [2.5, 5.5, 8.5, 11.5];
+    // Row 1: Further down (~ -17)
+    // Row 2: After that (~ -21)
+    const leftFarZ = [-17, -21];
+
+    for (let y of leftFarStories) {
+        for (let z of leftFarZ) {
+            windows.push(
+                <mesh key={`l-new-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
+                    <planeGeometry args={[1.2, 1.8]} />
+                    <meshStandardMaterial color="#ff5555" emissive="#ffaaaa" emissiveIntensity={2 + Math.random()} toneMapped={false} />
+                </mesh>
+            )
+        }
+    }
+
     return <group>{windows}</group>;
 }
 
@@ -86,6 +120,79 @@ function WallBlock({ position, size, rotation = [0, 0, 0] }: { position: [number
                 <Noise mapping="local" type="cell" scale={0.5} mode="overlay" alpha={0.1} />
             </LayerMaterial>
         </mesh>
+    );
+}
+
+const WallMaterial = new THREE.MeshStandardMaterial({ color: "#222", roughness: 0.8 });
+
+function InternalVendorWall({ position, rotationY = 0 }: { position: [number, number, number], rotationY?: number }) {
+    return (
+        <group position={position} rotation={[0, rotationY, 0]}>
+            {/* --- SHELL (Recessed Box) --- */}
+            {/* Back Wall */}
+            <mesh position={[0, 1.5, -1.8]} receiveShadow>
+                <boxGeometry args={[3.8, 3, 0.2]} />
+                <primitive object={WallMaterial} />
+            </mesh>
+            {/* Ceiling */}
+            <mesh position={[0, 3, -0.5]}>
+                <boxGeometry args={[3.8, 0.2, 3]} />
+                <primitive object={WallMaterial} />
+            </mesh>
+            {/* Floor */}
+            <mesh position={[0, 0.1, -0.5]}>
+                <boxGeometry args={[3.8, 0.2, 3]} />
+                <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
+            </mesh>
+            {/* Side Walls */}
+            <mesh position={[-1.9, 1.5, -0.5]}>
+                <boxGeometry args={[0.2, 3, 3]} />
+                <primitive object={WallMaterial} />
+            </mesh>
+            <mesh position={[1.9, 1.5, -0.5]}>
+                <boxGeometry args={[0.2, 3, 3]} />
+                <primitive object={WallMaterial} />
+            </mesh>
+
+            {/* --- INTERIOR --- */}
+            {/* Main Counter - Angled/Tech */}
+            <mesh position={[0, 0.6, 0.6]} castShadow receiveShadow>
+                <boxGeometry args={[3.6, 1.2, 0.8]} />
+                <meshStandardMaterial color="#2d1b2e" roughness={0.5} metalness={0.6} />
+            </mesh>
+            {/* Counter Glow Strip */}
+            <mesh position={[0, 1.1, 1.01]}>
+                <planeGeometry args={[3.6, 0.05]} />
+                <meshBasicMaterial color="#ff0055" toneMapped={false} />
+            </mesh>
+
+            {/* Back Shelves/Tech */}
+            <mesh position={[-1, 1.8, -1.6]}>
+                <boxGeometry args={[1.5, 0.1, 0.4]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+            <mesh position={[1, 2.2, -1.6]}>
+                <boxGeometry args={[1.5, 0.1, 0.4]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+
+            {/* Overhead Light Strip */}
+            <mesh position={[0, 2.9, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[3.5, 0.2]} />
+                <meshBasicMaterial color="#ff0055" toneMapped={false} transparent opacity={0.8} />
+            </mesh>
+            {/* Volumetric Glow for Overhead */}
+            <mesh position={[0, 1.5, 0.5]} rotation={[0, 0, 0]}>
+                <boxGeometry args={[3.5, 2.5, 0.1]} />
+                <meshBasicMaterial color="#ff0055" transparent opacity={0.03} depthWrite={false} blending={THREE.AdditiveBlending} />
+            </mesh>
+
+            {/* Clutter */}
+            <mesh position={[1.2, 1.25, 0.6]} rotation={[0, -0.2, 0]}>
+                <boxGeometry args={[0.4, 0.1, 0.4]} />
+                <meshStandardMaterial color="#111" />
+            </mesh>
+        </group>
     );
 }
 
@@ -136,8 +243,7 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
                 <meshBasicMaterial color="#ffaa00" toneMapped={false} />
             </mesh>
 
-            {/* Interior Light - contained */}
-            <pointLight position={[0, 2.5, -0.5]} distance={5} decay={2} intensity={2} color="#ccaaff" />
+            {/* Interior Light - REMOVED -> Baked into emissive strips */}
 
             {/* Clutter - Random boxes */}
             <mesh position={[-1, 1.7, -1.6]} rotation={[0, 0.2, 0]}>
@@ -203,13 +309,11 @@ function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flick
     const ref = useRef<THREE.Mesh>(null);
     useFrame(({ clock }) => {
         if (!ref.current || !flicker) return;
-        // Cyber flicker: random drops
+        // Cyber flicker: deterministic noise
         const t = clock.getElapsedTime();
-        if (Math.random() > 0.95) {
-            ref.current.visible = !ref.current.visible;
-        } else {
-            ref.current.visible = true;
-        }
+        // Use sine wave interference for deterministic flicker
+        const noise = Math.sin(t * 20) * Math.sin(t * 7);
+        ref.current.visible = noise > -0.8;
     });
 
     return (
@@ -370,8 +474,7 @@ function ProtrudingSign({ position, text, color = "#ff00ff" }: any) {
                 {text}
                 <meshBasicMaterial color={color} toneMapped={false} />
             </Text>
-            {/* Glow */}
-            <pointLight position={[0.6, -0.2, 0]} distance={3} intensity={2} color={color} />
+            {/* Glow - Opt: Removed PointLight, relying on Bloom from emissive text */}\n
         </group>
     );
 }
@@ -441,8 +544,7 @@ function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, num
                 <meshStandardMaterial color="#795548" />
             </mesh>
 
-            {/* Integrated Light */}
-            <pointLight position={[0, 1.8, 0]} intensity={2} color="#ffab91" distance={5} />
+            {/* Integrated Light - Opt: Removed PointLight */}\n
         </group>
     );
 }
@@ -508,9 +610,9 @@ function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position:
             {/* Bulb */}
             <mesh position={[0, 0, 0]}>
                 <sphereGeometry args={[0.05, 16, 16]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} toneMapped={false} />
             </mesh>
-            <pointLight distance={20} decay={2} color={color} intensity={intensity} />
+            {/* Opt: Removed light, using emissive bloom */}
             {/* Volumetric Light Cone - Extends to ground */}
             <mesh position={[0, -1.5, 0]}>
                 <coneGeometry args={[1.2, 4, 32, 1, true]} />
@@ -560,7 +662,7 @@ function FloorGlow({ position, color = "#0055ff", length = 2 }: { position: [num
                 <planeGeometry args={[0.1, length]} />
                 <meshBasicMaterial color={color} toneMapped={false} />
             </mesh>
-            <pointLight position={[0, 0.2, 0]} distance={8} decay={1.5} color={color} intensity={0.5} />
+            {/* Opt: Removed light from floor glow */}\n
         </group>
     );
 }
@@ -634,7 +736,9 @@ export default function Environment() {
 
             {/* Vendor Stalls Interiors - Matched to Vendor Positions */}
             <VendorStall position={[-3.8, 0, -2.5]} rotationY={Math.PI / 2} /> {/* Broker */}
-            <VendorStall position={[3.8, 0, -5]} rotationY={-Math.PI / 2} /> {/* Barker */}
+
+            {/* Barker - Custom Internal Wall */}
+            <InternalVendorWall position={[4, 0, -5]} rotationY={-Math.PI / 2} />
 
             {/* Back Left - Converted to Market Cart */}
             <MarketCart position={[-2.5, 0, -9]} rotation={[0, 0.5, 0]} />

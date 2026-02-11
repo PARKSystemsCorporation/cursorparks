@@ -15,7 +15,7 @@ const VENDORS = [
     },
     {
         id: "barker", name: "THE BARKER", color: "#6b3a3a",
-        position: [2.5, 0, -5],
+        position: [3.2, 0, -5],
         shouts: ["Step right up!", "Don't be shy!", "Fortune favors the bold."],
         shoutInterval: 6000
     },
@@ -37,14 +37,45 @@ const VENDORS = [
 // --- Procedural Vendor Visuals ---
 
 // Cyberpunk Character Component
-function CyberHuman({ position, color, isTarget, name, lastShout, shoutOpacity, setTarget, id }: any) {
+function CyberHuman({ position, color, isTarget, name, lastShout, setTarget, id }: any) {
     const group = useRef<THREE.Group>(null);
+    const textRef = useRef<any>(null);
+    const bgRef = useRef<THREE.Mesh>(null);
+    const lineRef = useRef<THREE.Mesh>(null);
 
-    // Idle Animation
+    // Animation state ref (mutable, no re-renders)
+    const animState = useRef({ opacity: 0, lastShoutSeen: null as string | null });
+
+    // Idle Animation & Shout Fade
     useFrame(({ clock }) => {
         if (!group.current) return;
         const t = clock.getElapsedTime() + position[0]; // Offset by pos
         group.current.position.y = position[1] + Math.sin(t * 1.5) * 0.02; // Breathe
+
+        // Handle Shout Animation
+        if (lastShout !== animState.current.lastShoutSeen) {
+            animState.current.lastShoutSeen = lastShout;
+            animState.current.opacity = 1; // Reset opacity on new shout
+        }
+
+        if (animState.current.opacity > 0) {
+            animState.current.opacity -= 0.005; // Decay
+            if (animState.current.opacity < 0) animState.current.opacity = 0;
+
+            // Apply to visuals if they exist
+            if (textRef.current) {
+                textRef.current.fillOpacity = animState.current.opacity;
+                textRef.current.outlineOpacity = animState.current.opacity;
+            }
+            if (bgRef.current) {
+                // @ts-expect-error -- material exists on mesh
+                if (bgRef.current.material) bgRef.current.material.opacity = animState.current.opacity * 0.7;
+            }
+            if (lineRef.current) {
+                // @ts-expect-error -- material exists on mesh
+                if (lineRef.current.material) lineRef.current.material.opacity = animState.current.opacity * 0.5;
+            }
+        }
     });
 
     return (
@@ -99,29 +130,30 @@ function CyberHuman({ position, color, isTarget, name, lastShout, shoutOpacity, 
             </Billboard>
 
             {/* Shout Bubble */}
-            {lastShout && shoutOpacity > 0 && (
+            {lastShout && (
                 <Billboard position={[0.8, 1.9, 0.5]}>
                     <Text
+                        ref={textRef}
                         fontSize={0.15}
                         maxWidth={2.5}
                         color="#ffffff" // White text
-                        fillOpacity={shoutOpacity}
+                        fillOpacity={0} // Controlled by ref
                         outlineWidth={0.01}
                         outlineColor="#000"
-                        outlineOpacity={shoutOpacity}
+                        outlineOpacity={0} // Controlled by ref
                         font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
                     >
                         {lastShout}
                     </Text>
                     {/* Text Background Box */}
-                    <mesh position={[0, 0, -0.01]}>
+                    <mesh ref={bgRef} position={[0, 0, -0.01]}>
                         <planeGeometry args={[2.6, 0.4]} />
-                        <meshBasicMaterial color="#000000" transparent opacity={shoutOpacity * 0.7} />
+                        <meshBasicMaterial color="#000000" transparent opacity={0} />
                     </mesh>
                     {/* Connecting Line */}
-                    <mesh position={[-0.8, -0.2, 0]} rotation={[0, 0, 0.5]}>
+                    <mesh ref={lineRef} position={[-0.8, -0.2, 0]} rotation={[0, 0, 0.5]}>
                         <planeGeometry args={[0.02, 0.5]} />
-                        <meshBasicMaterial color={color} transparent opacity={shoutOpacity * 0.5} />
+                        <meshBasicMaterial color={color} transparent opacity={0} />
                     </mesh>
                 </Billboard>
             )}
@@ -143,24 +175,26 @@ function CyberHuman({ position, color, isTarget, name, lastShout, shoutOpacity, 
 // Wrapper to handle state logic (shouts)
 function VendorWrapper(props: any) {
     const [lastShout, setLastShout] = useState<string | null>(null);
-    const [shoutOpacity, setShoutOpacity] = useState(0);
+    // Removed shoutOpacity state to prevent re-renders on every frame
 
     // Shout logic
     useFrame((state) => {
         if (state.clock.elapsedTime * 1000 % props.shoutInterval < 50) {
+            // Only trigger state update if we actually change the shout
+            // This runs at 60fps but the condition is rare (once per interval)
             if (Math.random() > 0.7) {
-                setLastShout(props.shouts[Math.floor(Math.random() * props.shouts.length)]);
-                setShoutOpacity(1);
+                const newShout = props.shouts[Math.floor(Math.random() * props.shouts.length)];
+                if (newShout !== lastShout) {
+                    setLastShout(newShout);
+                }
             }
         }
-        if (shoutOpacity > 0) setShoutOpacity(prev => prev - 0.01);
     });
 
     return (
         <CyberHuman
             {...props}
             lastShout={lastShout}
-            shoutOpacity={shoutOpacity}
             isTarget={props.targetId === props.id}
             setTarget={props.setTarget}
         />

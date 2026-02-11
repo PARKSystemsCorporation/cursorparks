@@ -2,7 +2,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Physics } from "@react-three/cannon";
+// import { Physics } from "@react-three/cannon"; // Optimized: Removed unused physics engine
 import { useEffect, useState, useRef, Suspense } from "react";
 import * as THREE from "three";
 import Environment from "./Environment";
@@ -12,6 +12,8 @@ import CameraRig from "./CameraRig";
 import InputBar from "./InputBar";
 import "./BazaarLanding.css";
 import { EffectComposer, Bloom, Noise, Vignette, ToneMapping } from "@react-three/postprocessing";
+import LedSign from "./LedSign";
+import ScrapSign from "./ScrapSign";
 
 // --- Configuration ---
 const CONFIG = {
@@ -50,12 +52,16 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
             {/* Hemisphere for ground bounce */}
             <hemisphereLight args={["#2a3045", "#050505", 1.0]} />
 
-            {/* Physics World */}
-            <Physics gravity={[0, -9.8, 0]}>
-                <Environment />
-                <Vendor setTarget={onShout} targetId={targetVendor} />
-                <Crowd messages={messages} />
-            </Physics>
+            {/* Hemisphere for ground bounce */}
+            <hemisphereLight args={["#2a3045", "#050505", 1.0]} />
+
+            {/* Optimized: Removed Physics wrapper as no bodies are used */}
+            <Environment />
+            <Vendor setTarget={onShout} targetId={targetVendor} />
+            <Crowd messages={messages} />
+
+            <LedSign />
+            <ScrapSign />
 
             {/* Camera Control */}
             <CameraRig targetVendor={targetVendor} onExit={() => onShout("/back")} />
@@ -63,9 +69,8 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
             {/* Post-Processing Stack - Clean HD */}
             <EffectComposer>
                 <Bloom luminanceThreshold={1} mipmapBlur intensity={1.5} radius={0.6} />
-                {/* <Noise opacity={0.05} /> -- REMOVED for HD Clean look */}
                 <Vignette eskil={false} offset={0.1} darkness={0.6} />
-                <ToneMapping adaptive={true} resolution={256} middleGrey={0.6} maxLuminance={16.0} averageLuminance={1.0} adaptationRate={1.0} />
+                <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
             </EffectComposer>
         </>
     );
@@ -87,19 +92,9 @@ export default function BazaarScene() {
     // Socket Connection (Simulated if backend missing for dev)
     useEffect(() => {
         const initSocket = async () => {
-            const { io } = await import("socket.io-client");
-            // Use relative path or env var in real prod. 
-            // Reducing reconnection attempts to stop spam in dev if backend is off
-            // Use relative path to connect to the same origin (server.js serves both app and socket)
-            // matching server.js `path: "/socket"`
-            const newSocket = io({
-                path: "/socket",
-                // transports: ["websocket", "polling"], // Let Socket.io negotiate default (polling -> upgrade)
-                reconnection: true,
-                reconnectionAttempts: Infinity,
-                timeout: 20000, // Increased timeout
-                forceNew: true,
-            });
+            // Optimized: Use shared socket singleton to share connection
+            const { getSocket } = await import("../../engine/socketClient");
+            const newSocket = getSocket();
 
             newSocket.on("connect_error", (err) => {
                 console.warn("Bazaar Socket Error:", err.message);
@@ -155,7 +150,7 @@ export default function BazaarScene() {
         <div className="bazaar-canvas-container">
             <Canvas
                 shadows
-                dpr={[1, 2]} // High DPI for HD look
+                dpr={[1, 1.5]} // Optimized: Capped at 1.5x to save 44% pixel fill rate on retina screens
                 gl={{
                     antialias: true, // Clean lines
                     toneMapping: CONFIG.postprocessing.toneMapping,

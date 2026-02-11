@@ -1,10 +1,35 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+
+// Shared Animation Loop Manager
+// Reduces overhead of multiple requestAnimationFrames running simultaneously
+const listeners = new Set<(t: number) => void>();
+let rafId: number | null = null;
+
+function masterLoop(time: number) {
+  if (listeners.size === 0) {
+    rafId = null;
+    return;
+  }
+  listeners.forEach(cb => cb(time));
+  rafId = requestAnimationFrame(masterLoop);
+}
+
+function register(cb: (t: number) => void) {
+  listeners.add(cb);
+  if (rafId === null) {
+    rafId = requestAnimationFrame(masterLoop);
+  }
+}
+
+function unregister(cb: (t: number) => void) {
+  listeners.delete(cb);
+}
 
 /**
  * Hook for smooth number animations
- * Provides animated transitions when numbers change
+ * Uses a shared rAF loop for performance
  */
 export function useAnimatedNumber(
   value: number,
@@ -13,49 +38,44 @@ export function useAnimatedNumber(
 ): { displayValue: string; isAnimating: boolean } {
   const [displayValue, setDisplayValue] = useState(value);
   const [isAnimating, setIsAnimating] = useState(false);
-  const rafRef = useRef<number | null>(null);
-  const startValueRef = useRef(value);
-  const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (value === displayValue) return;
+    // If already at target, do nothing
+    // We use a small epsilon for float comparison equivalence
+    if (Math.abs(displayValue - value) < 0.0001) {
+      setIsAnimating(false);
+      return;
+    }
 
     setIsAnimating(true);
-    startValueRef.current = displayValue;
-    startTimeRef.current = null;
+    let startTime: number | null = null;
+    const startVal = displayValue;
+    const endVal = value;
 
-    const animate = (currentTime: number) => {
-      if (startTimeRef.current === null) {
-        startTimeRef.current = currentTime;
-      }
-
-      const elapsed = currentTime - startTimeRef.current;
+    const onFrame = (currentTime: number) => {
+      if (startTime === null) startTime = currentTime;
+      const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Easing function (ease-out)
+      // Easing: easeOutCubic
       const eased = 1 - Math.pow(1 - progress, 3);
+      const current = startVal + (endVal - startVal) * eased;
 
-      const current = startValueRef.current + (value - startValueRef.current) * eased;
       setDisplayValue(current);
 
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(animate);
-      } else {
-        setDisplayValue(value);
+      if (progress >= 1) {
         setIsAnimating(false);
+        unregister(onFrame);
+        setDisplayValue(endVal); // Ensure exact final value
       }
     };
 
-    rafRef.current = requestAnimationFrame(animate);
+    register(onFrame);
+    return () => unregister(onFrame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, duration]); // dependency on displayValue removed to prevent infinite loop re-subscriptions
 
-    return () => {
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-      }
-    };
-  }, [value, duration, displayValue]);
-
-  const formatted = decimals === 0 
+  const formatted = decimals === 0
     ? displayValue.toFixed(0)
     : displayValue.toFixed(decimals);
 

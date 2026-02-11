@@ -37,7 +37,8 @@ app.prepare().then(() => {
 
   const io = new Server(server, {
     path: "/socket",
-    cors: { origin: "*" }
+    cors: { origin: "*" },
+    perMessageDeflate: true
   });
 
   const { setIO } = require("./src/server/socket.js");
@@ -48,6 +49,7 @@ app.prepare().then(() => {
 
   let onlineCount = 0;
   let totalVisitors = 0;
+  let messageCount = 0; // Optimization: Prune counter
   const engine = getEngine();
 
   engine.on("tick", (snapshot) => {
@@ -90,6 +92,8 @@ app.prepare().then(() => {
     onlineCount += 1;
     totalVisitors += 1;
     engine.online.retail = onlineCount;
+
+    // Send FULL snapshot on connect
     socket.emit("market:snapshot", engine.getSnapshot());
     io.emit("presence:update", { online: onlineCount, total: totalVisitors });
 
@@ -97,21 +101,27 @@ app.prepare().then(() => {
     const recent = getRecentMessages.all();
     socket.emit("bazaar:init", { messages: recent });
 
-    const assignUserRoom = (userId) => {
+    const assignUserRoom = (user) => {
+      const userId = user?.id;
       const previousUserId = socket.data.userId;
       if (previousUserId && previousUserId !== userId) {
         socket.leave(`user:${previousUserId}`);
       }
+
+      // Cache user on socket to avoid DB hits
+      socket.data.user = user || null;
       socket.data.userId = userId || null;
+
       if (userId) socket.join(`user:${userId}`);
     };
 
+    // Initial auth check
     const user = await getUserFromCookie(socket.handshake.headers.cookie || "");
-    assignUserRoom(user?.id || null);
+    assignUserRoom(user);
 
     socket.on("session:refresh", async () => {
       const refreshedUser = await getUserFromCookie(socket.handshake.headers.cookie || "");
-      assignUserRoom(refreshedUser?.id || null);
+      assignUserRoom(refreshedUser);
     });
 
     socket.on("trade:submit", async (payload) => {
@@ -144,8 +154,11 @@ app.prepare().then(() => {
         const info = insertMessage.run(msg.content, msg.x, msg.y, msg.z, msg.timestamp);
         msg.id = info.lastInsertRowid;
 
-        // Prune old messages occasionally (every 10 inserts or just do it here)
-        pruneMessages.run();
+        // Prune optimization: only every 10th message
+        messageCount++;
+        if (messageCount % 10 === 0) {
+          pruneMessages.run();
+        }
 
         io.emit("bazaar:shout", msg);
       } catch (err) {

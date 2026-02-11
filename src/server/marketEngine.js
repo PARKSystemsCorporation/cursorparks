@@ -50,7 +50,7 @@ class MarketEngine extends EventEmitter {
       this.curBar.c = this.price;
     }
 
-    this.emit("tick", this.getSnapshot());
+    this.emit("tick", this.getDelta());
   }
 
   getSnapshot() {
@@ -61,9 +61,22 @@ class MarketEngine extends EventEmitter {
       volState: this.volState,
       spread: this.spread,
       liquidity: this.liquidity,
-      orderBook: this.makeOrderBook(),
       bar: this.curBar,
       bars: this.bars.slice(-600),
+      online: this.online,
+      news: this.news
+    };
+  }
+
+  getDelta() {
+    return {
+      t: Date.now(),
+      price: this.price,
+      velocity: this.velocity,
+      volState: this.volState,
+      spread: this.spread,
+      liquidity: this.liquidity,
+      bar: this.curBar,
       online: this.online,
       news: this.news
     };

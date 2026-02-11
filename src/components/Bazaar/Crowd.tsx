@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useMemo } from "react";
+import React, { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Text, Billboard } from "@react-three/drei";
 import * as THREE from "three";
@@ -10,60 +10,12 @@ interface Message {
     content: string;
 }
 
-// Floating Text Component
-function ChatBubble({ message, index, count }: { message: Message; index: number; count: number }) {
-    const textRef = useRef<any>(null);
-    const birthTime = useMemo(() => Date.now(), []);
-
-    // Deterministic random start position
-    const startPos = useMemo(() => {
-        return new THREE.Vector3(
-            (Math.random() - 0.5) * 5, // Wider spread
-            0.5 + Math.random() * 1.5, // Start height
-            (Math.random() - 0.5) * 8 - 4 // Depth spread
-        );
-    }, []);
-
-    const driftSpeed = useMemo(() => 0.2 + Math.random() * 0.3, []);
-
-    useFrame(({ clock }) => {
-        if (!textRef.current) return;
-        const t = clock.getElapsedTime();
-        const age = (Date.now() - birthTime) / 1000;
-        const life = 12; // Seconds to live
-
-        // Physics: Rise and Drift
-        // Smoke-like motion: rise steadily, drift horizontally with noise
-        const yOffset = age * driftSpeed;
-        const xDrift = Math.sin(age * 0.5 + index) * 0.5 + Math.sin(t * 2 + index) * 0.05; // Macro + Micro jitter
-
-        textRef.current.position.set(
-            startPos.x + xDrift,
-            startPos.y + yOffset,
-            startPos.z
-        );
-
-        // Rotation Jitter (Wind buffeting)
-        textRef.current.rotation.z = Math.sin(t * 3 + index) * 0.05;
-
-        // Opacity / Fade 
-        let opacity = 1;
-        if (age < 1) opacity = age; // Fade in
-        else if (age > life - 2) opacity = (life - age) / 2; // Fade out
-
-        // Congestion adjustment
-        const densityFactor = Math.max(0.4, 1 - (count / 60));
-        const finalOpacity = opacity * densityFactor;
-
-        // Apply visual updates
-        textRef.current.fillOpacity = finalOpacity;
-        textRef.current.outlineOpacity = finalOpacity;
-    });
-
+// Floating Text Component (Pure presentation now)
+const ChatBubble = React.memo(({ message, index, count, bubbleRef }: { message: Message; index: number; count: number; bubbleRef: any }) => {
     return (
         <Billboard>
             <Text
-                ref={textRef}
+                ref={bubbleRef}
                 fontSize={0.3} // Slightly smaller for scale
                 color="#e0dcca" // Warm paper/parchment white
                 font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
@@ -79,15 +31,91 @@ function ChatBubble({ message, index, count }: { message: Message; index: number
             </Text>
         </Billboard>
     );
-}
+});
+ChatBubble.displayName = "ChatBubble";
 
 export default function Crowd({ messages }: { messages: any[] }) {
     const recentMessages = messages.slice(-60); // Show more chaos
+    const refs = useRef<Array<any>>([]);
+
+    // Reset refs array when messages change length substantially to avoid stale refs
+    // actually, just keep it loose, index-based access is fine
+    refs.current = refs.current.slice(0, recentMessages.length);
+
+    // Initial random positions state (static per message index to stay stable)
+    // We use a stable seed or just index based math to keep it deterministic-ish 
+    // or just store it. Storing is safer for "drift".
+    const stateRefs = useRef<Array<{
+        startPos: THREE.Vector3,
+        birthTime: number,
+        driftSpeed: number
+    }>>([]);
+
+    // Initialize state for new messages
+    useEffect(() => {
+        // Ensure state exists for all
+        for (let i = 0; i < recentMessages.length; i++) {
+            if (!stateRefs.current[i]) {
+                stateRefs.current[i] = {
+                    startPos: new THREE.Vector3(
+                        (Math.random() - 0.5) * 5,
+                        0.5 + Math.random() * 1.5,
+                        (Math.random() - 0.5) * 8 - 4
+                    ),
+                    birthTime: Date.now(),
+                    driftSpeed: 0.2 + Math.random() * 0.3
+                }
+            }
+        }
+    }, [recentMessages.length]); // Only run on length change
+
+    useFrame(({ clock }) => {
+        const t = clock.getElapsedTime();
+        const now = Date.now();
+        const count = recentMessages.length;
+
+        refs.current.forEach((ref, i) => {
+            if (!ref || !stateRefs.current[i]) return;
+
+            const state = stateRefs.current[i];
+            const age = (now - state.birthTime) / 1000;
+            const life = 12;
+
+            // Physics: Rise and Drift
+            const yOffset = age * state.driftSpeed;
+            const xDrift = Math.sin(age * 0.5 + i) * 0.5 + Math.sin(t * 2 + i) * 0.05;
+
+            ref.position.set(
+                state.startPos.x + xDrift,
+                state.startPos.y + yOffset,
+                state.startPos.z
+            );
+
+            ref.rotation.z = Math.sin(t * 3 + i) * 0.05;
+
+            // Opacity / Fade 
+            let opacity = 1;
+            if (age < 1) opacity = age;
+            else if (age > life - 2) opacity = (life - age) / 2;
+
+            const densityFactor = Math.max(0.4, 1 - (count / 60));
+            const finalOpacity = opacity * densityFactor;
+
+            ref.fillOpacity = finalOpacity;
+            ref.outlineOpacity = finalOpacity;
+        });
+    });
 
     return (
         <group>
             {recentMessages.map((msg, i) => (
-                <ChatBubble key={msg.id || i} message={msg} index={i} count={recentMessages.length} />
+                <ChatBubble
+                    key={msg.id || i}
+                    message={msg}
+                    index={i}
+                    count={recentMessages.length}
+                    bubbleRef={(el: any) => (refs.current[i] = el)}
+                />
             ))}
         </group>
     );
