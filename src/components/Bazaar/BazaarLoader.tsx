@@ -18,6 +18,17 @@ export default function BazaarLoader({ onFinished }: { onFinished?: () => void }
         }
     }, [progress, finished, onFinished]);
 
+    // Failsafe: Force finish after 3 seconds if stuck
+    useEffect(() => {
+        if (!finished) {
+            const timer = setTimeout(() => {
+                setFinished(true);
+                if (onFinished) onFinished();
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [finished, onFinished]);
+
     if (finished) return null;
 
     return (
