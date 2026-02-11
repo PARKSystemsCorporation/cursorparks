@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { CyberHuman } from "./Vendor";
+import { RealisticVendorBody, VENDOR_APPEARANCE } from "./RealisticVendorBody";
 
 const ALLEY_TWO_VENDORS = [
     {
@@ -47,6 +47,21 @@ const ALLEY_TWO_VENDORS = [
         ],
         shoutInterval: 6000,
     },
+    {
+        id: "coder",
+        name: "THE CODER",
+        color: "#00ff9d",
+        position: [3.5, 0, -3] as [number, number, number],
+        shoutBubbleOffset: [0.8, 2, 0.5] as [number, number, number],
+        shouts: [
+            "FREE CODE. Come get it.",
+            "Open source. No strings.",
+            "KIRA specs — yours for free.",
+            "Build your own AI agent.",
+            "Take the blueprint. It's free.",
+        ],
+        shoutInterval: 4500,
+    },
 ] as const;
 
 type AlleyTwoVendorWithShout = (typeof ALLEY_TWO_VENDORS)[number] & {
@@ -68,12 +83,17 @@ function AlleyTwoVendorWrapper(props: AlleyTwoVendorWithShout) {
         }
     });
 
+    const config = VENDOR_APPEARANCE[props.id];
+    if (!config) return null;
+
     return (
-        <CyberHuman
+        <RealisticVendorBody
             {...props}
             lastShout={lastShout}
             isTarget={props.targetId === props.id}
             setTarget={props.setTarget}
+            config={config}
+            shoutBubbleOffset={props.shoutBubbleOffset ?? [0.8, 1.9, 0.5]}
         />
     );
 }
