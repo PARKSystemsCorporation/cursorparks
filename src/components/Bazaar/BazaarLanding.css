@@ -95,6 +95,65 @@ body {
     }
 }
 
+/* --- Global Scrollbar --- */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 255, 157, 0.3) transparent;
+}
+
+/* --- Loader Styles --- */
+.bazaar-loader-overlay {
+    position: absolute;
+    inset: 0;
+    background: #050510;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.bazaar-loader-text {
+    font-size: 1.5rem;
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: textPulse 2s infinite ease-in-out;
+}
+
+.bazaar-loader-bar-container {
+    width: 200px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    margin-top: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.bazaar-loader-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background: var(--brand-accent);
+    transform: translateX(-100%);
+    animation: loadBar 2s infinite ease-in-out;
+}
+
+@keyframes textPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+}
+
+@keyframes loadBar {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(0); }
+    100% { transform: translateX(100%); }
+}
+
 /* --- Input Bar --- */
 .bazaar-input-bar {
     position: fixed;
@@ -126,7 +185,7 @@ body {
     background: transparent;
     border: none;
     color: #e0e0e0;
-    font-family: 'Courier New', monospace;
+    font-family: 'Courier New', monospace; /* Keeping terminal theme per plan */
     font-size: 16px;
     padding: 0 20px;
     outline: none;
@@ -145,16 +204,17 @@ body {
     border: none;
     border-left: 1px solid rgba(255, 255, 255, 0.08);
     color: #00ff9d;
-    font-family: 'Courier New', sans-serif;
+    font-family: 'Courier New', monospace;
     font-weight: 700;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    font-size: 18px; /* Larger icon/text */
     padding: 0 24px;
     height: 100%;
     cursor: pointer;
     transition: all 0.2s ease;
     text-shadow: 0 0 8px rgba(0, 255, 157, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .bazaar-input-bar button:hover {

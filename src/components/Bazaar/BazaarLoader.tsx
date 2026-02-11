@@ -32,25 +32,13 @@ export default function BazaarLoader({ onFinished }: { onFinished?: () => void }
     if (finished) return null;
 
     return (
-        <div style={{
-            position: "absolute",
-            inset: 0,
-            background: "#050510",
-            color: "#fff",
-            fontFamily: "sans-serif",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999
-        }}>
-            <h1 style={{
-                fontSize: "1.5rem",
-                fontWeight: "300",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase"
-            }}>
+        <div className="bazaar-loader-overlay">
+            <h1 className="bazaar-loader-text">
                 Entering Market
             </h1>
+            <div className="bazaar-loader-bar-container">
+                <div className="bazaar-loader-bar" />
+            </div>
         </div>
     );
 }
