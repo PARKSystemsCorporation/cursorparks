@@ -7,6 +7,7 @@ import { useBazaarMaterials } from "./BazaarMaterials";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
 import NeonImageSign from "./NeonImageSign";
 import LedBar from "./LedBar";
+import { AlleyEndingPortal } from "./AlleyEnding";
 
 // --- SHARED MATERIALS (created once, reused across all components) ---
 const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
@@ -292,8 +293,8 @@ function ConstructedWalls() {
             {/* Upper fill above stalls */}
             <WallBlock position={[4, 7, -5]} size={[2, 4, 4]} /> {/* Above Barker */}
 
-            {/* --- BACK WALL --- */}
-            <WallBlock position={[0, 6, -18]} size={[12, 12, 2]} />
+            {/* --- ALLEY ENDING (dead-end portal; no back wall block) --- */}
+            <AlleyEndingPortal positionZ={-18} />
         </group>
     );
 }
@@ -704,6 +705,26 @@ export default function Environment() {
                 height={1.6}
                 emissiveIntensity={1.15}
                 lightIntensity={0.35}
+            />
+
+            {/* Alley ending gateway signage (hotel-style left, poster right) */}
+            <NeonImageSign
+                textureUrl="/textures/signs/alley-hotel.png"
+                position={[-2.8, 4.2, -18.2]}
+                rotation={[0, Math.PI / 2, 0]}
+                width={2}
+                height={1}
+                emissiveIntensity={1.1}
+                lightIntensity={0.25}
+            />
+            <NeonImageSign
+                textureUrl="/textures/signs/alley-poster.png"
+                position={[2.8, 3.8, -18.2]}
+                rotation={[0, -Math.PI / 2, 0]}
+                width={1.8}
+                height={1.2}
+                emissiveIntensity={1}
+                lightIntensity={0.2}
             />
 
             {/* Overhead Cables (Dense) */}

@@ -4,13 +4,14 @@ import React, { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Text, Billboard } from "@react-three/drei";
+import VendorProfileCard from "./VendorProfileCard";
 
 // --- Archetypes ---
 const VENDORS = [
     {
         id: "broker", name: "THE BROKER", color: "#3a506b",
         position: [-2.5, 0, -2.5],
-        shouts: ["Information has a price.", "I see the strings.", "Do you need a key?"],
+        shouts: ["Autonomous little bots — built and hustled.", "Need a bot? I've got runners.", "Custom agents, micro to macro."],
         shoutInterval: 8000
     },
     {
@@ -167,6 +168,16 @@ function CyberHuman({ position, color, isTarget, name, lastShout, setTarget, id 
                     </mesh>
                     <pointLight distance={3} intensity={2} color={color} position={[0, 1, 0]} decay={2} />
                 </group>
+            )}
+
+            {/* In-world profile card (broker / bot hustler) */}
+            {id === "broker" && (
+                <VendorProfileCard
+                    vendorId="broker"
+                    color={color}
+                    position={[0.85, 2.2, 0.45]}
+                    visible={!!isTarget}
+                />
             )}
         </group>
     );

@@ -187,6 +187,74 @@ body {
     text-shadow: 0 0 12px rgba(0, 255, 157, 0.6);
 }
 
+/* --- Vendor Profile Card (in-world) --- */
+.bazaar-vendor-profile-card {
+    --profile-accent: #3a506b;
+    width: min(320px, 90vw);
+    padding: 14px 18px;
+    background: rgba(8, 10, 18, 0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--profile-accent);
+    border-radius: 6px;
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(0, 0, 0, 0.5),
+        0 0 24px color-mix(in srgb, var(--profile-accent) 45%, transparent);
+    color: var(--text-glow);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+    text-rendering: optimizeLegibility;
+}
+
+.bazaar-vendor-profile-title {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--profile-accent);
+    text-shadow: 0 0 10px color-mix(in srgb, var(--profile-accent) 60%, transparent);
+}
+
+.bazaar-vendor-profile-tagline {
+    margin: 0 0 12px 0;
+    font-size: 12px;
+    color: rgba(220, 220, 230, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 10px;
+}
+
+.bazaar-vendor-profile-specialties {
+    margin: 0 0 10px 0;
+    padding-left: 18px;
+    color: rgba(200, 205, 220, 0.9);
+}
+
+.bazaar-vendor-profile-specialties li {
+    margin-bottom: 4px;
+}
+
+.bazaar-vendor-profile-inventory {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: rgba(180, 190, 210, 0.85);
+}
+
+.bazaar-vendor-profile-inventory-label {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+}
+
+.bazaar-vendor-profile-cta {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--profile-accent);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--profile-accent) 50%, transparent);
+}
+
 /* --- Loading Screen --- */
 .loader-container {
     position: fixed;
