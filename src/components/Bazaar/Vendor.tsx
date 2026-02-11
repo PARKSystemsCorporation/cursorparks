@@ -107,12 +107,6 @@ function CyberHuman({ position, color, isTarget, name, lastShout, shoutOpacity, 
                         color="#ffffff" // White text
                         fillOpacity={shoutOpacity}
                         outlineWidth={0.01}
-                    <Text
-                        fontSize={0.15}
-                        maxWidth={2.5}
-                        color="#ffffff" // White text
-                        fillOpacity={shoutOpacity}
-                        outlineWidth={0.01}
                         outlineColor="#000"
                         outlineOpacity={shoutOpacity}
                         font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"

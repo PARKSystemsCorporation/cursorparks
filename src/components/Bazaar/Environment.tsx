@@ -230,31 +230,7 @@ export default function Environment() {
         </group>
     );
 }
-const curve1 = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-3, 3, 2),
-    new THREE.Vector3(0, 2.5, 0),
-    new THREE.Vector3(3, 3.2, -2)
-]), []);
 
-const curve2 = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-4, 4, -5),
-    new THREE.Vector3(1, 3, -8),
-    new THREE.Vector3(4, 4.5, -10)
-]), []);
-
-return (
-    <group>
-        <mesh>
-            <tubeGeometry args={[curve1, 20, 0.02, 8, false]} />
-            <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
-        </mesh>
-        <mesh>
-            <tubeGeometry args={[curve2, 20, 0.03, 8, false]} />
-            <meshStandardMaterial color="#000000" roughness={0.9} />
-        </mesh>
-    </group>
-);
-}
 
 function Beams() {
     return (
