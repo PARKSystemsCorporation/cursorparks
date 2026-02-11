@@ -15,6 +15,9 @@ import { EffectComposer, Bloom, Vignette, ToneMapping, SMAA } from "@react-three
 import LedSign from "./LedSign";
 import ScrapSign from "./ScrapSign";
 import { BazaarMaterialsProvider } from "./BazaarMaterials";
+import NeonSign from "./NeonSign";
+import LedBar from "./LedBar";
+import AlleyLight from "./AlleyLight";
 
 // --- Configuration ---
 const CONFIG = {
@@ -61,13 +64,28 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
             <LedSign />
             <ScrapSign />
 
+            {/* --- NEW CYBERPUNK LIGHTING --- */}
+            {/* Neon Signs */}
+            <NeonSign text="NOODLES" color="#ff0055" position={[6, 4, -8]} rotation={[0, -0.5, 0]} flicker />
+            <NeonSign text="OPEN" color="#00ffcc" position={[-5, 3, -2]} rotation={[0, 0.5, 0]} scale={0.8} />
+            <NeonSign text="CYBER" color="#aa00ff" position={[0, 5, -10]} scale={1.5} />
+
+            {/* LED Bars */}
+            <LedBar color="#ff0055" position={[6, 1, -8]} rotation={[0, 0, Math.PI / 2]} length={4} />
+            <LedBar color="#00ffcc" position={[-5, 1, -2]} rotation={[0, 0, Math.PI / 2]} length={3} />
+            <LedBar color="#0088ff" position={[0, 0.2, -5]} length={10} thickness={0.1} />
+
+            {/* Alleyway Lights */}
+            <AlleyLight position={[-2, 4, 2]} color="#ffaa00" rotation={[-Math.PI / 3, 0.5, 0]} />
+            <AlleyLight position={[3, 4, 3]} color="#ffaa00" rotation={[-Math.PI / 3, -0.5, 0]} />
+
             {/* Camera Control */}
             <CameraRig targetVendor={targetVendor} onExit={() => onShout("/back")} />
 
             {/* Post-Processing Stack - Clean HD */}
             <EffectComposer>
                 <SMAA />
-                <Bloom luminanceThreshold={1.2} mipmapBlur intensity={1.2} radius={0.5} />
+                <Bloom luminanceThreshold={1} mipmapBlur intensity={1.5} radius={0.6} />
                 <Vignette eskil={false} offset={0.1} darkness={0.6} />
                 <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
             </EffectComposer>
