@@ -560,51 +560,51 @@ function FloorGlow({ position, color = "#0055ff", length = 2 }: { position: [num
     );
 }
 
-function MetalBeam() {
+function MetalBeam({ position }: { position: [number, number, number] }) {
     return (
-        <group position={[0, 3, -5]}>
+        <group position={position}>
             {/* The Beam - Spanning Right to Left */}
             <mesh rotation={[0, 0, Math.PI / 2]} position={[0, 0, 0]} castShadow receiveShadow>
-                <cylinderGeometry args={[0.15, 0.15, 20]} />
+                <cylinderGeometry args={[0.15, 0.15, 24]} />
                 <meshStandardMaterial color="#222" roughness={0.4} metalness={0.8} />
             </mesh>
 
-            {/* The LED Strip Housing */}
+            {/* The LED Strip Housing - Extended */}
             <mesh rotation={[0, 0, Math.PI / 2]} position={[0, -0.16, 0]}>
-                <boxGeometry args={[0.3, 18, 0.05]} />
+                <boxGeometry args={[0.3, 22, 0.05]} />
                 <meshStandardMaterial color="#111" />
             </mesh>
 
             {/* The Light Source (Pink/Blue hue) */}
-            {/* We use a series of point lights to simulate a linear LED strip since RectAreaLight can be heavy/complex */}
 
-            {/* Main Downward Spot for "Extend to ground" effect - Pink/Blue mix (Purple-ish) */}
+            {/* Main Downward Spot - Extended angle/distance for coverage */}
             <spotLight
                 position={[0, -0.2, 0]}
                 color="#bb88ff"
-                intensity={10}
-                distance={20}
-                angle={1.0}
-                penumbra={0.5}
+                intensity={8}
+                distance={25}
+                angle={1.2}
+                penumbra={1}
                 castShadow
             />
 
-            {/* Volumetric Beam Simulation */}
+            {/* Volumetric Beam Simulation - More Transparent */}
             <mesh position={[0, -5, 0]} rotation={[0, 0, 0]}>
-                <coneGeometry args={[2, 10, 32, 1, true]} />
+                <coneGeometry args={[3, 12, 32, 1, true]} />
                 <meshBasicMaterial
                     color="#bb88ff"
                     transparent
-                    opacity={0.03}
+                    opacity={0.015}
                     depthWrite={false}
                     side={THREE.DoubleSide}
                     blending={THREE.AdditiveBlending}
                 />
             </mesh>
 
-            {/* Subtle linear glow along the beam */}
-            <pointLight position={[-5, -0.5, 0]} color="#0088ff" intensity={2} distance={8} decay={2} />
-            <pointLight position={[5, -0.5, 0]} color="#ff44aa" intensity={2} distance={8} decay={2} />
+            {/* Linear Glow Points - Spread out */}
+            <pointLight position={[-8, -0.5, 0]} color="#0088ff" intensity={1} distance={10} decay={2} />
+            <pointLight position={[8, -0.5, 0]} color="#ff44aa" intensity={1} distance={10} decay={2} />
+            <pointLight position={[0, -0.5, 0]} color="#aa44ff" intensity={1} distance={10} decay={2} />
         </group>
     );
 }
@@ -678,8 +678,10 @@ export default function Environment() {
 
             <Beams />
 
-            {/* New Industrial Beam with LED */}
-            <MetalBeam />
+            {/* New Industrial Beams with LED */}
+            {/* Raised by ~2ft (approx 0.6m units) -> y=3.6 or 4.0. Using 4.5 for clearance. */}
+            <MetalBeam position={[0, 4.5, -5]} />
+            <MetalBeam position={[0, 5.0, 1]} /> {/* Closer to POV (Camera is at z=6) */}
 
             {/* Removed DustSystem for optimization */}
         </group>
