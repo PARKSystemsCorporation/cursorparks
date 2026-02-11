@@ -56,7 +56,7 @@ function ShadowMapSetup() {
     return null;
 }
 
-function SceneContent({ messages, targetVendor, onShout }: { messages: any[], targetVendor: string | null, onShout: (t: string) => void }) {
+function SceneContent({ messages, targetVendor, onShout, onEnterAlleyTwo }: { messages: any[], targetVendor: string | null, onShout: (t: string) => void, onEnterAlleyTwo?: () => void }) {
     return (
         <>
             <ShadowMapSetup />
@@ -85,7 +85,7 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
             />
             <hemisphereLight args={[CONFIG.lights.hemisphere.sky, CONFIG.lights.hemisphere.ground, CONFIG.lights.hemisphere.intensity]} />
 
-            <BazaarSet />
+            <BazaarSet onEnterPortal={onEnterAlleyTwo} />
             <Vendor setTarget={onShout} targetId={targetVendor} />
             <Crowd messages={messages} />
 
@@ -113,7 +113,9 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
     );
 }
 
-export default function BazaarScene() {
+export type BazaarSceneProps = { onEnterAlleyTwo?: () => void };
+
+export default function BazaarScene({ onEnterAlleyTwo }: BazaarSceneProps = {}) {
     const [messages, setMessages] = useState<any[]>([]);
     const socketRef = useRef<any>(null); // Use ref to prevent re-renders on socket changes
     const [targetVendor, setTargetVendor] = useState<string | null>(null);
@@ -175,7 +177,6 @@ export default function BazaarScene() {
             if (cmd.startsWith("hawker")) setTargetVendor("hawker");
             else if (cmd.startsWith("broker")) setTargetVendor("broker");
             else if (cmd.startsWith("barker")) setTargetVendor("barker");
-            else if (cmd.startsWith("gamemaster") || cmd === "gm") setTargetVendor("gamemaster");
             else if (cmd === "reset" || cmd === "back") setTargetVendor(null);
         }
 
@@ -211,6 +212,7 @@ export default function BazaarScene() {
                             messages={messages}
                             targetVendor={targetVendor}
                             onShout={onShoutTarget}
+                            onEnterAlleyTwo={onEnterAlleyTwo}
                         />
                     </Suspense>
                 </BazaarMaterialsProvider>

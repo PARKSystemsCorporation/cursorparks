@@ -5,20 +5,22 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import gsap from "gsap";
 
-export default function CameraRig({ targetVendor, onExit }: { targetVendor: string | null, onExit: () => void }) {
+export default function AlleyTwoCameraRig({
+    targetVendor,
+    onExit,
+}: {
+    targetVendor: string | null;
+    onExit: () => void;
+}) {
     const { camera } = useThree();
     const mouse = useRef({ x: 0, y: 0 });
     const touchStartDist = useRef<number>(0);
 
-    // Gestures for "Back" / "Escape"
     useEffect(() => {
         if (!targetVendor) return;
 
         const handleWheel = (e: WheelEvent) => {
-            // Scroll "Down" / Pull Back = Exit
-            if (e.deltaY > 0) {
-                onExit();
-            }
+            if (e.deltaY > 0) onExit();
         };
 
         const handleTouchStart = (e: TouchEvent) => {
@@ -34,13 +36,7 @@ export default function CameraRig({ targetVendor, onExit }: { targetVendor: stri
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
                 const dy = e.touches[0].clientY - e.touches[1].clientY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
-
-                // Pinch In (Distance decreases) = Zoom Out = Exit
-                // User said "pinch out" but standard "back" is pinch in. 
-                // Adding check for substantial change to avoid accidental triggers.
-                if (touchStartDist.current - dist > 50) {
-                    onExit();
-                }
+                if (touchStartDist.current - dist > 50) onExit();
             }
         };
 
@@ -55,27 +51,24 @@ export default function CameraRig({ targetVendor, onExit }: { targetVendor: stri
         };
     }, [targetVendor, onExit]);
 
-    // Vendor Focus Positions (Strictly clamped to Y=1.7)
-    // Hawker: [-3.3, 0, 2.5] -> Cam: [-2, 1.7, 1.2] (left wall, near entrance)
-    // Broker: [-2.2, 1.4, -2.5] -> Cam: [-1.2, 1.7, -0.5]
-    // Barker: [2.5, 0, -5] -> Cam: [1.5, 1.7, -3.5]
-
     useEffect(() => {
-        let x = 0, y = 1.7, z = 6; // Default
+        let x = 0, y = 1.7, z = 5;
 
-        if (targetVendor === "hawker") { x = -2.2; y = 1.7; z = 2; } // Tighter view of Hawker behind counter
-        else if (targetVendor === "broker") { x = -1.2; y = 1.7; z = -0.5; }
-        else if (targetVendor === "barker") { x = 1.5; y = 1.7; z = -3.5; }
+        if (targetVendor === "smith") {
+            x = -2.2; y = 1.7; z = 0.5;
+        } else if (targetVendor === "fixer") {
+            x = -2.2; y = 1.7; z = -3.5;
+        } else if (targetVendor === "merchant") {
+            x = 1.8; y = 1.7; z = -7.5;
+        }
 
         gsap.to(camera.position, {
             x, y, z,
             duration: 2.0,
-            ease: "power2.inOut"
+            ease: "power2.inOut",
         });
-
     }, [targetVendor, camera]);
 
-    // Track mouse
     useEffect(() => {
         const handleMove = (e: MouseEvent) => {
             mouse.current.x = (e.clientX / window.innerWidth) * 2 - 1;
@@ -87,35 +80,21 @@ export default function CameraRig({ targetVendor, onExit }: { targetVendor: stri
 
     useFrame(({ clock }) => {
         const t = clock.getElapsedTime();
-
-        // Handheld Noise (Rotation only, to simulate lens shake)
         const noiseX = Math.sin(t * 0.5) * 0.02 + Math.cos(t * 1.5) * 0.01;
         const noiseY = Math.cos(t * 0.3) * 0.02 + Math.sin(t * 1.1) * 0.01;
 
-        // Base Look Target (down alley)
         const lookX = mouse.current.x * 2;
-        const lookY = 1.5 + mouse.current.y * 1 + noiseY; // Look slightly down/level
-        const lookZ = camera.position.z - 10; // Always look "forward" relative to current Z
+        const lookY = 1.5 + mouse.current.y * 1 + noiseY;
+        const lookZ = camera.position.z - 8;
 
-        // Dynamic LookAt
-        // We calculate a target point in world space
-        const targetPoint = new THREE.Vector3(
-            lookX + noiseX,
-            lookY,
-            lookZ
-        );
+        const targetPoint = new THREE.Vector3(lookX + noiseX, lookY, lookZ);
 
-        // If locked to a vendor, we should look AT them, plus noise
-        if (targetVendor === "hawker") targetPoint.set(-4.2, 1.5, 2.5 + noiseX);
-        if (targetVendor === "broker") targetPoint.set(-2.5, 1.5, -2.5 + noiseX);
-        if (targetVendor === "barker") targetPoint.set(2.5, 1.5, -5 + noiseX);
+        if (targetVendor === "smith") targetPoint.set(-3.7, 1.5, -1 + noiseX);
+        if (targetVendor === "fixer") targetPoint.set(-3.7, 1.5, -5 + noiseX);
+        if (targetVendor === "merchant") targetPoint.set(3.2, 1.5, -10 + noiseX);
 
-        // Apply noise to Y as well
         targetPoint.y += noiseY;
-
         camera.lookAt(targetPoint);
-
-        // Enforce strict height lock to prevent drifting through floor
         camera.position.y = THREE.MathUtils.lerp(camera.position.y, 1.7, 0.1);
     });
 

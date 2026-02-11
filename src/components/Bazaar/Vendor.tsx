@@ -11,7 +11,8 @@ import VendorProfileCard from "./VendorProfileCard";
 const VENDORS = [
     {
         id: "hawker", name: "THE HAWKER", color: "#cc3300",
-        position: [-3.3, 0, 2.5],
+        position: [-4.2, 0, 2.5] as [number, number, number], // Inside HawkerStallShop, behind market counter
+        shoutBubbleOffset: [-0.9, 2, 0.5] as [number, number, number], // Left of vendor so it doesn't block shop view
         shouts: ["HEY! YOU! Over here!", "Don't just walk by!", "BEST DEALS— right here!", "WAKE UP! Look alive!", "You look like you need what I got!"],
         shoutInterval: 3500
     },
@@ -26,19 +27,13 @@ const VENDORS = [
         position: [3.2, 0, -5],
         shouts: ["Step right up!", "Don't be shy!", "Fortune favors the bold."],
         shoutInterval: 6000
-    },
-    {
-        id: "gamemaster", name: "GAMEMASTER", color: "#3a6b50",
-        position: [-2.5, 0, -9],
-        shouts: ["Roll the dice.", "All part of the game.", "Win or lose, you play."],
-        shoutInterval: 10000
     }
 ] as const;
 
 // --- Procedural Vendor Visuals ---
 // --- Procedural Vendor Visuals ---
 
-interface CyberHumanProps {
+export interface CyberHumanProps {
     position: readonly [number, number, number];
     color: string;
     isTarget: boolean;
@@ -46,8 +41,10 @@ interface CyberHumanProps {
     lastShout: string | null;
     setTarget: (id: string) => void;
     id: string;
+    /** Offset for shout bubble so it doesn't block vendor/shop view */
+    shoutBubbleOffset?: [number, number, number];
 }
-function CyberHuman({ position, color, isTarget, name, lastShout, setTarget, id }: CyberHumanProps) {
+export function CyberHuman({ position, color, isTarget, name, lastShout, setTarget, id, shoutBubbleOffset = [0.8, 1.9, 0.5] }: CyberHumanProps) {
     const group = useRef<THREE.Group>(null);
     type TextRefWithOpacity = THREE.Object3D & { fillOpacity?: number; outlineOpacity?: number };
 const textRef = useRef<TextRefWithOpacity | null>(null);
@@ -144,7 +141,7 @@ const textRef = useRef<TextRefWithOpacity | null>(null);
 
             {/* Shout Bubble */}
             {lastShout && (
-                <Billboard position={[0.8, 1.9, 0.5]}>
+                <Billboard position={shoutBubbleOffset}>
                     <Text
                         ref={textRef}
                         fontSize={0.15}
