@@ -15,7 +15,7 @@ type AlleyEndingPortalProps = {
     onEnterPortal?: () => void;
 };
 
-export function AlleyEndingPortal({ positionZ = -18, onEnterPortal }: AlleyEndingPortalProps) {
+export function AlleyEndingPortal({ positionZ = -28, onEnterPortal }: AlleyEndingPortalProps) {
     const group = useRef<THREE.Group>(null);
     const portalRef = useRef<THREE.Mesh>(null);
 

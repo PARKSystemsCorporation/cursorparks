@@ -281,10 +281,7 @@ function InternalVendorWall({ position, rotationY = 0 }: { position: [number, nu
             <mesh position={[0, 1.5, -1.8]} receiveShadow material={metalPanel}>
                 <boxGeometry args={[3.8, 3, 0.2]} />
             </mesh>
-            {/* Ceiling */}
-            <mesh position={[0, 3, -0.5]} material={metalPanel}>
-                <boxGeometry args={[3.8, 0.2, 3]} />
-            </mesh>
+            {/* No ceiling — open alley stall, sky visible */}
             {/* Floor */}
             <mesh position={[0, 0.1, -0.5]} material={concreteWall}>
                 <boxGeometry args={[3.8, 0.2, 3]} />
@@ -647,11 +644,12 @@ function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, num
 const beamMat = new THREE.MeshStandardMaterial({ color: "#3d2914", roughness: 1 });
 
 function Beams() {
+    // Beams only over left half so right alley stays open (no ceiling)
     return (
         <group>
             {[0, -4, -8, -12, -16, -20, -24].map((z, i) => (
-                <mesh key={i} position={[0, 4, z]} material={beamMat}>
-                    <boxGeometry args={[10, 0.2, 0.2]} />
+                <mesh key={i} position={[-2.5, 4, z]} material={beamMat}>
+                    <boxGeometry args={[5, 0.2, 0.2]} />
                 </mesh>
             ))}
         </group>
@@ -882,10 +880,20 @@ export default function Environment() {
 
             <Beams />
 
-            {/* New Industrial Beams with LED */}
-            {/* Raised by ~2ft (approx 0.6m units) -> y=3.6 or 4.0. Using 4.5 for clearance. */}
-            <MetalBeam position={[0, 4.5, -5]} />
-            <MetalBeam position={[0, 5.0, 1]} /> {/* Closer to POV (Camera is at z=6) */}
+            {/* Industrial beams with LED — left side only so right alley is open sky */}
+            <MetalBeam position={[-1.5, 4.5, -5]} />
+            <MetalBeam position={[-1.5, 5.0, 1]} />
+
+            {/* Right alley dressing — open-air side, use the space */}
+            <mesh position={[3.2, 0.45, -7]} rotation={[0, 0.3, 0]} castShadow receiveShadow material={woodCrate}>
+                <boxGeometry args={[0.6, 0.5, 0.5]} />
+            </mesh>
+            <mesh position={[3.5, 0.35, -11]} rotation={[0, -0.2, 0]} castShadow receiveShadow material={woodCrate}>
+                <boxGeometry args={[0.5, 0.4, 0.6]} />
+            </mesh>
+            <mesh position={[3.6, 0.25, -14]} castShadow receiveShadow material={woodCrate}>
+                <boxGeometry args={[0.4, 0.3, 0.4]} />
+            </mesh>
 
             {/* Removed DustSystem for optimization */}
         </group>
