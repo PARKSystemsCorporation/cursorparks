@@ -316,17 +316,17 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
                 <meshStandardMaterial color="#884400" emissive="#ff4400" emissiveIntensity={0.2} roughness={0.6} />
             </mesh>
             {/* Light Source - No Shadow for GPU Perf */}
-            <pointLight ref={light} color={color} distance={18} decay={2} />
+            <pointLight ref={light} color={color} distance={25} decay={2} />
 
-            {/* Fake Volumetric Glow / God Ray Cone */}
-            <mesh position={[0, -1.0, 0]} rotation={[0, 0, 0]}>
-                <coneGeometry args={[0.8, 2.5, 32, 1, true]} />
-                <meshBasicMaterial color={color} transparent opacity={0.01} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+            {/* Volumetric Light Cone - Extends to ground */}
+            <mesh position={[0, -1.2, 0]} rotation={[0, 0, 0]}>
+                <coneGeometry args={[1.5, 3.5, 32, 1, true]} />
+                <meshBasicMaterial color={color} transparent opacity={0.008} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
             </mesh>
             {/* Central Hotspot */}
             <mesh position={[0, -0.3, 0]}>
-                <sphereGeometry args={[0.2, 16, 16]} />
-                <meshBasicMaterial color={color} transparent opacity={0.03} depthWrite={false} blending={THREE.AdditiveBlending} />
+                <sphereGeometry args={[0.15, 16, 16]} />
+                <meshBasicMaterial color={color} transparent opacity={0.015} depthWrite={false} blending={THREE.AdditiveBlending} />
             </mesh>
         </group>
     );
@@ -510,11 +510,16 @@ function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position:
                 <sphereGeometry args={[0.05, 16, 16]} />
                 <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} />
             </mesh>
-            <pointLight distance={15} decay={2} color={color} intensity={intensity} />
-            {/* Glow Sprite */}
+            <pointLight distance={20} decay={2} color={color} intensity={intensity} />
+            {/* Volumetric Light Cone - Extends to ground */}
+            <mesh position={[0, -1.5, 0]}>
+                <coneGeometry args={[1.2, 4, 32, 1, true]} />
+                <meshBasicMaterial color={color} transparent opacity={0.008} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+            </mesh>
+            {/* Glow Sprite - More transparent */}
             <mesh position={[0, 0, 0]}>
-                <planeGeometry args={[0.8, 0.8]} />
-                <meshBasicMaterial color={color} transparent opacity={0.03} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+                <planeGeometry args={[0.6, 0.6]} />
+                <meshBasicMaterial color={color} transparent opacity={0.015} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
             </mesh>
         </group>
     );
