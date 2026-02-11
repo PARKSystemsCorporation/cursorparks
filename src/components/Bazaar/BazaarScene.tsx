@@ -10,6 +10,7 @@ import Vendor from "./Vendor";
 import Crowd from "./Crowd";
 import CameraRig from "./CameraRig";
 import InputBar from "./InputBar";
+import "./BazaarLanding.css";
 
 // --- Configuration ---
 const CONFIG = {
