@@ -4,12 +4,12 @@ import * as THREE from "three";
 import { Instance, Instances, Float, Text } from "@react-three/drei";
 import { LayerMaterial, Depth, Noise } from "lamina";
 import { useBazaarMaterials } from "./BazaarMaterials";
+import { BAZAAR_BRIGHTNESS } from "./brightness";
 
 // --- SHARED MATERIALS (created once, reused across all components) ---
 const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
 const MAT_DARKER = new THREE.MeshStandardMaterial({ color: "#333" });
 const MAT_BLACK = new THREE.MeshStandardMaterial({ color: "#111" });
-const MAT_WOOD_DARK = new THREE.MeshStandardMaterial({ color: "#8d6e63" });
 const MAT_METAL_GREY = new THREE.MeshStandardMaterial({ color: "#444", roughness: 0.3, metalness: 0.6 });
 const MAT_METAL_DARK = new THREE.MeshStandardMaterial({ color: "#555", roughness: 0.6, metalness: 0.4 });
 
@@ -66,18 +66,18 @@ function WindowGrid() {
     const zLocations = [-2, -8, -14];
 
     // Left Wall Windows (Original)
-    for (let y of stories) {
-        for (let z of zLocations) {
+    for (const y of stories) {
+        for (const z of zLocations) {
             windows.push(
                 <mesh key={`l-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
                     <planeGeometry args={[1.5, 2]} />
-                    <meshStandardMaterial color="#ffaa55" emissive="#ffddaa" emissiveIntensity={1.5 + Math.random()} toneMapped={false} />
+                    <meshStandardMaterial color="#ffaa55" emissive="#ffddaa" emissiveIntensity={(1.5 + Math.random()) * BAZAAR_BRIGHTNESS} toneMapped={false} />
                 </mesh>
             )
             windows.push(
                 <mesh key={`r-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
                     <planeGeometry args={[1.5, 2]} />
-                    <meshStandardMaterial color="#55aaff" emissive="#aaddee" emissiveIntensity={1.5 + Math.random()} toneMapped={false} />
+                    <meshStandardMaterial color="#55aaff" emissive="#aaddee" emissiveIntensity={(1.5 + Math.random()) * BAZAAR_BRIGHTNESS} toneMapped={false} />
                 </mesh>
             )
         }
@@ -89,12 +89,12 @@ function WindowGrid() {
     const rightImmediateStories = [2.5, 5.5, 8.5, 11.5];
     const rightImmediateZ = [-1, 1]; // Close to camera (z=6 is camera, 0 is start)
 
-    for (let y of rightImmediateStories) {
-        for (let z of rightImmediateZ) {
+    for (const y of rightImmediateStories) {
+        for (const z of rightImmediateZ) {
             windows.push(
                 <mesh key={`r-new-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
                     <planeGeometry args={[1.2, 1.8]} />
-                    <meshStandardMaterial color="#00ffaa" emissive="#aaffcc" emissiveIntensity={2 + Math.random()} toneMapped={false} />
+                    <meshStandardMaterial color="#00ffaa" emissive="#aaffcc" emissiveIntensity={(2 + Math.random()) * BAZAAR_BRIGHTNESS} toneMapped={false} />
                 </mesh>
             )
         }
@@ -106,12 +106,12 @@ function WindowGrid() {
     // Row 2: After that (~ -21)
     const leftFarZ = [-17, -21];
 
-    for (let y of leftFarStories) {
-        for (let z of leftFarZ) {
+    for (const y of leftFarStories) {
+        for (const z of leftFarZ) {
             windows.push(
                 <mesh key={`l-new-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
                     <planeGeometry args={[1.2, 1.8]} />
-                    <meshStandardMaterial color="#ff5555" emissive="#ffaaaa" emissiveIntensity={2 + Math.random()} toneMapped={false} />
+                    <meshStandardMaterial color="#ff5555" emissive="#ffaaaa" emissiveIntensity={(2 + Math.random()) * BAZAAR_BRIGHTNESS} toneMapped={false} />
                 </mesh>
             )
         }
@@ -396,7 +396,7 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
             {/* Lantern Body */}
             <mesh position={[0, -0.2, 0]}>
                 <cylinderGeometry args={[0.15, 0.1, 0.4, 6]} />
-                <meshStandardMaterial color="#884400" emissive={color} emissiveIntensity={0.5} roughness={0.6} toneMapped={false} />
+                <meshStandardMaterial color="#884400" emissive={color} emissiveIntensity={0.5 * BAZAAR_BRIGHTNESS} roughness={0.6} toneMapped={false} />
             </mesh>
         </group>
     );
@@ -556,7 +556,7 @@ function HangingBanner({ position, rotation, color }: { position: [number, numbe
     );
 }
 
-function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position: [number, number, number], color?: string, intensity?: number }) {
+function HangingBulb({ position, color = "#ffaa00" }: { position: [number, number, number], color?: string }) {
     const group = useRef<THREE.Group>(null);
     const frameCount = useRef(0);
     useFrame(({ clock }) => {
@@ -580,7 +580,7 @@ function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position:
             {/* Bulb — emissive + Bloom handles glow */}
             <mesh position={[0, 0, 0]}>
                 <sphereGeometry args={[0.05, 16, 16]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3} toneMapped={false} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3 * BAZAAR_BRIGHTNESS} toneMapped={false} />
             </mesh>
         </group>
     );
@@ -706,8 +706,8 @@ export default function Environment() {
             {/* --- MOTIVATED LIGHTING --- */}
 
             {/* Rhythm: Hanging Bulbs down the center */}
-            {[-2, -5, -8, -11, -14].map((z, i) => (
-                <HangingBulb key={`bulb-${z}`} position={[Math.sin(z) * 0.5, 3.5, z]} color="#ffaa55" intensity={2} />
+            {[-2, -5, -8, -11, -14].map((z) => (
+                <HangingBulb key={`bulb-${z}`} position={[Math.sin(z) * 0.5, 3.5, z]} color="#ffaa55" />
             ))}
 
             {/* Lanterns - Warmth details - Spaced out */}

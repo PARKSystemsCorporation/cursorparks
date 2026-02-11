@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { BAZAAR_BRIGHTNESS } from "./brightness";
 
 interface NeonSignProps {
     text: string;
@@ -22,7 +23,7 @@ export default function NeonSign({ text, color, position, rotation = [0, 0, 0], 
         if (flicker && textRef.current && lightRef.current) {
             // Random flicker effect
             const intensity = 1 + Math.sin(state.clock.elapsedTime * 20) * 0.1 + (Math.random() > 0.9 ? -0.5 : 0);
-            textRef.current.material.emissiveIntensity = Math.max(0.2, intensity * 2);
+            textRef.current.material.emissiveIntensity = Math.max(0.2, intensity * 2 * BAZAAR_BRIGHTNESS);
             lightRef.current.intensity = Math.max(0.5, intensity * 1.5);
         }
     });
@@ -43,7 +44,7 @@ export default function NeonSign({ text, color, position, rotation = [0, 0, 0], 
                 <meshStandardMaterial
                     color={color}
                     emissive={color}
-                    emissiveIntensity={2}
+                    emissiveIntensity={2 * BAZAAR_BRIGHTNESS}
                     toneMapped={false}
                 />
             </Text>

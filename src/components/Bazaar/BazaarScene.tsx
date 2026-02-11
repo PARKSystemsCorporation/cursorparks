@@ -18,6 +18,7 @@ import { BazaarMaterialsProvider } from "./BazaarMaterials";
 import NeonSign from "./NeonSign";
 import LedBar from "./LedBar";
 import AlleyLight from "./AlleyLight";
+import { BAZAAR_BRIGHTNESS } from "./brightness";
 
 // --- Configuration ---
 const CONFIG = {
@@ -32,7 +33,7 @@ const CONFIG = {
         fov: 60,
     },
     postprocessing: {
-        exposure: 1.5, // Brighter
+        exposure: 1.5 * BAZAAR_BRIGHTNESS, // Brighter
         toneMapping: THREE.ACESFilmicToneMapping
     }
 };
@@ -140,7 +141,6 @@ export default function BazaarScene() {
         return () => {
             if (socketRef.current) socketRef.current.disconnect();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleShout = (text: string) => {

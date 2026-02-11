@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import * as THREE from "three";
+import { BAZAAR_BRIGHTNESS } from "./brightness";
 
 interface LedBarProps {
     position: [number, number, number];
@@ -19,7 +19,7 @@ export default function LedBar({ position, rotation = [0, 0, 0], color, length =
                 <meshStandardMaterial
                     color={color}
                     emissive={color}
-                    emissiveIntensity={3}
+                    emissiveIntensity={3 * BAZAAR_BRIGHTNESS}
                     toneMapped={false}
                 />
             </mesh>

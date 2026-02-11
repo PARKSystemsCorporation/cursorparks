@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useRef } from "react";
-import { useHelper } from "@react-three/drei";
 import * as THREE from "three";
+import { BAZAAR_BRIGHTNESS } from "./brightness";
 
 interface AlleyLightProps {
     position: [number, number, number];
@@ -29,7 +29,7 @@ export default function AlleyLight({ position, color = "#ffaa00", intensity = 5,
                 <meshStandardMaterial
                     color={color}
                     emissive={color}
-                    emissiveIntensity={2}
+                    emissiveIntensity={2 * BAZAAR_BRIGHTNESS}
                     toneMapped={false}
                 />
             </mesh>

@@ -3,7 +3,7 @@
 import React, { useRef } from "react";
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import * as THREE from "three";
+import { BAZAAR_BRIGHTNESS } from "./brightness";
 
 export default function ScrapSign() {
     const textRef = useRef<any>(null);
@@ -36,7 +36,7 @@ export default function ScrapSign() {
                 <meshStandardMaterial
                     color="#0088ff"
                     emissive="#0088ff"
-                    emissiveIntensity={3}
+                    emissiveIntensity={3 * BAZAAR_BRIGHTNESS}
                     toneMapped={false}
                 />
             </Text>
