@@ -60,10 +60,10 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
             {/* Camera Control */}
             <CameraRig targetVendor={targetVendor} onExit={() => onShout("/back")} />
 
-            {/* Post-Processing Stack */}
+            {/* Post-Processing Stack - Clean HD */}
             <EffectComposer>
                 <Bloom luminanceThreshold={1} mipmapBlur intensity={1.5} radius={0.6} />
-                <Noise opacity={0.05} />
+                {/* <Noise opacity={0.05} /> -- REMOVED for HD Clean look */}
                 <Vignette eskil={false} offset={0.1} darkness={0.6} />
                 <ToneMapping adaptive={true} resolution={256} middleGrey={0.6} maxLuminance={16.0} averageLuminance={1.0} adaptationRate={1.0} />
             </EffectComposer>
@@ -148,9 +148,9 @@ export default function BazaarScene() {
         <div className="bazaar-canvas-container">
             <Canvas
                 shadows
-                dpr={[1, 1.5]} // Cap DPI for performance
+                dpr={[1, 2]} // High DPI for HD look
                 gl={{
-                    antialias: false, // Grittier look, faster
+                    antialias: true, // Clean lines
                     toneMapping: CONFIG.postprocessing.toneMapping,
                     toneMappingExposure: CONFIG.postprocessing.exposure,
                     stencil: false,

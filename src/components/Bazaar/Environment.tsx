@@ -172,12 +172,16 @@ function ConstructedWalls() {
             {/* Broker Hole is roughly z=-1 to -4 */}
             {/* Post-Broker / Pre-Gamemaster Segment */}
             <WallBlock position={[-4, 4, -6]} size={[2, 8, 4]} />
-            {/* Gamemaster Hole is roughly z=-7 to -11 */}
+
+            {/* Gamemaster Hole CLOSED for Market Cart */}
+            <WallBlock position={[-4, 4, -10.5]} size={[2, 8, 5]} />
+
             {/* Post-Gamemaster Segment */}
-            <WallBlock position={[-4, 4, -15]} size={[2, 8, 8]} />
+            <WallBlock position={[-4, 4, -15]} size={[2, 8, 4]} /> {/* Adjusted size to fit */}
+
             {/* Upper fill above stalls */}
             <WallBlock position={[-4, 7, -2.5]} size={[2, 4, 4]} /> {/* Above Broker */}
-            <WallBlock position={[-4, 7, -9]} size={[2, 4, 4]} /> {/* Above Gamemaster */}
+            {/* Gamemaster upper fill merged into wall block since hole is closed */}
 
 
             {/* --- RIGHT WALL (x = 4) --- */}
@@ -311,8 +315,8 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
                 <cylinderGeometry args={[0.15, 0.1, 0.4, 6]} />
                 <meshStandardMaterial color="#884400" emissive="#ff4400" emissiveIntensity={0.2} roughness={0.6} />
             </mesh>
-            {/* Light Source */}
-            <pointLight ref={light} color={color} distance={18} decay={2} castShadow shadow-bias={-0.001} />
+            {/* Light Source - No Shadow for GPU Perf */}
+            <pointLight ref={light} color={color} distance={18} decay={2} />
 
             {/* Fake Volumetric Glow / God Ray Cone */}
             <mesh position={[0, -1.0, 0]} rotation={[0, 0, 0]}>
@@ -324,6 +328,121 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
                 <sphereGeometry args={[0.2, 16, 16]} />
                 <meshBasicMaterial color={color} transparent opacity={0.03} depthWrite={false} blending={THREE.AdditiveBlending} />
             </mesh>
+        </group>
+    );
+}
+
+function ProtrudingSign({ position, text, color = "#ff00ff" }: any) {
+    return (
+        <group position={position}>
+            {/* Mounting Arm */}
+            <mesh position={[0, 0, 0]}>
+                <boxGeometry args={[0.8, 0.1, 0.1]} />
+                <meshStandardMaterial color="#222" />
+            </mesh>
+            {/* Sign Box */}
+            <mesh position={[0.6, -0.2, 0]}>
+                <boxGeometry args={[0.8, 0.4, 0.15]} />
+                <meshStandardMaterial color="#111" />
+            </mesh>
+            {/* LED Text Front */}
+            <Text
+                position={[0.6, -0.2, 0.08]}
+                fontSize={0.25}
+                color={color}
+                font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
+                anchorX="center"
+                anchorY="middle"
+            >
+                {text}
+                <meshBasicMaterial color={color} toneMapped={false} />
+            </Text>
+            {/* LED Text Back */}
+            <Text
+                position={[0.6, -0.2, -0.08]}
+                rotation={[0, Math.PI, 0]}
+                fontSize={0.25}
+                color={color}
+                font="https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff"
+                anchorX="center"
+                anchorY="middle"
+            >
+                {text}
+                <meshBasicMaterial color={color} toneMapped={false} />
+            </Text>
+            {/* Glow */}
+            <pointLight position={[0.6, -0.2, 0]} distance={3} intensity={2} color={color} />
+        </group>
+    );
+}
+
+function MarketCart({ position, rotation = [0, 0, 0] }: { position: [number, number, number], rotation?: [number, number, number] }) {
+    return (
+        <group position={position} rotation={new THREE.Euler(...rotation)}>
+            {/* Cart Base */}
+            <mesh position={[0, 0.4, 0]} castShadow receiveShadow>
+                <boxGeometry args={[1.5, 0.8, 1]} />
+                <meshStandardMaterial color="#5d4037" roughness={0.8} />
+            </mesh>
+            {/* Wheels */}
+            <mesh position={[-0.6, 0.2, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.2, 0.2, 0.1]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+            <mesh position={[0.6, 0.2, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+                <cylinderGeometry args={[0.2, 0.2, 0.1]} />
+                <meshStandardMaterial color="#333" />
+            </mesh>
+
+            {/* Posts */}
+            <mesh position={[-0.7, 1.5, 0.4]}>
+                <cylinderGeometry args={[0.03, 0.03, 1.5]} />
+                <meshStandardMaterial color="#8d6e63" />
+            </mesh>
+            <mesh position={[0.7, 1.5, 0.4]}>
+                <cylinderGeometry args={[0.03, 0.03, 1.5]} />
+                <meshStandardMaterial color="#8d6e63" />
+            </mesh>
+            <mesh position={[-0.7, 1.5, -0.4]}>
+                <cylinderGeometry args={[0.03, 0.03, 1.5]} />
+                <meshStandardMaterial color="#8d6e63" />
+            </mesh>
+            <mesh position={[0.7, 1.5, -0.4]}>
+                <cylinderGeometry args={[0.03, 0.03, 1.5]} />
+                <meshStandardMaterial color="#8d6e63" />
+            </mesh>
+
+            {/* Canvas Roof (Pyramid/Tilted) */}
+            <mesh position={[0, 2.4, 0]}>
+                <coneGeometry args={[1.3, 0.8, 4]} />
+                <meshStandardMaterial color="#2e3c50" roughness={1} side={THREE.DoubleSide} />
+            </mesh>
+
+            {/* Steam Emitter (Simple Particles) */}
+            <Instances range={10}>
+                <sphereGeometry args={[0.1]} />
+                <meshBasicMaterial color="#fff" transparent opacity={0.3} />
+                {Array.from({ length: 10 }).map((_, i) => (
+                    <Float key={i} speed={2} rotationIntensity={0} floatIntensity={5} floatingRange={[1, 3]}>
+                        <group position={[(Math.random() - 0.5) * 0.5, 1, 0]}>
+                            <Instance />
+                        </group>
+                    </Float>
+                ))}
+            </Instances>
+
+            {/* Food Props */}
+            <mesh position={[0.2, 0.85, 0.2]}>
+                <boxGeometry args={[0.3, 0.1, 0.3]} />
+                <meshStandardMaterial color="#ff5722" />
+            </mesh>
+            <mesh position={[-0.2, 0.85, -0.1]}>
+                <cylinderGeometry args={[0.1, 0.15, 0.2]} />
+                <meshStandardMaterial color="#795548" />
+            </mesh>
+
+            {/* Integrated Light */}
+            <pointLight position={[0, 1.8, 0]} intensity={2} color="#ffab91" distance={5} />
         </group>
     );
 }
@@ -413,7 +532,7 @@ function HangingBulb({ position, color = "#ffaa00", intensity = 1 }: { position:
                 <sphereGeometry args={[0.05, 16, 16]} />
                 <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} toneMapped={false} />
             </mesh>
-            <pointLight distance={15} decay={2} color={color} intensity={intensity} castShadow />
+            <pointLight distance={15} decay={2} color={color} intensity={intensity} />
             {/* Glow Sprite */}
             <mesh position={[0, 0, 0]}>
                 <planeGeometry args={[0.8, 0.8]} />
@@ -446,7 +565,7 @@ function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { posi
                 <sphereGeometry args={[0.05]} />
                 <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
             </mesh>
-            <spotLight position={[0, 0.6, 0.1]} target-position={[0, 0, 1]} angle={0.6} penumbra={0.5} intensity={4} distance={15} color={color} castShadow />
+            <spotLight position={[0, 0.6, 0.1]} target-position={[0, 0, 1]} angle={0.6} penumbra={0.5} intensity={4} distance={15} color={color} />
         </group>
     );
 }
@@ -484,12 +603,15 @@ export default function Environment() {
             {/* Vendor Stalls Interiors - Matched to Vendor Positions */}
             <VendorStall position={[-3.8, 0, -2.5]} rotationY={Math.PI / 2} /> {/* Broker */}
             <VendorStall position={[3.8, 0, -5]} rotationY={-Math.PI / 2} /> {/* Barker */}
-            <VendorStall position={[-3.8, 0, -9]} rotationY={Math.PI / 2} /> {/* Gamemaster */}
+
+            {/* Back Left - Converted to Market Cart */}
+            <MarketCart position={[-2.5, 0, -9]} rotation={[0, 0.5, 0]} />
 
             <UpperCityLayer />
 
             {/* Neon Signage Cluster */}
             <NeonSign text="MARKET" position={[-3.5, 4, -5]} rotation={[0, Math.PI / 2, 0]} color="#ff0055" size={2} />
+            <ProtrudingSign text="NOODLES" position={[-3.8, 3.5, -8]} color="#00ffaa" />
             <NeonSign text="OPEN" position={[-3.5, 3, -5]} rotation={[0, Math.PI / 2, 0]} color="#00ff55" size={1} flicker />
             <NeonSign text="CYBER" position={[3.5, 5, -8]} rotation={[0, -Math.PI / 2, 0]} color="#0088ff" size={1.5} />
             <NeonSign text="NO DATA" position={[3.5, 3.5, -3]} rotation={[0, -Math.PI / 2, 0]} color="#ffaa00" size={0.8} />
