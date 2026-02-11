@@ -436,10 +436,6 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
     );
 }
 
-// Left wall hole: 12 units wide (z) by 7 units high (y), centered z=-12, y=2..9
-const LEFT_WALL_HOLE_Z = { min: -18, max: -6 };
-const LEFT_WALL_HOLE_Y = { min: 2, max: 9 };
-
 // Left wall hole for Hawker: z 1.5–4.5, y 0.5–2.8.
 // The turn is at z < 1.0.
 const HAWKER_HOLE_Z = { min: 1.5, max: 4.5 };
@@ -540,8 +536,6 @@ function ConstructedWalls({ onEnterPortal }: { onEnterPortal?: () => void }) {
     // LEFT TURN CORRIDOR:
     // Starts at x = -4, extends to x = -15
     // Width (z) = 4 units approximately (z = -2 to z = 2)
-    const corridorCenterZ = 0;
-    const corridorWidth = 4;
 
     // CORNER WALL (The wall that forces you to turn left inside the corridor logic)
     // Actually, the main left wall is broken.
@@ -728,9 +722,8 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
     return (
         <group ref={group} position={position}>
             {/* Rope */}
-            <mesh position={[0, 0.5, 0]}>
+            <mesh position={[0, 0.5, 0]} material={darkMetal}>
                 <cylinderGeometry args={[0.01, 0.01, 1]} />
-                <meshBasicMaterial color="#000" />
             </mesh>
             {/* Lantern Body */}
             <mesh position={[0, -0.2, 0]}>
@@ -949,7 +942,7 @@ function HangingBanner({ position, rotation, color }: { position: [number, numbe
 }
 
 function HangingBulb({ position, color = "#ffaa00" }: { position: [number, number, number], color?: string }) {
-    const { darkMetal, metalPanel } = useBazaarMaterials();
+    const { darkMetal } = useBazaarMaterials();
     const group = useRef<THREE.Group>(null);
     const frameCount = useRef(0);
     useFrame(({ clock }) => {

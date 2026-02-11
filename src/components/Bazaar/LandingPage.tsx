@@ -7,12 +7,10 @@ interface LandingPageProps {
 
 export default function LandingPage({ onEnter }: LandingPageProps) {
     const { progress } = useProgress();
-    const [loaded, setLoaded] = useState(false);
     const [showEnter, setShowEnter] = useState(false);
 
     useEffect(() => {
         if (progress === 100) {
-            setLoaded(true);
             // Small delay to ensure everything is truly ready and to smooth out the UI
             setTimeout(() => setShowEnter(true), 500);
         }
