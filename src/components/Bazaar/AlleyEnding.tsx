@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
+import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 
 const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
 const MAT_DARKER = new THREE.MeshStandardMaterial({ color: "#333" });
@@ -19,11 +20,11 @@ export function AlleyEndingPortal({ positionZ = -18, onEnterPortal }: AlleyEndin
     const portalRef = useRef<THREE.Mesh>(null);
 
     useFrame(({ clock }) => {
-        if (!portalRef.current) return;
+        if (!portalRef.current || EMISSIVE_SCALE === 0) return;
         const t = clock.getElapsedTime();
         const pulse = 0.7 + 0.3 * Math.sin(t * 1.2);
         const mat = portalRef.current.material as THREE.MeshStandardMaterial;
-        if (mat.emissive) mat.emissiveIntensity = pulse * 1.5 * BAZAAR_BRIGHTNESS;
+        if (mat.emissive) mat.emissiveIntensity = pulse * 1.5 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE;
     });
 
     // Back wall frame: opening 5 wide, 4 tall; total wall 12 wide, 12 tall.
@@ -83,8 +84,7 @@ export function AlleyEndingPortal({ positionZ = -18, onEnterPortal }: AlleyEndin
                 <meshStandardMaterial
                     color="#4466aa"
                     emissive="#2288ff"
-                    emissiveIntensity={1.2 * BAZAAR_BRIGHTNESS}
-                    toneMapped={false}
+                    emissiveIntensity={1.2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
                     side={THREE.DoubleSide}
                 />
             </mesh>
@@ -112,7 +112,7 @@ export function AlleyEndingPortal({ positionZ = -18, onEnterPortal }: AlleyEndin
                 </mesh>
                 <mesh position={[0, -0.2, 0]}>
                     <cylinderGeometry args={[0.18, 0.12, 0.35, 8]} />
-                    <meshStandardMaterial color="#661100" emissive="#ff4400" emissiveIntensity={0.8 * BAZAAR_BRIGHTNESS} roughness={0.6} toneMapped={false} />
+                    <meshStandardMaterial color="#661100" emissive="#ff4400" emissiveIntensity={0.8 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} roughness={0.6} />
                 </mesh>
             </group>
 
@@ -124,9 +124,12 @@ export function AlleyEndingPortal({ positionZ = -18, onEnterPortal }: AlleyEndin
                 <boxGeometry args={[0.6, 0.45, 0.3]} />
             </mesh>
 
-            {/* --- GATEWAY LIGHT --- */}
-            <pointLight position={[0, 0, 0.5]} color="#bb99ff" intensity={4} distance={12} decay={2} />
-            <pointLight position={[0, -0.5, -1.5]} color="#4488ff" intensity={2} distance={6} decay={2} />
+            {PRACTICAL_LIGHT_INTENSITY > 0 && (
+                <>
+                    <pointLight position={[0, 0, 0.5]} color="#bb99ff" intensity={4} distance={12} decay={2} />
+                    <pointLight position={[0, -0.5, -1.5]} color="#4488ff" intensity={2} distance={6} decay={2} />
+                </>
+            )}
         </group>
     );
 }

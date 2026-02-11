@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
+import { EMISSIVE_SCALE } from "./lightingMode";
 
 export default function LedSign() {
     const textRef = useRef<any>(null);
@@ -35,8 +36,7 @@ export default function LedSign() {
                 <meshStandardMaterial
                     color="#39ff14"
                     emissive="#39ff14"
-                    emissiveIntensity={4 * BAZAAR_BRIGHTNESS}
-                    toneMapped={false}
+                    emissiveIntensity={4 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
                 />
             </Text>
         </group>

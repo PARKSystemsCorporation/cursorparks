@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Text, Billboard } from "@react-three/drei";
+import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 import VendorProfileCard from "./VendorProfileCard";
 
 // --- Archetypes ---
@@ -95,12 +96,14 @@ function CyberHuman({ position, color, isTarget, name, lastShout, setTarget, id 
                 <meshStandardMaterial color="#1a1a1a" roughness={0.7} />
             </mesh>
 
-            {/* Glowing Tech Visor */}
+            {/* Tech Visor */}
             <mesh position={[0, 1.75, 0.18]}>
                 <boxGeometry args={[0.25, 0.05, 0.02]} />
-                <meshBasicMaterial color={color} toneMapped={false} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
             </mesh>
-            <pointLight position={[0, 1.8, 0.3]} distance={1} intensity={1} color={color} decay={2} />
+            {PRACTICAL_LIGHT_INTENSITY > 0 && (
+                <pointLight position={[0, 1.8, 0.3]} distance={1} intensity={1} color={color} decay={2} />
+            )}
 
             {/* Tech Collar / Backpack */}
             <mesh position={[0, 1.45, -0.15]}>
@@ -166,7 +169,9 @@ function CyberHuman({ position, color, isTarget, name, lastShout, setTarget, id 
                         <ringGeometry args={[0.5, 0.55, 32]} />
                         <meshBasicMaterial color={color} side={THREE.DoubleSide} transparent opacity={0.5} />
                     </mesh>
-                    <pointLight distance={3} intensity={2} color={color} position={[0, 1, 0]} decay={2} />
+                    {PRACTICAL_LIGHT_INTENSITY > 0 && (
+                        <pointLight distance={3} intensity={2} color={color} position={[0, 1, 0]} decay={2} />
+                    )}
                 </group>
             )}
 

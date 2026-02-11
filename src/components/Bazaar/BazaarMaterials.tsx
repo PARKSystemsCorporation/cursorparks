@@ -7,6 +7,8 @@ import {
     createConcreteWallNormal,
     createWetFloorTexture,
     createWetFloorRoughness,
+    createDirtRoadTexture,
+    createDirtRoadRoughness,
     createMetalPanelTexture,
     createWoodCrateTexture,
     createRustPipeTexture,
@@ -15,6 +17,7 @@ import {
 type BazaarMaterials = {
     concreteWall: THREE.MeshStandardMaterial;
     wetFloor: THREE.MeshStandardMaterial;
+    dirtRoad: THREE.MeshStandardMaterial;
     metalPanel: THREE.MeshStandardMaterial;
     woodCrate: THREE.MeshStandardMaterial;
     rustPipe: THREE.MeshStandardMaterial;
@@ -30,6 +33,8 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
 
         const txFloor = createWetFloorTexture();
         const txFloorRough = createWetFloorRoughness();
+        const txDirt = createDirtRoadTexture();
+        const txDirtRough = createDirtRoadRoughness();
 
         const txMetal = createMetalPanelTexture();
         const txWood = createWoodCrateTexture();
@@ -46,7 +51,7 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             metalness: 0.1,
         });
 
-        // Floor: Wet, dark, reflective in spots
+        // Floor: Wet, dark, reflective in spots (night / alternate)
         const wetFloor = new THREE.MeshStandardMaterial({
             map: txFloor,
             roughnessMap: txFloorRough,
@@ -54,6 +59,16 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             roughness: 1.0,
             metalness: 0.6,
             envMapIntensity: 1.5,
+        });
+
+        // Ground: Dusty dirt road (daylight cinematic)
+        const dirtRoad = new THREE.MeshStandardMaterial({
+            map: txDirt,
+            roughnessMap: txDirtRough,
+            color: "#6b5b4f",
+            roughness: 0.92,
+            metalness: 0,
+            envMapIntensity: 0.25,
         });
 
         // Metal Panel: Brushed, tech
@@ -83,6 +98,7 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
         return {
             concreteWall,
             wetFloor,
+            dirtRoad,
             metalPanel,
             woodCrate,
             rustPipe,

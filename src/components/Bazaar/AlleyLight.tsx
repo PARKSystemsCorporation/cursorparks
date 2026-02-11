@@ -3,6 +3,7 @@
 import React, { useRef } from "react";
 import * as THREE from "three";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
+import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 
 interface AlleyLightProps {
     position: [number, number, number];
@@ -29,11 +30,11 @@ export default function AlleyLight({ position, color = "#ffaa00", intensity = 5,
                 <meshStandardMaterial
                     color={color}
                     emissive={color}
-                    emissiveIntensity={2 * BAZAAR_BRIGHTNESS}
-                    toneMapped={false}
+                    emissiveIntensity={2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
                 />
             </mesh>
 
+            {PRACTICAL_LIGHT_INTENSITY > 0 && (
             <spotLight
                 ref={lightRef}
                 color={color}
@@ -44,6 +45,7 @@ export default function AlleyLight({ position, color = "#ffaa00", intensity = 5,
                 castShadow
                 shadow-bias={-0.0001}
             />
+            )}
         </group>
     );
 }

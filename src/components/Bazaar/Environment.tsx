@@ -5,6 +5,7 @@ import { Instance, Instances, Float, Text } from "@react-three/drei";
 import { LayerMaterial, Depth, Noise } from "lamina";
 import { useBazaarMaterials } from "./BazaarMaterials";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
+import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 import NeonImageSign from "./NeonImageSign";
 import LedBar from "./LedBar";
 import { AlleyEndingPortal } from "./AlleyEnding";
@@ -15,6 +16,9 @@ const MAT_DARKER = new THREE.MeshStandardMaterial({ color: "#333" });
 const MAT_BLACK = new THREE.MeshStandardMaterial({ color: "#111" });
 const MAT_METAL_GREY = new THREE.MeshStandardMaterial({ color: "#444", roughness: 0.3, metalness: 0.6 });
 const MAT_METAL_DARK = new THREE.MeshStandardMaterial({ color: "#555", roughness: 0.6, metalness: 0.4 });
+
+// Fabric colors for blankets / clothes (middle-eastern bazaar)
+const FABRIC_COLORS = ["#8B4513", "#654321", "#a0522d", "#cd853f", "#6b4423", "#4a3728", "#8b6914", "#5c4033"];
 
 // --- CYBER ASSETS ---
 
@@ -49,12 +53,11 @@ function POVLight() {
     const ref = useRef<THREE.Group>(null);
     useFrame(({ camera }) => {
         if (!ref.current) return;
-        // Follow camera with slight offset
         ref.current.position.copy(camera.position);
-        ref.current.position.y += 0.2; // Shoulder height
+        ref.current.position.y += 0.2;
         ref.current.position.z += 0.1;
     });
-
+    if (PRACTICAL_LIGHT_INTENSITY === 0) return null;
     return (
         <group ref={ref}>
             <pointLight distance={10} decay={2} intensity={1} color="#ddeeff" />
@@ -74,13 +77,13 @@ function WindowGrid() {
             windows.push(
                 <mesh key={`l-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
                     <planeGeometry args={[1.5, 2]} />
-                    <meshStandardMaterial color="#ffaa55" emissive="#ffddaa" emissiveIntensity={(1.5 + Math.random()) * BAZAAR_BRIGHTNESS} toneMapped={false} />
+                    <meshStandardMaterial color="#ffaa55" emissive="#ffddaa" emissiveIntensity={(1.5 + Math.random()) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} toneMapped={EMISSIVE_SCALE === 0} />
                 </mesh>
             )
             windows.push(
                 <mesh key={`r-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
                     <planeGeometry args={[1.5, 2]} />
-                    <meshStandardMaterial color="#55aaff" emissive="#aaddee" emissiveIntensity={(1.5 + Math.random()) * BAZAAR_BRIGHTNESS} toneMapped={false} />
+                    <meshStandardMaterial color="#55aaff" emissive="#aaddee" emissiveIntensity={(1.5 + Math.random()) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} toneMapped={EMISSIVE_SCALE === 0} />
                 </mesh>
             )
         }
@@ -97,7 +100,7 @@ function WindowGrid() {
             windows.push(
                 <mesh key={`r-new-${y}-${z}`} position={[4.1, y, z]} rotation={[0, -Math.PI / 2, 0]}>
                     <planeGeometry args={[1.2, 1.8]} />
-                    <meshStandardMaterial color="#00ffaa" emissive="#aaffcc" emissiveIntensity={(2 + Math.random()) * BAZAAR_BRIGHTNESS} toneMapped={false} />
+                    <meshStandardMaterial color="#00ffaa" emissive="#aaffcc" emissiveIntensity={(2 + Math.random()) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} toneMapped={EMISSIVE_SCALE === 0} />
                 </mesh>
             )
         }
@@ -114,13 +117,152 @@ function WindowGrid() {
             windows.push(
                 <mesh key={`l-new-${y}-${z}`} position={[-4.1, y, z]} rotation={[0, Math.PI / 2, 0]}>
                     <planeGeometry args={[1.2, 1.8]} />
-                    <meshStandardMaterial color="#ff5555" emissive="#ffaaaa" emissiveIntensity={(2 + Math.random()) * BAZAAR_BRIGHTNESS} toneMapped={false} />
+                    <meshStandardMaterial color="#ff5555" emissive="#ffaaaa" emissiveIntensity={(2 + Math.random()) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} toneMapped={EMISSIVE_SCALE === 0} />
                 </mesh>
             )
         }
     }
 
     return <group>{windows}</group>;
+}
+
+// Makeshift window ACs (subset of window positions for variety)
+const WINDOW_AC_POSITIONS: { x: number; y: number; z: number; tilt?: number }[] = [
+    { x: -4.05, y: 5, z: -2 }, { x: 4.05, y: 10, z: -8 }, { x: -4.05, y: 15, z: -14 },
+    { x: 4.05, y: 2.5, z: -1 }, { x: -4.05, y: 8.5, z: 1 }, { x: 4.05, y: 11.5, z: -14 },
+    { x: -4.05, y: 5.5, z: -17 }, { x: 4.05, y: 3, z: -5 },
+];
+
+function WindowAC({ x, y, z, tilt = 0 }: { x: number; y: number; z: number; tilt?: number }) {
+    const isLeft = x < 0;
+    const rotY = isLeft ? Math.PI / 2 : -Math.PI / 2;
+    return (
+        <group position={[x, y, z]} rotation={[tilt, rotY, 0]}>
+            <mesh castShadow material={MAT_METAL_DARK}>
+                <boxGeometry args={[0.5, 0.35, 0.28]} />
+            </mesh>
+            <mesh position={[0, 0, 0.15]} material={MAT_DARK}>
+                <circleGeometry args={[0.12, 12]} />
+            </mesh>
+        </group>
+    );
+}
+
+function WindowACs() {
+    return (
+        <group>
+            {WINDOW_AC_POSITIONS.map((p, i) => (
+                <WindowAC key={i} x={p.x} y={p.y} z={p.z} tilt={p.tilt ?? (i % 3 === 0 ? 0.04 : 0)} />
+            ))}
+        </group>
+    );
+}
+
+function HangingBlanket({ y, z, width, height, color }: { y: number; z: number; width: number; height: number; color: string }) {
+    return (
+        <group position={[0, y, z]}>
+            <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+                <cylinderGeometry args={[0.015, 0.015, 7.6, 8]} />
+                <meshStandardMaterial color="#2a2520" roughness={0.9} />
+            </mesh>
+            <mesh position={[0, -height / 2, 0]} rotation={[0, 0, Math.PI / 2]} receiveShadow castShadow>
+                <planeGeometry args={[width, height]} />
+                <meshStandardMaterial color={color} roughness={0.95} side={THREE.DoubleSide} />
+            </mesh>
+        </group>
+    );
+}
+
+const BLANKET_LINES = [
+    { y: 3.2, z: -4, w: 2.2, h: 1.4 },
+    { y: 2.6, z: -9, w: 2.6, h: 1.1 },
+    { y: 3.8, z: -12, w: 1.8, h: 1.5 },
+    { y: 2.2, z: -6, w: 2.4, h: 1.2 },
+];
+
+function HangingBlankets() {
+    return (
+        <group>
+            {BLANKET_LINES.map((line, i) => (
+                <HangingBlanket
+                    key={i}
+                    y={line.y}
+                    z={line.z}
+                    width={line.w}
+                    height={line.h}
+                    color={FABRIC_COLORS[i % FABRIC_COLORS.length]}
+                />
+            ))}
+        </group>
+    );
+}
+
+function Clothesline({ y, z }: { y: number; z: number }) {
+    const clothes = useMemo(() => [
+        { x: -2.2, type: "shirt" as const, rot: 0.1 },
+        { x: 0, type: "pants" as const, rot: -0.05 },
+        { x: 2.1, type: "towel" as const, rot: 0.08 },
+        { x: -0.8, type: "shirt" as const, rot: -0.12 },
+        { x: 1.4, type: "towel" as const, rot: 0.06 },
+    ], []);
+    return (
+        <group position={[0, y, z]}>
+            <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+                <cylinderGeometry args={[0.01, 0.01, 7.6, 6]} />
+                <meshStandardMaterial color="#1a1a1a" roughness={1} />
+            </mesh>
+            {clothes.map((c, i) => (
+                <group key={i} position={[c.x, -0.15, 0]} rotation={[0, 0, c.rot]}>
+                    {c.type === "shirt" && (
+                        <>
+                            <mesh castShadow material={MAT_DARKER}>
+                                <boxGeometry args={[0.35, 0.45, 0.04]} />
+                            </mesh>
+                            <mesh position={[-0.18, -0.2, 0]} material={MAT_DARK}>
+                                <boxGeometry args={[0.12, 0.25, 0.03]} />
+                            </mesh>
+                            <mesh position={[0.18, -0.2, 0]} material={MAT_DARK}>
+                                <boxGeometry args={[0.12, 0.25, 0.03]} />
+                            </mesh>
+                        </>
+                    )}
+                    {c.type === "pants" && (
+                        <>
+                            <mesh position={[-0.1, -0.35, 0]} castShadow material={MAT_DARKER}>
+                                <boxGeometry args={[0.15, 0.5, 0.04]} />
+                            </mesh>
+                            <mesh position={[0.1, -0.35, 0]} castShadow material={MAT_DARKER}>
+                                <boxGeometry args={[0.15, 0.5, 0.04]} />
+                            </mesh>
+                        </>
+                    )}
+                    {c.type === "towel" && (
+                        <mesh castShadow receiveShadow>
+                            <planeGeometry args={[0.5, 0.35]} />
+                            <meshStandardMaterial color={FABRIC_COLORS[(i + 2) % FABRIC_COLORS.length]} roughness={0.9} side={THREE.DoubleSide} />
+                        </mesh>
+                    )}
+                </group>
+            ))}
+        </group>
+    );
+}
+
+const CLOTHESLINE_POSITIONS = [
+    { y: 2.8, z: -3 },
+    { y: 3.4, z: -7 },
+    { y: 2.4, z: -11 },
+    { y: 3.0, z: -15 },
+];
+
+function Clotheslines() {
+    return (
+        <group>
+            {CLOTHESLINE_POSITIONS.map((p, i) => (
+                <Clothesline key={i} y={p.y} z={p.z} />
+            ))}
+        </group>
+    );
 }
 
 function WallBlock({ position, size, rotation = [0, 0, 0] }: { position: [number, number, number], size: [number, number, number], rotation?: [number, number, number] }) {
@@ -163,10 +305,10 @@ function InternalVendorWall({ position, rotationY = 0 }: { position: [number, nu
                 <boxGeometry args={[3.6, 1.2, 0.8]} />
                 <meshStandardMaterial color="#2d1b2e" roughness={0.5} metalness={0.6} />
             </mesh>
-            {/* Counter Glow Strip */}
+            {/* Counter strip (paint/plastic in day, glow at night) */}
             <mesh position={[0, 1.1, 1.01]}>
                 <planeGeometry args={[3.6, 0.05]} />
-                <meshBasicMaterial color="#ff0055" toneMapped={false} />
+                <meshStandardMaterial color="#ff0055" emissive="#ff0055" emissiveIntensity={EMISSIVE_SCALE} />
             </mesh>
 
             {/* Back Shelves/Tech */}
@@ -177,16 +319,17 @@ function InternalVendorWall({ position, rotationY = 0 }: { position: [number, nu
                 <boxGeometry args={[1.5, 0.1, 0.4]} />
             </mesh>
 
-            {/* Overhead Light Strip */}
+            {/* Overhead strip */}
             <mesh position={[0, 2.9, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[3.5, 0.2]} />
-                <meshBasicMaterial color="#ff0055" toneMapped={false} transparent opacity={0.8} />
+                <meshStandardMaterial color="#ff0055" emissive="#ff0055" emissiveIntensity={EMISSIVE_SCALE} transparent opacity={0.8 + 0.2 * (1 - EMISSIVE_SCALE)} />
             </mesh>
-            {/* Volumetric Glow for Overhead */}
-            <mesh position={[0, 1.5, 0.5]} rotation={[0, 0, 0]}>
-                <boxGeometry args={[3.5, 2.5, 0.1]} />
-                <meshBasicMaterial color="#ff0055" transparent opacity={0.03} depthWrite={false} blending={THREE.AdditiveBlending} />
-            </mesh>
+            {EMISSIVE_SCALE > 0 && (
+                <mesh position={[0, 1.5, 0.5]} rotation={[0, 0, 0]}>
+                    <boxGeometry args={[3.5, 2.5, 0.1]} />
+                    <meshBasicMaterial color="#ff0055" transparent opacity={0.03} depthWrite={false} blending={THREE.AdditiveBlending} />
+                </mesh>
+            )}
 
             {/* Clutter */}
             <mesh position={[1.2, 1.25, 0.6]} rotation={[0, -0.2, 0]}>
@@ -217,10 +360,10 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
             <mesh position={[0, 0.5, 0.5]} castShadow receiveShadow material={woodCrate}>
                 <boxGeometry args={[3.5, 1, 0.8]} />
             </mesh>
-            {/* Counter LED Strip */}
+            {/* Counter LED strip */}
             <mesh position={[0, 0.9, 0.91]}>
                 <planeGeometry args={[3.5, 0.05]} />
-                <meshBasicMaterial color="#00ffff" toneMapped={false} />
+                <meshStandardMaterial color="#00ffff" emissive="#00ffff" emissiveIntensity={EMISSIVE_SCALE} />
             </mesh>
 
             {/* Shelves */}
@@ -230,14 +373,14 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
             <mesh position={[0, 2.2, -1.7]} material={metalPanel}>
                 <boxGeometry args={[3.6, 0.1, 0.5]} />
             </mesh>
-            {/* Shelf LED Strips */}
+            {/* Shelf LED strips */}
             <mesh position={[0, 1.45, -1.45]}>
                 <planeGeometry args={[3.6, 0.02]} />
-                <meshBasicMaterial color="#ff00ff" toneMapped={false} />
+                <meshStandardMaterial color="#ff00ff" emissive="#ff00ff" emissiveIntensity={EMISSIVE_SCALE} />
             </mesh>
             <mesh position={[0, 2.15, -1.45]}>
                 <planeGeometry args={[3.6, 0.02]} />
-                <meshBasicMaterial color="#ffaa00" toneMapped={false} />
+                <meshStandardMaterial color="#ffaa00" emissive="#ffaa00" emissiveIntensity={EMISSIVE_SCALE} />
             </mesh>
 
             {/* Interior Light - REMOVED -> Baked into emissive strips */}
@@ -257,43 +400,24 @@ function VendorStall({ position, rotationY = 0 }: { position: [number, number, n
 }
 
 function ConstructedWalls() {
-    // Manually place wall blocks to leave holes for vendors
-    // Vendors are at: 
-    // Broker: [-2.5, 0, -2.5] -> Hole on LEFT at Z ~ -2.5
-    // Barker: [2.5, 0, -5] -> Hole on RIGHT at Z ~ -5
-    // Gamemaster: [-2.5, 0, -9] -> Hole on LEFT at Z ~ -9
-    // Gatekeeper: [0, 0, -14] -> End of hall (handled separately)
+    // Tall canyon walls (height 20) so sun comes in from above but is obstructed; holes for vendors
+    const wallH = 20;
+    const wallY = wallH / 2; // center at 10 so floor at 0
 
     return (
         <group>
-            {/* --- LEFT WALL (x = -4) --- */}
-            {/* Pre-Broker Segment */}
-            <WallBlock position={[-4, 4, 1.5]} size={[2, 8, 8]} />
-            {/* Broker Hole is roughly z=-1 to -4 */}
-            {/* Post-Broker / Pre-Gamemaster Segment */}
-            <WallBlock position={[-4, 4, -6]} size={[2, 8, 4]} />
+            {/* --- LEFT WALL (x = -4) — very high --- */}
+            <WallBlock position={[-4, wallY, 1.5]} size={[2, wallH, 8]} />
+            <WallBlock position={[-4, wallY, -6]} size={[2, wallH, 4]} />
+            <WallBlock position={[-4, wallY, -10.5]} size={[2, wallH, 5]} />
+            <WallBlock position={[-4, wallY, -15]} size={[2, wallH, 4]} />
+            <WallBlock position={[-4, 13, -2.5]} size={[2, 12, 4]} /> {/* Above Broker */}
 
-            {/* Gamemaster Hole CLOSED for Market Cart */}
-            <WallBlock position={[-4, 4, -10.5]} size={[2, 8, 5]} />
+            {/* --- RIGHT WALL (x = 4) — very high --- */}
+            <WallBlock position={[4, wallY, 0]} size={[2, wallH, 10]} />
+            <WallBlock position={[4, wallY, -13]} size={[2, wallH, 16]} />
+            <WallBlock position={[4, 13, -5]} size={[2, 12, 4]} /> {/* Above Barker */}
 
-            {/* Post-Gamemaster Segment */}
-            <WallBlock position={[-4, 4, -15]} size={[2, 8, 4]} /> {/* Adjusted size to fit */}
-
-            {/* Upper fill above stalls */}
-            <WallBlock position={[-4, 7, -2.5]} size={[2, 4, 4]} /> {/* Above Broker */}
-            {/* Gamemaster upper fill merged into wall block since hole is closed */}
-
-
-            {/* --- RIGHT WALL (x = 4) --- */}
-            {/* Pre-Barker Segment */}
-            <WallBlock position={[4, 4, 0]} size={[2, 8, 10]} />
-            {/* Barker Hole is roughly z=-3 to -7 */}
-            {/* Post-Barker Segment */}
-            <WallBlock position={[4, 4, -13]} size={[2, 8, 16]} />
-            {/* Upper fill above stalls */}
-            <WallBlock position={[4, 7, -5]} size={[2, 4, 4]} /> {/* Above Barker */}
-
-            {/* --- ALLEY ENDING (dead-end portal; no back wall block) --- */}
             <AlleyEndingPortal positionZ={-18} />
         </group>
     );
@@ -327,7 +451,7 @@ function NeonSign({ text, position, color, rotation = [0, 0, 0], size = 1, flick
                 outlineBlur={0.2}
             >
                 {text}
-                <meshBasicMaterial color={color} toneMapped={false} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
             </Text>
             {/* Backing plate */}
             <mesh position={[0, 0, -0.05]} material={backingPlateMat}>
@@ -399,7 +523,7 @@ function Lantern({ position, color, delay = 0 }: { position: [number, number, nu
             {/* Lantern Body */}
             <mesh position={[0, -0.2, 0]}>
                 <cylinderGeometry args={[0.15, 0.1, 0.4, 6]} />
-                <meshStandardMaterial color="#884400" emissive={color} emissiveIntensity={0.5 * BAZAAR_BRIGHTNESS} roughness={0.6} toneMapped={false} />
+                <meshStandardMaterial color="#884400" emissive={color} emissiveIntensity={0.5 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} roughness={0.6} />
             </mesh>
         </group>
     );
@@ -428,7 +552,7 @@ function ProtrudingSign({ position, text, color = "#ff00ff" }: any) {
                 anchorY="middle"
             >
                 {text}
-                <meshBasicMaterial color={color} toneMapped={false} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
             </Text>
             {/* LED Text Back */}
             <Text
@@ -441,9 +565,8 @@ function ProtrudingSign({ position, text, color = "#ff00ff" }: any) {
                 anchorY="middle"
             >
                 {text}
-                <meshBasicMaterial color={color} toneMapped={false} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
             </Text>
-            {/* Glow - Opt: Removed PointLight, relying on Bloom from emissive text */}
         </group>
     );
 }
@@ -580,10 +703,10 @@ function HangingBulb({ position, color = "#ffaa00" }: { position: [number, numbe
             <mesh position={[0, 0.1, 0]} material={MAT_DARK}>
                 <cylinderGeometry args={[0.03, 0.03, 0.1]} />
             </mesh>
-            {/* Bulb — emissive + Bloom handles glow */}
+            {/* Bulb */}
             <mesh position={[0, 0, 0]}>
                 <sphereGeometry args={[0.05, 16, 16]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3 * BAZAAR_BRIGHTNESS} toneMapped={false} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} />
             </mesh>
         </group>
     );
@@ -610,9 +733,11 @@ function StallLamp({ position, rotation = [0, 0, 0], color = "#ddffaa" }: { posi
             {/* Bulb */}
             <mesh position={[0, 0.55, 0.1]} rotation={[0.5, 0, 0]}>
                 <sphereGeometry args={[0.05]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2 * EMISSIVE_SCALE} />
             </mesh>
-            <spotLight position={[0, 0.6, 0.1]} target-position={[0, 0, 1]} angle={0.6} penumbra={0.5} intensity={4} distance={15} color={color} />
+            {PRACTICAL_LIGHT_INTENSITY > 0 && (
+                <spotLight position={[0, 0.6, 0.1]} target-position={[0, 0, 1]} angle={0.6} penumbra={0.5} intensity={4} distance={15} color={color} />
+            )}
         </group>
     );
 }
@@ -622,9 +747,8 @@ function FloorGlow({ position, color = "#0055ff", length = 2 }: { position: [num
         <group position={position}>
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
                 <planeGeometry args={[0.1, length]} />
-                <meshBasicMaterial color={color} toneMapped={false} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE} />
             </mesh>
-            {/* Opt: Removed light from floor glow */}
         </group>
     );
 }
@@ -637,45 +761,45 @@ function MetalBeam({ position }: { position: [number, number, number] }) {
                 <boxGeometry args={[0.3, 22, 0.05]} />
             </mesh>
 
-            {/* Main Downward Spot */}
-            <spotLight
-                position={[0, -0.2, 0]}
-                color="#bb88ff"
-                intensity={8}
-                distance={25}
-                angle={1.2}
-                penumbra={1}
-            />
-
-            {/* Single centered accent light (merged from 3) */}
-            <pointLight position={[0, -0.5, 0]} color="#9966dd" intensity={2} distance={15} decay={2} />
+            {PRACTICAL_LIGHT_INTENSITY > 0 && (
+                <>
+                    <spotLight
+                        position={[0, -0.2, 0]}
+                        color="#bb88ff"
+                        intensity={8}
+                        distance={25}
+                        angle={1.2}
+                        penumbra={1}
+                    />
+                    <pointLight position={[0, -0.5, 0]} color="#9966dd" intensity={2} distance={15} decay={2} />
+                </>
+            )}
         </group>
     );
 }
 
 export default function Environment() {
-    const { wetFloor, woodCrate } = useBazaarMaterials();
+    const { dirtRoad, woodCrate } = useBazaarMaterials();
 
-    // Tiling for floor
-    const tiledFloor = useMemo(() => {
-        const m = wetFloor.clone();
+    const tiledDirt = useMemo(() => {
+        const m = dirtRoad.clone();
         if (m.map) { m.map = m.map.clone(); m.map.repeat.set(10, 30); }
         if (m.roughnessMap) { m.roughnessMap = m.roughnessMap.clone(); m.roughnessMap.repeat.set(10, 30); }
-        // normalMap isn't used in ProceduralTextures logic currently but good to handle if added
         if (m.normalMap) { m.normalMap = m.normalMap.clone(); m.normalMap.repeat.set(10, 30); }
         return m;
-    }, [wetFloor]);
+    }, [dirtRoad]);
 
     return (
         <group>
-            {/* Wet Ground - High Metalness/Roughness adjustments */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow material={tiledFloor}>
+            {/* Dirt road ground — dusty, clear visibility, daylight */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow material={tiledDirt}>
                 <planeGeometry args={[20, 60]} />
             </mesh>
 
             {/* Replaced procedural walls with Constructed Stalls */}
             <ConstructedWalls />
             <WindowGrid />
+            <WindowACs />
             <POVLight />
 
             {/* Vendor Stalls Interiors - Matched to Vendor Positions */}
@@ -729,6 +853,10 @@ export default function Environment() {
 
             {/* Overhead Cables (Dense) */}
             <Cables />
+
+            {/* Middle-eastern bazaar: blankets and clotheslines across alley */}
+            <HangingBlankets />
+            <Clotheslines />
 
             {/* --- MOTIVATED LIGHTING --- */}
 

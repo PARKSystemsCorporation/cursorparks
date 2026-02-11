@@ -1,93 +1,112 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Canvas } from "@react-three/fiber";
-// import { Physics } from "@react-three/cannon"; // Optimized: Removed unused physics engine
+import { Canvas, useThree } from "@react-three/fiber";
 import { useEffect, useState, useRef, Suspense } from "react";
 import * as THREE from "three";
-import Environment from "./Environment";
+import { Sky, Environment as DreiEnvironment } from "@react-three/drei";
+import BazaarSet from "./Environment";
 import Vendor from "./Vendor";
 import Crowd from "./Crowd";
 import CameraRig from "./CameraRig";
 import InputBar from "./InputBar";
 import "./BazaarLanding.css";
-import { EffectComposer, Bloom, Vignette, ToneMapping, SMAA } from "@react-three/postprocessing";
+import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
 import LedSign from "./LedSign";
 import ScrapSign from "./ScrapSign";
 import { BazaarMaterialsProvider } from "./BazaarMaterials";
 import NeonSign from "./NeonSign";
 import LedBar from "./LedBar";
 import AlleyLight from "./AlleyLight";
-import { BAZAAR_BRIGHTNESS } from "./brightness";
 
-// --- Configuration ---
+// --- Daylight configuration (high-sun cinematic market) ---
+const SKY_BLUE = "#87CEEB";
 const CONFIG = {
-    fog: { color: "#060610", near: 5, far: 50 }, // Deeper void, pushed back for visibility
+    fog: { color: "#b8d4e3", near: 18, far: 52 },
     lights: {
-        ambient: { intensity: 1.5, color: "#1a1a2e" }, // Much brighter base
-        moon: { intensity: 8, color: "#4d66cc", position: [10, 20, 10] }, // Stronger moon
-        lanterns: { intensity: 12, distance: 15, decay: 2, color: "#ffaa00" }, // Keep warm lights popping
+        ambient: { intensity: 0.62, color: "#ffffff" },
+        sun: { intensity: 2.2, color: "#fff5e6", position: [5, 28, 8] as [number, number, number] },
+        hemisphere: { sky: "#a8c8e8", ground: "#c4a574", intensity: 1.45 },
     },
     camera: {
         position: [0, 1.7, 6] as [number, number, number],
         fov: 60,
     },
     postprocessing: {
-        exposure: 1.5 * BAZAAR_BRIGHTNESS, // Brighter
-        toneMapping: THREE.ACESFilmicToneMapping
-    }
+        exposure: 1.0,
+        toneMapping: THREE.ACESFilmicToneMapping,
+    },
+    shadow: {
+        mapSize: 4096,
+        normalBias: 0.02,
+        cameraFar: 65,
+        cameraLeft: -20,
+        cameraRight: 20,
+        cameraTop: 24,
+        cameraBottom: -20,
+    },
 };
+
+function ShadowMapSetup() {
+    const { gl } = useThree();
+    useEffect(() => {
+        gl.shadowMap.type = THREE.PCFSoftShadowMap;
+        gl.shadowMap.needsUpdate = true;
+    }, [gl]);
+    return null;
+}
 
 function SceneContent({ messages, targetVendor, onShout }: { messages: any[], targetVendor: string | null, onShout: (t: string) => void }) {
     return (
         <>
-            {/* Cinematic Atmosphere */}
+            <ShadowMapSetup />
             <fog attach="fog" args={[CONFIG.fog.color, CONFIG.fog.near, CONFIG.fog.far]} />
-            <color attach="background" args={[CONFIG.fog.color]} />
+            <color attach="background" args={[SKY_BLUE]} />
 
-            {/* Cinematic Lighting System */}
+            {/* Sky dome (bright blue, light atmospheric haze) */}
+            <Sky sunPosition={[CONFIG.lights.sun.position[0], CONFIG.lights.sun.position[1], CONFIG.lights.sun.position[2]]} turbidity={4} rayleigh={0.5} mieCoefficient={0.005} />
+
+            {/* Skybox-based IBL for PBR materials */}
+            <DreiEnvironment preset="park" background={false} environmentIntensity={1.2} />
+
             <ambientLight intensity={CONFIG.lights.ambient.intensity} color={CONFIG.lights.ambient.color} />
             <directionalLight
-                position={[10, 20, 5]}
-                intensity={CONFIG.lights.moon.intensity}
-                color={CONFIG.lights.moon.color}
+                position={CONFIG.lights.sun.position}
+                intensity={CONFIG.lights.sun.intensity}
+                color={CONFIG.lights.sun.color}
                 castShadow
-                shadow-mapSize={[2048, 2048]}
+                shadow-mapSize={[CONFIG.shadow.mapSize, CONFIG.shadow.mapSize]}
+                shadow-normalBias={CONFIG.shadow.normalBias}
+                shadow-camera-far={CONFIG.shadow.cameraFar}
+                shadow-camera-left={CONFIG.shadow.cameraLeft}
+                shadow-camera-right={CONFIG.shadow.cameraRight}
+                shadow-camera-top={CONFIG.shadow.cameraTop}
+                shadow-camera-bottom={CONFIG.shadow.cameraBottom}
             />
-            {/* Hemisphere for ground bounce */}
-            <hemisphereLight args={["#2a3045", "#050505", 1.0]} />
+            <hemisphereLight args={[CONFIG.lights.hemisphere.sky, CONFIG.lights.hemisphere.ground, CONFIG.lights.hemisphere.intensity]} />
 
-            {/* Optimized: Removed Physics wrapper as no bodies are used */}
-            <Environment />
+            <BazaarSet />
             <Vendor setTarget={onShout} targetId={targetVendor} />
             <Crowd messages={messages} />
 
             <LedSign />
             <ScrapSign />
 
-            {/* --- NEW CYBERPUNK LIGHTING --- */}
-            {/* Neon Signs */}
             <NeonSign text="NOODLES" color="#ff0055" position={[6, 4, -8]} rotation={[0, -0.5, 0]} flicker />
             <NeonSign text="OPEN" color="#00ffcc" position={[-5, 3, -2]} rotation={[0, 0.5, 0]} scale={0.8} />
             <NeonSign text="CYBER" color="#aa00ff" position={[0, 5, -10]} scale={1.5} />
 
-            {/* LED Bars */}
             <LedBar color="#ff0055" position={[6, 1, -8]} rotation={[0, 0, Math.PI / 2]} length={4} />
             <LedBar color="#00ffcc" position={[-5, 1, -2]} rotation={[0, 0, Math.PI / 2]} length={3} />
             <LedBar color="#0088ff" position={[0, 0.2, -5]} length={10} thickness={0.1} />
 
-            {/* Alleyway Lights */}
             <AlleyLight position={[-2, 4, 2]} color="#ffaa00" rotation={[-Math.PI / 3, 0.5, 0]} />
             <AlleyLight position={[3, 4, 3]} color="#ffaa00" rotation={[-Math.PI / 3, -0.5, 0]} />
 
-            {/* Camera Control */}
             <CameraRig targetVendor={targetVendor} onExit={() => onShout("/back")} />
 
-            {/* Post-Processing Stack - Clean HD */}
             <EffectComposer>
                 <SMAA />
-                <Bloom luminanceThreshold={1} mipmapBlur intensity={1.5} radius={0.6} />
-                <Vignette eskil={false} offset={0.1} darkness={0.6} />
                 <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
             </EffectComposer>
         </>
@@ -169,7 +188,7 @@ export default function BazaarScene() {
                 shadows
                 dpr={[1, 1.5]} // Optimized: Capped at 1.5x to save 44% pixel fill rate on retina screens
                 gl={{
-                    antialias: false, // Handled by SMAA post-process instead (cheaper)
+                    antialias: false,
                     toneMapping: CONFIG.postprocessing.toneMapping,
                     toneMappingExposure: CONFIG.postprocessing.exposure,
                     powerPreference: 'default', // Don't force discrete GPU on laptops

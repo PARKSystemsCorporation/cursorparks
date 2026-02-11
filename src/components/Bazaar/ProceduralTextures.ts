@@ -240,6 +240,85 @@ export function createWetFloorRoughness() {
 }
 
 /**
+ * Dirt Road — 2048px, dusty brown base, ruts, patches, small stones (daylight ground)
+ */
+export function createDirtRoadTexture() {
+    const size = 2048;
+    const canvas = createCanvas(size);
+    const ctx = getContext(canvas);
+
+    // Base dusty dirt (warm brown-grey)
+    ctx.fillStyle = "#6b5b4f";
+    ctx.fillRect(0, 0, size, size);
+
+    fillNoise(ctx, size, 0.12);
+
+    // Lighter dust patches
+    for (let i = 0; i < 25; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const r = 80 + Math.random() * 200;
+        const grd = ctx.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0, "rgba(140, 120, 100, 0.5)");
+        grd.addColorStop(1, "transparent");
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Darker ruts / compacted tracks (elongated along road axis)
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "#4a4035";
+    for (let i = 0; i < 12; i++) {
+        const y = Math.random() * size;
+        const w = size * (0.3 + Math.random() * 0.4);
+        const h = 40 + Math.random() * 80;
+        ctx.fillRect(Math.random() * (size - w), y, w, h);
+    }
+    ctx.globalAlpha = 1;
+
+    // Small stones (dark spots)
+    ctx.fillStyle = "#3d352a";
+    for (let i = 0; i < 200; i++) {
+        const x = Math.random() * size;
+        const y = Math.random() * size;
+        const r = 2 + Math.random() * 6;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    fillNoise(ctx, size, 0.06);
+    return createTextureFromCanvas(canvas);
+}
+
+/**
+ * Dirt Road Roughness — high roughness, slightly smoother in compacted tracks
+ */
+export function createDirtRoadRoughness() {
+    const size = 2048;
+    const canvas = createCanvas(size);
+    const ctx = getContext(canvas);
+
+    ctx.fillStyle = "#88"; // High roughness base
+    ctx.fillRect(0, 0, size, size);
+
+    // Slightly smoother (darker) compacted tracks
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = "#55";
+    for (let i = 0; i < 15; i++) {
+        const y = Math.random() * size;
+        const w = size * (0.25 + Math.random() * 0.5);
+        const h = 50 + Math.random() * 100;
+        ctx.fillRect(Math.random() * (size - w), y, w, h);
+    }
+    ctx.globalAlpha = 1;
+    fillNoise(ctx, size, 0.15);
+    return createTextureFromCanvas(canvas);
+}
+
+/**
  * Metal Tech Panel — 1024px (up from 512)
  */
 export function createMetalPanelTexture() {

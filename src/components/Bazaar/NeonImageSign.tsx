@@ -5,6 +5,7 @@ import { useTexture } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
+import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 
 type NeonImageSignProps = {
     textureUrl: string;
@@ -56,13 +57,12 @@ export default function NeonImageSign({
                     map={tex}
                     emissiveMap={tex}
                     emissive={"#ffffff"}
-                    emissiveIntensity={emissiveIntensity * BAZAAR_BRIGHTNESS}
-                    toneMapped={false}
+                    emissiveIntensity={emissiveIntensity * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
                     side={THREE.DoubleSide}
                 />
             </mesh>
 
-            {lightIntensity > 0 ? (
+            {lightIntensity > 0 && PRACTICAL_LIGHT_INTENSITY > 0 ? (
                 <pointLight position={[0, 0, 0.25]} color="#ff4fd8" intensity={lightIntensity} distance={8} decay={2} />
             ) : null}
         </group>
