@@ -3,7 +3,7 @@
 
 import { Canvas } from "@react-three/fiber";
 import { Physics } from "@react-three/cannon";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import * as THREE from "three";
 import Environment from "./Environment";
 import Vendor from "./Vendor";
@@ -73,7 +73,7 @@ function SceneContent({ messages, targetVendor, onShout }: { messages: any[], ta
 
 export default function BazaarScene() {
     const [messages, setMessages] = useState<any[]>([]);
-    const [socket, setSocket] = useState<any>(null);
+    const socketRef = useRef<any>(null); // Use ref to prevent re-renders on socket changes
     const [targetVendor, setTargetVendor] = useState<string | null>(null);
 
     // Initial Message for atmosphere
@@ -92,13 +92,14 @@ export default function BazaarScene() {
             // Reducing reconnection attempts to stop spam in dev if backend is off
             const newSocket = io("http://localhost:3001", {
                 transports: ["websocket"],
-                reconnectionAttempts: 1,
+                reconnection: false, // Prevent loop/flashing if backend is down
                 timeout: 5000,
             });
 
             newSocket.on("connect_error", () => {
                 // Silently fail or log once to avoid console spam
-                console.log("Bazaar Backend offline - switching to Simulation Mode");
+                console.warn("Bazaar Backend offline - switching to Simulation Mode");
+                newSocket.disconnect(); // Explicitly disconnect to stop trying
             });
 
             newSocket.on("connect", () => {
@@ -114,12 +115,12 @@ export default function BazaarScene() {
                 setMessages((prev) => [msg, ...prev].slice(0, 50));
             });
 
-            setSocket(newSocket);
+            socketRef.current = newSocket;
         };
 
         initSocket();
         return () => {
-            if (socket) socket.disconnect();
+            if (socketRef.current) socketRef.current.disconnect();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -135,8 +136,8 @@ export default function BazaarScene() {
             else if (cmd === "reset" || cmd === "back") setTargetVendor(null);
         }
 
-        if (socket) {
-            socket.emit("chat-message", text);
+        if (socketRef.current && socketRef.current.connected) {
+            socketRef.current.emit("chat-message", text);
         } else {
             // Local fallback
             const msg = { id: Date.now().toString(), content: text, timestamp: Date.now() };
