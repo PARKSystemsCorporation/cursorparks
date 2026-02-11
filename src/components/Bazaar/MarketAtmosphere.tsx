@@ -26,7 +26,6 @@ export default function MarketAtmosphere() {
 
     const p = phase;
     const isTwilight = p > TWILIGHT_START;
-    const isTwilight = p > TWILIGHT_START;
     // Afternoon Light: Warm amber sun, cream/brown fill
     const sunColor = "#ffb76b";
     const skyColor = "#ffeedd"; // Pale warm cream
