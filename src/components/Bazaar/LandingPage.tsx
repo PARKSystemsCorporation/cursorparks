@@ -9,6 +9,14 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
     const { progress } = useProgress();
     const [showEnter, setShowEnter] = useState(false);
 
+    // Fallback: If progress is stuck or nothing to load (procedural), force enter after a safe delay
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowEnter(true);
+        }, 2500); // 2.5s "fake" load time if real loader doesn't fire
+        return () => clearTimeout(timer);
+    }, []);
+
     useEffect(() => {
         if (progress === 100) {
             setTimeout(() => setShowEnter(true), 500);
@@ -61,7 +69,7 @@ export default function LandingPage({ onEnter }: LandingPageProps) {
                             </div>
                             <div className="flex justify-between w-full text-xs font-mono text-[#c25e00]">
                                 <span>ESTABLISHING_LINK...</span>
-                                <span>{Math.round(progress)}%</span>
+                                <span>{showEnter ? 100 : Math.max(Math.round(progress), 0)}%</span>
                             </div>
                         </div>
                     ) : (
