@@ -74,6 +74,7 @@ export function AlleySurfaceBreakupLayer() {
                         opacity={0.7}
                         depthWrite={false}
                         blending={THREE.MultiplyBlending}
+                        premultipliedAlpha={true}
                     />
                 </mesh>
             ))}
@@ -81,14 +82,14 @@ export function AlleySurfaceBreakupLayer() {
             {/* Edge Grime - Left Wall Base */}
             <mesh position={[-ALLEY_WIDTH / 2 + 0.2, 0.02, -ALLEY_LENGTH / 2]} rotation={[-Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[0.5, ALLEY_LENGTH]} />
-                <meshBasicMaterial color="#000" transparent opacity={0.5} depthWrite={false} blending={THREE.MultiplyBlending}>
+                <meshBasicMaterial color="#000" transparent opacity={0.5} depthWrite={false} blending={THREE.MultiplyBlending} premultipliedAlpha={true}>
 
                 </meshBasicMaterial>
             </mesh>
             {/* Edge Grime - Right Wall Base */}
             <mesh position={[ALLEY_WIDTH / 2 - 0.2, 0.02, -ALLEY_LENGTH / 2]} rotation={[-Math.PI / 2, 0, 0]}>
                 <planeGeometry args={[0.5, ALLEY_LENGTH]} />
-                <meshBasicMaterial color="#000" transparent opacity={0.5} depthWrite={false} blending={THREE.MultiplyBlending} />
+                <meshBasicMaterial color="#000" transparent opacity={0.5} depthWrite={false} blending={THREE.MultiplyBlending} premultipliedAlpha={true} />
             </mesh>
         </group>
     );

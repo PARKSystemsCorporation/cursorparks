@@ -49,6 +49,7 @@ export function ContactShadowSystem() {
                         depthWrite={false}
                         blending={THREE.MultiplyBlending}
                         toneMapped={false}
+                        premultipliedAlpha={true}
                     />
                 </mesh>
             ))}
