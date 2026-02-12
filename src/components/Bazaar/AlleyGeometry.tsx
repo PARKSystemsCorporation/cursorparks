@@ -125,6 +125,17 @@ export function AlleyGeometry() {
                     );
                 })}
             </group>
+
+            {/* Back Wall (Behind POV) */}
+            <mesh position={[0, WALL_HEIGHT / 2, 2]} rotation={[0, Math.PI, 0]} receiveShadow>
+                <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 32, 16]} />
+                <meshStandardMaterial
+                    map={textures.wallDiff}
+                    normalMap={textures.wallNorm}
+                    roughness={0.9}
+                    color="#aaa"
+                />
+            </mesh>
         </group>
     );
 }

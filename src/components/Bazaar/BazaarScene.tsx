@@ -73,7 +73,33 @@ function AlleyProps() {
                     toneMapped={false}
                 />
             </mesh>
-        </group>
+
+            {/* Horizontal Floor Lights - Every 10m (White Blue & Vibrant) */}
+            {
+                [0, -10, -20].map((z, i) => (
+                    <group key={i} position={[0, 0.02, z]}>
+                        {/* The Light Strip Mesh - 3 units wide, stretching left-right */}
+                        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                            <planeGeometry args={[3.5, 0.3]} />
+                            <meshStandardMaterial
+                                color="#88ccff"
+                                emissive="#88ccff"
+                                emissiveIntensity={5}
+                                toneMapped={false}
+                            />
+                        </mesh>
+                        {/* The Actual Light Source to illuminate floor */}
+                        <pointLight
+                            position={[0, 0.5, 0]} // Just above the strip
+                            intensity={3}
+                            distance={8}
+                            decay={2}
+                            color="#aaddff"
+                        />
+                    </group>
+                ))
+            }
+        </group >
     );
 }
 
