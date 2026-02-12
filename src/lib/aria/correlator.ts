@@ -29,7 +29,7 @@ export interface ProcessingResult {
 }
 
 export interface CorrelationData {
-    id: number;
+    id: string;
     patternKey: string;
     word1: string;
     word2: string;
