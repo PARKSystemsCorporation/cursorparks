@@ -12,60 +12,11 @@ import { EnvironmentalMicroMotion } from "./EnvironmentalMicroMotion";
 import { SpatialAudioZones } from "./SpatialAudioZones";
 import { RobotRepairShop } from "./RobotRepairShop";
 
-// --- Human Camera Rig ---
-function HumanCameraRig({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
-    const { camera } = useThree();
-    const targetPos = useRef(new THREE.Vector3(0, 1.65, 0));
-    const lookAtPos = useRef(new THREE.Vector3(0, 1.5, -10));
-    const sway = useRef(new THREE.Vector2(0, 0));
+import { HotspotNavigation } from "./HotspotNavigation";
 
-    useFrame((state) => {
-        const time = state.clock.getElapsedTime();
-        const t = time * 0.5;
-
-        // Stabilization factor: Starts at 1, decays to 0.25 (75% reduction) over 10 seconds
-        const stabilization = Math.max(0.25, 1.0 - (time * 0.1));
-
-        // 1. Idle Body Sway (breathing/balance) - Reduced magnitude & Applied Stabilization
-        sway.current.x = Math.sin(t) * 0.02 * stabilization; // Was 0.05
-        sway.current.y = Math.cos(t * 1.4) * 0.015 * stabilization; // Was 0.03
-
-        // 2. Head Bob (micro) - heavily reduced
-        const bob = Math.sin(t * 4) * 0.002 * stabilization;
-
-        // 3. Forward Drift (Disabled per user request)
-        /*
-        if (targetPos.current.z > -25) {
-            targetPos.current.z -= 0.005; // Slightly slower drift
-        } else {
-            if (onEnterAlleyTwo) onEnterAlleyTwo();
-        }
-        */
-
-        // Apply with stiffer spring for stability
-        camera.position.x += (targetPos.current.x + sway.current.x - camera.position.x) * 0.05;
-        camera.position.y += (targetPos.current.y + sway.current.y + bob - camera.position.y) * 0.05;
-        camera.position.z += (targetPos.current.z - camera.position.z) * 0.05;
-
-        // Look Behavior (Focus shifting)
-        // Look ahead but wander slightly
-        // Reduced wander amplitude
-        const wanderX = Math.sin(time * 0.3) * 0.5 * stabilization;
-        const wanderY = Math.cos(time * 0.2) * 0.2 * stabilization;
-
-        const idealLookAt = new THREE.Vector3(
-            wanderX,
-            1.5 + wanderY,
-            camera.position.z - 10
-        );
-
-        // Smooth look
-        lookAtPos.current.lerp(idealLookAt, 0.02);
-        camera.lookAt(lookAtPos.current);
-    });
-
-    return <></>;
-}
+// --- Human Camera Rig (Legacy - Replaced by HotspotNavigation) ---
+// function HumanCameraRig... (REMOVED)
+// (Orphaned logic removed)
 
 // --- Depth Grading / Fog ---
 // --- Error Boundary ---
@@ -145,7 +96,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                         <color attach="background" args={['#87CEEB']} />
                         <fogExp2 attach="fog" args={['#fff0dd', 0.005]} />
 
-                        <HumanCameraRig onEnterAlleyTwo={onEnterAlleyTwo} />
+                        <HotspotNavigation />
 
                         <AlleyGeometry />
                         <AlleyEndingPortal />
