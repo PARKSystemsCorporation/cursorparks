@@ -46,7 +46,7 @@ export function AlleySurfaceBreakupLayer() {
 
     // Generate random positions for decals
     const floorDecals = useMemo(() => {
-        return Array.from({ length: 15 }).map((_v, _i) => ({
+        return Array.from({ length: 15 }).map(() => ({
             position: [
                 (Math.random() - 0.5) * (ALLEY_WIDTH - 0.5),
                 0.01, // Slightly above ground

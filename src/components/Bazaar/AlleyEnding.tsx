@@ -2,7 +2,14 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import { createConcreteWallNormal, createConcreteWallTexture, createWetFloorRoughness, createWetFloorTexture } from './ProceduralTextures';
 
-export function AlleyEnding() {
+interface AlleyEndingPortalProps {
+    positionX?: number;
+    positionZ?: number;
+    rotationY?: number;
+    onEnterPortal?: () => void;
+}
+
+export function AlleyEndingPortal({ positionX = 0, positionZ = -30, rotationY = 0, onEnterPortal }: AlleyEndingPortalProps) {
     // Reuse textures (in a real app, use a centralized asset store)
     const textures = useMemo(() => {
         const wallDiff = createConcreteWallTexture();
@@ -17,12 +24,11 @@ export function AlleyEnding() {
         return { wallDiff, wallNorm, floorDiff, floorRough };
     }, []);
 
-    const END_Z = -30;
     const ALLEY_WIDTH = 4;
     const EXT_DEPTH = 10; // How far the "turn" goes
 
     return (
-        <group position={[0, 0, END_Z]}>
+        <group position={[positionX, 0, positionZ]} rotation={[0, rotationY, 0]}>
             {/* 1. The Occluding Wall (Blocks the right side, forcing eye left) */}
             <mesh position={[ALLEY_WIDTH / 4, 3.5, 0]} receiveShadow>
                 <planeGeometry args={[ALLEY_WIDTH, 7]} />

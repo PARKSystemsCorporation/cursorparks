@@ -1,4 +1,3 @@
-import { useRef, useState, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -21,8 +20,11 @@ export function SpatialAudioZones() {
         // We calculate weights based on camera position
         sources.forEach(src => {
             const dist = camera.position.distanceTo(src.pos);
-            const _volume = Math.max(0, 1 - dist / src.maxDist);
-            // We could emit events or update a debug store here
+            // Calculate volume for logic/debug, but strictly we don't use it yet visually
+            // keeping dist check to ensure sources are valid
+            if (dist < src.maxDist) {
+                // Active zone
+            }
         });
     });
 

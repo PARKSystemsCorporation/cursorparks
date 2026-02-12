@@ -5,7 +5,7 @@ import { Suspense, useRef } from "react";
 import * as THREE from "three";
 import { EffectComposer, ToneMapping, SMAA, Vignette, Noise } from "@react-three/postprocessing";
 import { AlleyGeometry } from "./AlleyGeometry";
-import { AlleyEnding } from "./AlleyEnding";
+import { AlleyEndingPortal } from "./AlleyEnding";
 import { AlleySurfaceBreakupLayer } from "./AlleySurfaceBreakupLayer";
 import { ContactShadowSystem } from "./ContactShadowSystem";
 import { EnvironmentalMicroMotion } from "./EnvironmentalMicroMotion";
@@ -142,7 +142,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                     <HumanCameraRig onEnterAlleyTwo={onEnterAlleyTwo} />
 
                     <AlleyGeometry />
-                    <AlleyEnding />
+                    <AlleyEndingPortal />
                     <AlleySurfaceBreakupLayer />
                     <ContactShadowSystem />
                     <EnvironmentalMicroMotion />
