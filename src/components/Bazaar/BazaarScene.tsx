@@ -3,7 +3,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import React, { Suspense, useRef } from "react";
 import * as THREE from "three";
-import { EffectComposer, ToneMapping, SMAA, Vignette, Noise } from "@react-three/postprocessing";
+import { EffectComposer, ToneMapping, SMAA, Vignette, Noise, Bloom } from "@react-three/postprocessing"; // Added Bloom
 import { AlleyGeometry } from "./AlleyGeometry";
 import { AlleyEndingPortal } from "./AlleyEnding";
 import { AlleySurfaceBreakupLayer } from "./AlleySurfaceBreakupLayer";
@@ -99,9 +99,17 @@ function AlleyProps() {
                 <boxGeometry args={[0.8, 0.8, 0.8]} />
                 <meshStandardMaterial color="#8c6043" roughness={0.9} />
             </mesh>
-            <mesh position={[1.2, 0.6, -8]} rotation={[0, 0.5, 0]} castShadow receiveShadow>
-                <boxGeometry args={[1.0, 1.2, 1.0]} />
-                <meshStandardMaterial color="#6a6a75" roughness={0.6} metalness={0.4} />
+            {/* Grey Box Removed per user request */}
+
+            {/* Red Neon LED Strip - Right Wall Floor Junction */}
+            <mesh position={[1.95, 0.05, -15]} rotation={[0, 0, 0]}>
+                <boxGeometry args={[0.05, 0.05, 30]} />
+                <meshStandardMaterial
+                    color="#ff0000"
+                    emissive="#ff0000"
+                    emissiveIntensity={10}
+                    toneMapped={false}
+                />
             </mesh>
         </group>
     );
@@ -159,6 +167,8 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                             <Vignette eskil={false} offset={0.1} darkness={0.3} />
                             {/* Drastically reduced noise */}
                             <Noise opacity={0.015} />
+                            {/* Bloom for Neon - threshold set high so only the LED glows */}
+                            <Bloom luminanceThreshold={1.5} mipmapBlur intensity={1.5} radius={0.4} />
                             <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
                         </EffectComposer>
                     </Suspense>
