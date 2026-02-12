@@ -230,13 +230,20 @@ async function runCorrelator(words: Token[], messageIndex: number): Promise<Corr
                     const moved = await moveCorrelation(existing, currentTier, newTier);
                     if (moved) promoted++;
                 } else if (currentTier === 'decay') {
-                    // Resurrect
-                    existing.correlationScore = newScore;
-                    existing.reinforcementCount++;
-                    existing.lastSeenMessageIndex = messageIndex;
-                    existing.decayAtMessage = updateData.decayAtMessage;
+                    // Resurrect — build a full CorrelationData because AriaDecay lacks some fields
+                    const resurrected: CorrelationData = {
+                        id: existing.id,
+                        patternKey: existing.patternKey,
+                        word1: existing.word1,
+                        word2: existing.word2,
+                        correlationScore: newScore,
+                        reinforcementCount: existing.reinforcementCount + 1,
+                        decayCount: existing.decayCount,
+                        decayAtMessage: updateData.decayAtMessage,
+                        lastSeenMessageIndex: messageIndex,
+                    };
 
-                    const moved = await moveCorrelation(existing, 'decay', newTier);
+                    const moved = await moveCorrelation(resurrected, 'decay', newTier);
                     if (moved) promoted++;
                 }
 
