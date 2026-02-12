@@ -9,21 +9,18 @@ const MAT_TITANIUM = new THREE.MeshStandardMaterial({
     color: "#2a2a30",
     metalness: 0.9,
     roughness: 0.3,
-    colorSpace: THREE.SRGBColorSpace,
 });
 
 const MAT_CARBON = new THREE.MeshStandardMaterial({
     color: "#111111",
     metalness: 0.4,
     roughness: 0.8,
-    colorSpace: THREE.SRGBColorSpace,
 });
 
 const MAT_SYNTHETIC_SKIN = new THREE.MeshStandardMaterial({
     color: "#a08060", // Base tone, will be overridden by props
     roughness: 0.6,
     metalness: 0.1,
-    colorSpace: THREE.SRGBColorSpace,
 });
 
 const MAT_GLOW = new THREE.MeshStandardMaterial({

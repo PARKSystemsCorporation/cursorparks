@@ -180,10 +180,9 @@ export function RealisticVendorBody({
     const animState = useRef({ opacity: 0, lastShoutSeen: null as string | null });
     const idleRef = useRef(0);
 
-    const { skinTone, hairColor, hairStyle, topColor, bottomColor, accessory, posture, build, eyeColor, beard, glasses, mask, goggles, gloves, jewelry, accentMesh, roboticArm, goldChains } = config;
+    const { skinTone, topColor, bottomColor, accessory, posture, build, eyeColor, roboticArm, goldChains } = config;
 
     const buildScale = { slim: { torso: 0.9, limbs: 0.95 }, medium: { torso: 1, limbs: 1 }, stocky: { torso: 1.1, limbs: 1.05 }, muscular: { torso: 1.15, limbs: 1.1 }, tall: { torso: 1, limbs: 1.15 } }[build];
-    const seg = { head: [16, 12], torso: 8, limb: 6, joint: 6 };
 
     useFrame(({ clock }) => {
         if (!group.current) return;
@@ -231,8 +230,7 @@ export function RealisticVendorBody({
         }
     });
 
-    const handMat = gloves ? "#2a2a2a" : skinTone;
-    const armMat = accessory === "sleeveless" ? skinTone : topColor;
+
 
     return (
         <group ref={group} position={position} onClick={() => setTarget(id)}>
