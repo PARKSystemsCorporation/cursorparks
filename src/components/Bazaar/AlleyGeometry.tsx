@@ -56,16 +56,47 @@ export function AlleyGeometry() {
                 />
             </mesh>
 
-            {/* Right Wall */}
-            <mesh position={[ALLEY_WIDTH / 2, WALL_HEIGHT / 2, -ALLEY_LENGTH / 2]} rotation={[0, -Math.PI / 2, 0]} receiveShadow>
-                <planeGeometry args={[ALLEY_LENGTH, WALL_HEIGHT, 64, 16]} />
-                <meshStandardMaterial
-                    map={textures.wallDiff}
-                    normalMap={textures.wallNorm}
-                    roughness={0.9}
-                    color="#aaa"
-                />
-            </mesh>
+            {/* Right Wall - Segmented with Windows for Light Shafts */}
+            <group position={[ALLEY_WIDTH / 2, 0, -ALLEY_LENGTH / 2]}>
+                {/* 1. Base Wall (Solid up to 2.5m) */}
+                <mesh position={[0, 1.25, 0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
+                    <planeGeometry args={[ALLEY_LENGTH, 2.5]} />
+                    <meshStandardMaterial
+                        map={textures.wallDiff}
+                        normalMap={textures.wallNorm}
+                        roughness={0.9}
+                        color="#aaa"
+                    />
+                </mesh>
+
+                {/* 2. Top Lintel (Solid from 5.5m to 7m) */}
+                <mesh position={[0, 6.25, 0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
+                    <planeGeometry args={[ALLEY_LENGTH, 1.5]} />
+                    <meshStandardMaterial
+                        map={textures.wallDiff}
+                        normalMap={textures.wallNorm}
+                        roughness={0.9}
+                        color="#aaa"
+                    />
+                </mesh>
+
+                {/* 3. Pillars (Creating Window Gaps) */}
+                {Array.from({ length: 6 }).map((_, i) => {
+                    const zStep = ALLEY_LENGTH / 5;
+                    const zPos = (i * zStep) - (ALLEY_LENGTH / 2);
+                    return (
+                        <mesh key={i} position={[0, 4, zPos]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
+                            <planeGeometry args={[1, 3]} /> {/* Pillar width 1m, height 3m covering the gap */}
+                            <meshStandardMaterial
+                                map={textures.wallDiff}
+                                normalMap={textures.wallNorm}
+                                roughness={0.9}
+                                color="#888"
+                            />
+                        </mesh>
+                    );
+                })}
+            </group>
         </group>
     );
 }

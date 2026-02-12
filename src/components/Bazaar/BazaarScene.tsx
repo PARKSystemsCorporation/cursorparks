@@ -140,7 +140,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                         <ambientLight intensity={1.5} color="#fff8e6" />
                         <hemisphereLight args={['#87CEEB', '#504030', 1.2]} />
                         <directionalLight
-                            position={[50, 100, 50]}
+                            position={[50, 40, -10]} /* 3 o'clock (Right), High, Slightly forward */
                             intensity={4}
                             color="#fffaf0"
                             castShadow
