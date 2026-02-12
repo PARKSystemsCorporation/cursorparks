@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Suspense, useRef } from "react";
+import React, { Suspense, useRef } from "react";
 import * as THREE from "three";
 import { EffectComposer, ToneMapping, SMAA, Vignette, Noise } from "@react-three/postprocessing";
 import { AlleyGeometry } from "./AlleyGeometry";
@@ -68,26 +68,45 @@ function DepthGrading() {
     );
 }
 
-// --- Props (Instanced Placeholder) ---
+// --- Error Boundary ---
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error: Error) {
+        return { hasError: true, error };
+    }
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+        console.error("3D Scene Error:", error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ color: 'red', padding: '20px', background: 'rgba(0,0,0,0.8)', position: 'absolute', top: 0, left: 0, zIndex: 1000 }}>
+                    <h2>Sim Error</h2>
+                    <pre>{this.state.error?.message}</pre>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+// --- Props (Placeholder) ---
 function AlleyProps() {
-    // Placeholder instanced mesh for crates
+    // Replaced instancedMesh with simple group to avoid initialization issues
     return (
-        <instancedMesh args={[undefined, undefined, 10]} position={[0, 0.5, 0]} castShadow receiveShadow>
-            <boxGeometry args={[0.8, 0.8, 0.8]} />
-            <meshStandardMaterial color="#5c4033" roughness={0.9} />
-            {/* We would layout positions here in a real implementation using a layout array */}
-            {/* For now manually placing a few for the "Grounding Test" */}
-            <group>
-                <mesh position={[-1.2, 0.4, -4]} castShadow receiveShadow>
-                    <boxGeometry args={[0.8, 0.8, 0.8]} />
-                    <meshStandardMaterial color="#5c4033" roughness={0.9} />
-                </mesh>
-                <mesh position={[1.2, 0.6, -8]} rotation={[0, 0.5, 0]} castShadow receiveShadow>
-                    <boxGeometry args={[1.0, 1.2, 1.0]} />
-                    <meshStandardMaterial color="#4a4a55" roughness={0.6} metalness={0.4} />
-                </mesh>
-            </group>
-        </instancedMesh>
+        <group position={[0, 0, 0]}>
+            <mesh position={[-1.2, 0.4, -4]} castShadow receiveShadow>
+                <boxGeometry args={[0.8, 0.8, 0.8]} />
+                <meshStandardMaterial color="#5c4033" roughness={0.9} />
+            </mesh>
+            <mesh position={[1.2, 0.6, -8]} rotation={[0, 0.5, 0]} castShadow receiveShadow>
+                <boxGeometry args={[1.0, 1.2, 1.0]} />
+                <meshStandardMaterial color="#4a4a55" roughness={0.6} metalness={0.4} />
+            </mesh>
+        </group>
     );
 }
 
@@ -104,8 +123,8 @@ function AlleyLighting() {
             <ambientLight intensity={0.2} color="#102040" />
             <hemisphereLight args={['#102040', '#050a10', 0.4]} />
 
-            {/* Practical 1: Start */}
-            <pointLight position={[0, 4, -2]} intensity={2} color="#ffaa55" distance={8} decay={2} castShadow stroke-shadow-bias={-0.001} />
+            {/* Practical 1: Start - Fixed shadow-bias */}
+            <pointLight position={[0, 4, -2]} intensity={2} color="#ffaa55" distance={8} decay={2} castShadow shadow-bias={-0.001} />
 
             {/* Practical 2: Mid */}
             <pointLight position={[1, 4, -12]} intensity={1.5} color="#ffcc88" distance={10} decay={2} castShadow />
@@ -131,36 +150,38 @@ function AlleyLighting() {
 export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
     return (
         <div style={{ width: '100vw', height: '100vh', background: '#000' }}>
-            <Canvas
-                shadows
-                dpr={[1, 1.5]}
-                gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
-                camera={{ fov: 60, position: [0, 1.65, 0] }}
-            >
-                <Suspense fallback={null}>
-                    <DepthGrading />
-                    <HumanCameraRig onEnterAlleyTwo={onEnterAlleyTwo} />
+            <ErrorBoundary>
+                <Canvas
+                    shadows
+                    dpr={[1, 1.5]}
+                    gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+                    camera={{ fov: 60, position: [0, 1.65, 0] }}
+                >
+                    {/* Make Suspense fallback visible in 3D space via HTML or just ensure it doesn't hang */}
+                    <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="red" /></mesh>}>
+                        <DepthGrading />
+                        <HumanCameraRig onEnterAlleyTwo={onEnterAlleyTwo} />
 
-                    <AlleyGeometry />
-                    <AlleyEndingPortal />
-                    <AlleySurfaceBreakupLayer />
-                    <ContactShadowSystem />
-                    <EnvironmentalMicroMotion />
+                        <AlleyGeometry />
+                        <AlleyEndingPortal />
+                        <AlleySurfaceBreakupLayer />
+                        <ContactShadowSystem />
+                        <EnvironmentalMicroMotion />
 
-                    {/* Props would go here, manually placed for now */}
-                    <AlleyProps />
+                        <AlleyProps />
 
-                    <AlleyLighting />
-                    <SpatialAudioZones />
+                        <AlleyLighting />
+                        <SpatialAudioZones />
 
-                    <EffectComposer>
-                        <SMAA />
-                        <Vignette eskil={false} offset={0.1} darkness={1.1} />
-                        <Noise opacity={0.05} />
-                        <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
-                    </EffectComposer>
-                </Suspense>
-            </Canvas>
+                        <EffectComposer>
+                            <SMAA />
+                            <Vignette eskil={false} offset={0.1} darkness={1.1} />
+                            <Noise opacity={0.05} />
+                            <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
+                        </EffectComposer>
+                    </Suspense>
+                </Canvas>
+            </ErrorBoundary>
 
             {/* UI Overlays */}
             <div style={{
