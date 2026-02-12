@@ -10,6 +10,7 @@ import { AlleySurfaceBreakupLayer } from "./AlleySurfaceBreakupLayer";
 import { ContactShadowSystem } from "./ContactShadowSystem";
 import { EnvironmentalMicroMotion } from "./EnvironmentalMicroMotion";
 import { SpatialAudioZones } from "./SpatialAudioZones";
+import { RobotRepairShop } from "./RobotRepairShop";
 
 // --- Human Camera Rig ---
 function HumanCameraRig({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
@@ -143,6 +144,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                         <EnvironmentalMicroMotion />
 
                         <AlleyProps />
+                        <RobotRepairShop />
 
                         {/* Daytime Lighting Rig - BRIGHT SUN */}
                         <ambientLight intensity={2.5} color="#fff8e6" />
