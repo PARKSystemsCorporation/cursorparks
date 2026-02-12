@@ -14,6 +14,7 @@ import { SpatialAudioZones } from "./SpatialAudioZones";
 import { RobotRepairShop } from "./RobotRepairShop";
 
 import { HotspotNavigation } from "./HotspotNavigation";
+import BazaarVendors from "./BazaarVendors";
 
 // --- Human Camera Rig (Legacy - Replaced by HotspotNavigation) ---
 // function HumanCameraRig... (REMOVED)
@@ -165,7 +166,9 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                         <EnvironmentalMicroMotion />
 
                         <AlleyProps />
+                        <AlleyProps />
                         <RobotRepairShop />
+                        <BazaarVendors />
 
                         {/* Daytime Lighting Rig - BRIGHT SUN */}
                         <ambientLight intensity={2.5} color="#fff8e6" />
