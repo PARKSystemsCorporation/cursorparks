@@ -23,7 +23,7 @@ async function seedAria() {
         const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
         for (const line of lines) {
-            await processMessage(line, 'system_seed');
+            await processMessage(line);
             process.stdout.write('.');
             totalLines++;
         }
