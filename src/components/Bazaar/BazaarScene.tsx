@@ -62,12 +62,6 @@ function HumanCameraRig({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
 }
 
 // --- Depth Grading / Fog ---
-function DepthGrading() {
-    return (
-        <fogExp2 attach="fog" args={['#050810', 0.035]} /> // Dark blue-black fog, dense enough to hide end
-    );
-}
-
 // --- Error Boundary ---
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean, error: Error | null }> {
     constructor(props: { children: React.ReactNode }) {
@@ -95,7 +89,6 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 // --- Props (Placeholder) ---
 function AlleyProps() {
-    // Replaced instancedMesh with simple group to avoid initialization issues
     return (
         <group position={[0, 0, 0]}>
             <mesh position={[-1.2, 0.4, -4]} castShadow receiveShadow>
@@ -110,56 +103,24 @@ function AlleyProps() {
     );
 }
 
-// --- Lighting Rig ---
-function AlleyLighting() {
-    // Layered Lighting
-    // 1. Ambient (Base fill, very low)
-    // 2. Hemisphere (Sky/Ground contrast)
-    // 3. Practicals (Warm localized)
-    // 4. Portal Glow (End urge)
-
-    return (
-        <>
-            <ambientLight intensity={0.2} color="#102040" />
-            <hemisphereLight args={['#102040', '#050a10', 0.4]} />
-
-            {/* Practical 1: Start - Fixed shadow-bias */}
-            <pointLight position={[0, 4, -2]} intensity={2} color="#ffaa55" distance={8} decay={2} castShadow shadow-bias={-0.001} />
-
-            {/* Practical 2: Mid */}
-            <pointLight position={[1, 4, -12]} intensity={1.5} color="#ffcc88" distance={10} decay={2} castShadow />
-
-            {/* Practical 3: Deep */}
-            <pointLight position={[-1, 4, -22]} intensity={1.5} color="#ffaa55" distance={10} decay={2} />
-
-            {/* Portal Curiosity: Blue/Purple cool spill from around the corner at the end */}
-            <rectAreaLight
-                width={2}
-                height={8}
-                color="#4488ff"
-                intensity={5}
-                position={[-5, 3, -32]}
-                lookAt={() => new THREE.Vector3(0, 3, -25)}
-            />
-        </>
-    );
-}
-
 
 // --- Main Scene ---
 export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
     return (
-        <div style={{ width: '100vw', height: '100vh', background: '#000' }}>
+        <div style={{ width: '100vw', height: '100vh', background: '#e6ccb2' }}>
             <ErrorBoundary>
                 <Canvas
                     shadows
                     dpr={[1, 1.5]}
-                    gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+                    gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
                     camera={{ fov: 60, position: [0, 1.65, 0] }}
                 >
                     {/* Make Suspense fallback visible in 3D space via HTML or just ensure it doesn't hang */}
                     <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="red" /></mesh>}>
-                        <DepthGrading />
+                        {/* Daytime Fog: Dusty Horizon */}
+                        <color attach="background" args={['#e6ccb2']} />
+                        <fogExp2 attach="fog" args={['#e6ccb2', 0.02]} />
+
                         <HumanCameraRig onEnterAlleyTwo={onEnterAlleyTwo} />
 
                         <AlleyGeometry />
@@ -170,12 +131,27 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
 
                         <AlleyProps />
 
-                        <AlleyLighting />
+                        {/* Daytime Lighting Rig */}
+                        <ambientLight intensity={0.6} color="#ffeadd" />
+                        <hemisphereLight args={['#87CEEB', '#3d2b1f', 0.6]} />
+                        <directionalLight
+                            position={[50, 100, 50]}
+                            intensity={3}
+                            color="#fff0dd"
+                            castShadow
+                            shadow-bias={-0.0005}
+                            shadow-mapSize={[2048, 2048]}
+                        />
+
+                        {/* Subtle fill lights for alley depth */}
+                        <pointLight position={[0, 4, -10]} intensity={0.5} color="#ffaa55" distance={10} decay={2} />
+
                         <SpatialAudioZones />
 
                         <EffectComposer>
                             <SMAA />
-                            <Vignette eskil={false} offset={0.1} darkness={1.1} />
+                            {/* Lighter Vignette for Day */}
+                            <Vignette eskil={false} offset={0.1} darkness={0.6} />
                             <Noise opacity={0.05} />
                             <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
                         </EffectComposer>
@@ -183,12 +159,11 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                 </Canvas>
             </ErrorBoundary>
 
-            {/* UI Overlays */}
             <div style={{
                 position: 'absolute', bottom: '20px', left: '20px',
-                color: '#fff', opacity: 0.5, fontFamily: 'monospace', fontSize: '12px'
+                color: '#3d2b1f', opacity: 0.7, fontFamily: 'monospace', fontSize: '12px', fontWeight: 'bold'
             }}>
-                [SIMULATION ACTIVE]
+                [DAYTIME SIMULATION ACTIVE]
             </div>
         </div>
     );
