@@ -127,15 +127,40 @@ export function AlleyGeometry() {
             </group>
 
             {/* Back Wall (Behind POV) */}
-            <mesh position={[0, WALL_HEIGHT / 2, 2]} rotation={[0, Math.PI, 0]} receiveShadow>
-                <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 32, 16]} />
-                <meshStandardMaterial
-                    map={textures.wallDiff}
-                    normalMap={textures.wallNorm}
-                    roughness={0.9}
-                    color="#aaa"
-                />
-            </mesh>
+            {/* Back Wall Group (Behind POV) */}
+            <group position={[0, 0, 2]} rotation={[0, Math.PI, 0]}>
+                {/* The Wall Itself */}
+                <mesh position={[0, WALL_HEIGHT / 2, 0]} receiveShadow>
+                    <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 32, 16]} />
+                    <meshStandardMaterial
+                        map={textures.wallDiff}
+                        normalMap={textures.wallNorm}
+                        roughness={0.9}
+                        color="#aaa"
+                    />
+                </mesh>
+
+                {/* "Bus Stop" Yellow LED Strip (3 units wide, near top) */}
+                <group position={[0, 5.5, 0.15]}>
+                    <mesh>
+                        <boxGeometry args={[3, 0.15, 0.1]} />
+                        <meshStandardMaterial
+                            color="#ffcc00"
+                            emissive="#ffcc00"
+                            emissiveIntensity={8}
+                            toneMapped={false}
+                        />
+                    </mesh>
+                    {/* Light Cast */}
+                    <pointLight
+                        intensity={2}
+                        distance={10}
+                        decay={2}
+                        color="#ffcc00"
+                        position={[0, 0, 0.5]}
+                    />
+                </group>
+            </group>
         </group>
     );
 }
