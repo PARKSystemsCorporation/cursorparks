@@ -180,7 +180,7 @@ export function RealisticVendorBody({
     const animState = useRef({ opacity: 0, lastShoutSeen: null as string | null });
     const idleRef = useRef(0);
 
-    const { skinTone, topColor, bottomColor, accessory, posture, build, eyeColor, roboticArm, goldChains } = config;
+    const { skinTone, topColor, bottomColor, accessory, posture, build, roboticArm, goldChains } = config;
 
     const buildScale = { slim: { torso: 0.9, limbs: 0.95 }, medium: { torso: 1, limbs: 1 }, stocky: { torso: 1.1, limbs: 1.05 }, muscular: { torso: 1.15, limbs: 1.1 }, tall: { torso: 1, limbs: 1.15 } }[build];
 
@@ -268,7 +268,7 @@ export function RealisticVendorBody({
                 <>
                     {/* Left Arm */}
                     <group ref={leftArmRef} position={[-0.22 * buildScale.torso, 1.45, 0]} rotation={[0, 0, posture === "arms-wide" ? -0.4 : 0.15]}>
-                        <CyberneticArm isRight={false} robotic={false} color={accessory === "sleeveless" ? skinTone : topColor} />
+                        <CyberneticArm isRight={false} robotic={false} skinTone={skinTone} />
                     </group>
 
                     {/* Right Arm */}
@@ -276,7 +276,7 @@ export function RealisticVendorBody({
                         <CyberneticArm
                             isRight={true}
                             robotic={roboticArm || false}
-                            color={accessory === "sleeveless" ? skinTone : topColor}
+                            skinTone={skinTone}
                         />
                     </group>
                 </>

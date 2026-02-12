@@ -134,11 +134,9 @@ export function CyberneticTorso({ topColor, buildScale }: { topColor: string; bu
     );
 }
 
-export function CyberneticArm({ isRight, robotic, color }: { isRight: boolean; robotic: boolean; color: string }) {
-    const mainMat = robotic ? MAT_GOLD_ACCENT : new THREE.MeshStandardMaterial({ color: color, roughnes: 0.5 }); // Fallback
-
+export function CyberneticArm({ isRight, robotic, skinTone }: { isRight: boolean; robotic: boolean; skinTone: string }) {
     // Synthetic skin for upper arm (if organic/hybrid)
-    const upperArmMat = robotic ? MAT_GOLD_ACCENT : new THREE.MeshStandardMaterial({ color: "#a08060", roughness: 0.5, metalness: 0.1 });
+    const upperArmMat = robotic ? MAT_GOLD_ACCENT : new THREE.MeshStandardMaterial({ color: skinTone, roughness: 0.5, metalness: 0.1 });
 
     const sideMult = isRight ? 1 : -1;
 
