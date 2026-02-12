@@ -33,13 +33,14 @@ function HumanCameraRig({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
         // 2. Head Bob (micro) - heavily reduced
         const bob = Math.sin(t * 4) * 0.002 * stabilization;
 
-        // 3. Forward Drift (very slow auto-walk)
-        // We stop at -25 (portal)
+        // 3. Forward Drift (Disabled per user request)
+        /*
         if (targetPos.current.z > -25) {
             targetPos.current.z -= 0.005; // Slightly slower drift
         } else {
             if (onEnterAlleyTwo) onEnterAlleyTwo();
         }
+        */
 
         // Apply with stiffer spring for stability
         camera.position.x += (targetPos.current.x + sway.current.x - camera.position.x) * 0.05;
@@ -96,10 +97,8 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 function AlleyProps() {
     return (
         <group position={[0, 0, 0]}>
-            <mesh position={[-1.2, 0.4, -4]} castShadow receiveShadow>
-                <boxGeometry args={[0.8, 0.8, 0.8]} />
-                <meshStandardMaterial color="#8c6043" roughness={0.9} />
-            </mesh>
+            {/* Brown Box Removed per user request */}
+
             {/* Grey Box Removed per user request */}
 
             {/* Red Neon LED Strip - Right Wall Floor Junction */}
