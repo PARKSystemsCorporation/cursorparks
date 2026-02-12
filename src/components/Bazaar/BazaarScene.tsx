@@ -1,7 +1,7 @@
 "use client";
 
-import { Canvas, useFrame, useThree, extend } from "@react-three/fiber";
-import { Suspense, useEffect, useRef, useMemo } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Suspense, useRef } from "react";
 import * as THREE from "three";
 import { EffectComposer, ToneMapping, SMAA, Vignette, Noise } from "@react-three/postprocessing";
 import { AlleyGeometry } from "./AlleyGeometry";
@@ -10,11 +10,9 @@ import { AlleySurfaceBreakupLayer } from "./AlleySurfaceBreakupLayer";
 import { ContactShadowSystem } from "./ContactShadowSystem";
 import { EnvironmentalMicroMotion } from "./EnvironmentalMicroMotion";
 import { SpatialAudioZones } from "./SpatialAudioZones";
-import { BazaarMaterialsProvider } from "./BazaarMaterials"; // Keep provider for safety
-
 
 // --- Human Camera Rig ---
-function HumanCameraRig() {
+function HumanCameraRig({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
     const { camera } = useThree();
     const targetPos = useRef(new THREE.Vector3(0, 1.65, 0));
     const lookAtPos = useRef(new THREE.Vector3(0, 1.5, -10));
@@ -35,6 +33,8 @@ function HumanCameraRig() {
         // We stop at -25 (portal)
         if (targetPos.current.z > -25) {
             targetPos.current.z -= 0.008; // Very slow drift
+        } else {
+            if (onEnterAlleyTwo) onEnterAlleyTwo();
         }
 
         // Apply
@@ -128,7 +128,7 @@ function AlleyLighting() {
 
 
 // --- Main Scene ---
-export default function BazaarScene() {
+export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
     return (
         <div style={{ width: '100vw', height: '100vh', background: '#000' }}>
             <Canvas
@@ -139,7 +139,7 @@ export default function BazaarScene() {
             >
                 <Suspense fallback={null}>
                     <DepthGrading />
-                    <HumanCameraRig />
+                    <HumanCameraRig onEnterAlleyTwo={onEnterAlleyTwo} />
 
                     <AlleyGeometry />
                     <AlleyEnding />

@@ -21,7 +21,7 @@ export function SpatialAudioZones() {
         // We calculate weights based on camera position
         sources.forEach(src => {
             const dist = camera.position.distanceTo(src.pos);
-            const volume = Math.max(0, 1 - dist / src.maxDist);
+            const _volume = Math.max(0, 1 - dist / src.maxDist);
             // We could emit events or update a debug store here
         });
     });

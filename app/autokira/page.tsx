@@ -29,7 +29,7 @@ export default function AutoKira() {
   const [mode, setMode] = useState<Mode>("learning");
   const [online, setOnline] = useState(false);
   const [sending, setSending] = useState(false);
-  const [stats, setStats] = useState<any>({});
+  const [stats, setStats] = useState<Record<string, number>>({});
   const [events, setEvents] = useState<LearningEvent[]>([]);
   const [showEvents, setShowEvents] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
@@ -77,7 +77,7 @@ export default function AutoKira() {
             } else if (d.type === "event") {
               setEvents((ev) => [d.data, ...ev].slice(0, 50));
             }
-          } catch {}
+          } catch { }
         };
         ws.onclose = () => setTimeout(connect, 3000);
         ws.onerror = () => ws.close();
@@ -141,7 +141,7 @@ export default function AutoKira() {
           { role: "system", text: `Mode: ${d.current}`, time: Date.now() },
         ]);
       }
-    } catch {}
+    } catch { }
   };
 
   return (

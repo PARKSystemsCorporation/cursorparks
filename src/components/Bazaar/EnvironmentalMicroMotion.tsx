@@ -19,8 +19,6 @@ export function EnvironmentalMicroMotion() {
         });
     });
 
-    const ALLEY_LENGTH = 30;
-
     return (
         <group ref={groupRef}>
             {/* Hanging Cables - Simple catenary curves simulated with scaling/rotation */}
