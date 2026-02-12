@@ -117,7 +117,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                     shadows
                     dpr={[1, 1.5]}
                     // Switch to Cineon logic for better saturation in bright light
-                    gl={{ antialias: false, toneMapping: THREE.CineonToneMapping, toneMappingExposure: 1.2 }}
+                    gl={{ antialias: false, toneMapping: THREE.CineonToneMapping, toneMappingExposure: 1.5 }}
                     camera={{ fov: 60, position: [0, 1.65, 0] }}
                 >
                     {/* Make Suspense fallback visible in 3D space via HTML or just ensure it doesn't hang */}
@@ -136,12 +136,12 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
 
                         <AlleyProps />
 
-                        {/* Daytime Lighting Rig - Bright Sun */}
-                        <ambientLight intensity={1.5} color="#fff8e6" />
-                        <hemisphereLight args={['#87CEEB', '#504030', 1.2]} />
+                        {/* Daytime Lighting Rig - BRIGHT SUN */}
+                        <ambientLight intensity={2.5} color="#fff8e6" />
+                        <hemisphereLight args={['#87CEEB', '#504030', 1.5]} />
                         <directionalLight
-                            position={[50, 40, -10]} /* 3 o'clock (Right), High, Slightly forward */
-                            intensity={4}
+                            position={[50, 40, -10]}
+                            intensity={6}
                             color="#fffaf0"
                             castShadow
                             shadow-bias={-0.0005}
@@ -149,16 +149,17 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                         />
 
                         {/* Fill light */}
-                        <pointLight position={[0, 4, -10]} intensity={1.0} color="#ffaa55" distance={15} decay={2} />
+                        <pointLight position={[0, 4, -10]} intensity={1.5} color="#ffaa55" distance={20} decay={2} />
 
                         <SpatialAudioZones />
 
                         <EffectComposer>
                             <SMAA />
                             {/* Subtle Vignette */}
-                            <Vignette eskil={false} offset={0.1} darkness={0.4} />
-                            <Noise opacity={0.05} />
-                            <ToneMapping adaptive={false} resolution={256} middleGrey={0.7} maxLuminance={16.0} adaptationRate={1.0} />
+                            <Vignette eskil={false} offset={0.1} darkness={0.3} />
+                            {/* Drastically reduced noise */}
+                            <Noise opacity={0.015} />
+                            <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
                         </EffectComposer>
                     </Suspense>
                 </Canvas>
