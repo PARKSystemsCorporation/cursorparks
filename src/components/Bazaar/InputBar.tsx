@@ -1,18 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
+import { useChat } from "./ChatContext";
 
-interface InputBarProps {
-    onShout: (text: string) => void;
-}
-
-export default function InputBar({ onShout }: InputBarProps) {
+export default function InputBar() {
     const [text, setText] = useState("");
+    const { sendMessage } = useChat();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!text.trim()) return;
-        onShout(text);
+        sendMessage(text);
         setText("");
     };
 
@@ -22,7 +20,7 @@ export default function InputBar({ onShout }: InputBarProps) {
                 type="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="SHOUT INTO THE VOID..."
+                placeholder="Say something..."
                 maxLength={140}
                 autoFocus
             />

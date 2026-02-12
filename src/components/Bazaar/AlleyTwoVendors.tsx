@@ -10,6 +10,7 @@ const ALLEY_TWO_VENDORS = [
         name: "THE SMITH",
         color: "#338855",
         position: [-3.7, 0, -1] as [number, number, number],
+        rotation: [0, Math.PI / 4, 0] as [number, number, number], // left wall, face right toward user
         shoutBubbleOffset: [-0.8, 2, 0.5] as [number, number, number],
         shouts: [
             "Hardware? I fix it all.",
@@ -24,6 +25,7 @@ const ALLEY_TWO_VENDORS = [
         name: "THE FIXER",
         color: "#6644aa",
         position: [-3.7, 0, -5] as [number, number, number],
+        rotation: [0, Math.PI / 4, 0] as [number, number, number], // left wall, face right toward user
         shoutBubbleOffset: [-0.8, 2, 0.5] as [number, number, number],
         shouts: [
             "Need a connection? I've got 'em.",
@@ -38,6 +40,7 @@ const ALLEY_TWO_VENDORS = [
         name: "THE MERCHANT",
         color: "#ff8800",
         position: [3.2, 0, -10] as [number, number, number],
+        rotation: [0, -Math.PI / 4, 0] as [number, number, number], // right wall, face left toward user
         shoutBubbleOffset: [0.8, 2, 0.5] as [number, number, number],
         shouts: [
             "Rare finds. One of a kind.",
@@ -52,6 +55,7 @@ const ALLEY_TWO_VENDORS = [
         name: "THE CODER",
         color: "#00ff9d",
         position: [3.5, 0, -3] as [number, number, number],
+        rotation: [0, -Math.PI / 4, 0] as [number, number, number], // right wall, face left toward user
         shoutBubbleOffset: [0.8, 2, 0.5] as [number, number, number],
         shouts: [
             "FREE CODE. Come get it.",
@@ -89,6 +93,7 @@ function AlleyTwoVendorWrapper(props: AlleyTwoVendorWithShout) {
     return (
         <RealisticVendorBody
             {...props}
+            rotation={'rotation' in props ? (props as unknown as { rotation: [number, number, number] }).rotation : undefined}
             lastShout={lastShout}
             isTarget={props.targetId === props.id}
             setTarget={props.setTarget}

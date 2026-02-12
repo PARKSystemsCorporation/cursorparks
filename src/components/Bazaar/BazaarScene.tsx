@@ -15,6 +15,11 @@ import { RobotRepairShop } from "./RobotRepairShop";
 
 import { HotspotNavigation } from "./HotspotNavigation";
 import BazaarVendors from "./BazaarVendors";
+import InputBar from "./InputBar";
+import { ChatProvider } from "./ChatContext";
+import FloatingMessages from "./FloatingMessage";
+import StreamerChatOverlay from "./StreamerChatOverlay";
+import "./BazaarLanding.css";
 
 // --- Human Camera Rig (Legacy - Replaced by HotspotNavigation) ---
 // function HumanCameraRig... (REMOVED)
@@ -142,71 +147,73 @@ function AlleyProps() {
 // --- Main Scene ---
 export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
     return (
-        <div style={{ width: '100vw', height: '100vh', background: '#e6ccb2' }}>
-            <ErrorBoundary>
-                <Canvas
-                    shadows
-                    dpr={[1, 1.5]}
-                    // Switch to Cineon logic for better saturation in bright light
-                    gl={{ antialias: false, toneMapping: THREE.CineonToneMapping, toneMappingExposure: 1.5 }}
-                    camera={{ fov: 60, position: [0, 1.65, 0] }}
-                >
-                    {/* Make Suspense fallback visible in 3D space via HTML or just ensure it doesn't hang */}
-                    <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="red" /></mesh>}>
-                        {/* Daytime Fog: Very light, mostly clear to show sky */}
-                        <color attach="background" args={['#87CEEB']} />
-                        <fogExp2 attach="fog" args={['#fff0dd', 0.005]} />
+        <ChatProvider>
+            <div style={{ width: '100vw', height: '100vh', background: '#e6ccb2' }}>
+                <ErrorBoundary>
+                    <Canvas
+                        shadows
+                        dpr={[1, 1.5]}
+                        gl={{ antialias: false, toneMapping: THREE.CineonToneMapping, toneMappingExposure: 1.5 }}
+                        camera={{ fov: 60, position: [0, 1.65, 0] }}
+                    >
+                        <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="red" /></mesh>}>
+                            <color attach="background" args={['#87CEEB']} />
+                            <fogExp2 attach="fog" args={['#fff0dd', 0.005]} />
 
-                        <HotspotNavigation />
+                            <HotspotNavigation />
 
-                        <AlleyGeometry />
-                        <AlleyEndingPortal />
-                        <AlleySurfaceBreakupLayer />
-                        <ContactShadowSystem />
-                        <EnvironmentalMicroMotion />
+                            <AlleyGeometry />
+                            <AlleyEndingPortal />
+                            <AlleySurfaceBreakupLayer />
+                            <ContactShadowSystem />
+                            <EnvironmentalMicroMotion />
 
-                        <AlleyProps />
-                        <AlleyProps />
-                        <RobotRepairShop />
-                        <BazaarVendors />
+                            <AlleyProps />
+                            <AlleyProps />
+                            <RobotRepairShop />
+                            <BazaarVendors />
 
-                        {/* Daytime Lighting Rig - BRIGHT SUN */}
-                        <ambientLight intensity={2.5} color="#fff8e6" />
-                        <hemisphereLight args={['#87CEEB', '#504030', 1.5]} />
-                        <directionalLight
-                            position={[50, 40, -10]}
-                            intensity={6}
-                            color="#fffaf0"
-                            castShadow
-                            shadow-bias={-0.0005}
-                            shadow-mapSize={[2048, 2048]}
-                        />
+                            <FloatingMessages />
 
-                        {/* Fill light */}
-                        <pointLight position={[0, 4, -10]} intensity={1.5} color="#ffaa55" distance={20} decay={2} />
+                            {/* Daytime Lighting Rig - BRIGHT SUN */}
+                            <ambientLight intensity={2.5} color="#fff8e6" />
+                            <hemisphereLight args={['#87CEEB', '#504030', 1.5]} />
+                            <directionalLight
+                                position={[50, 40, -10]}
+                                intensity={6}
+                                color="#fffaf0"
+                                castShadow
+                                shadow-bias={-0.0005}
+                                shadow-mapSize={[2048, 2048]}
+                            />
 
-                        <SpatialAudioZones />
+                            {/* Fill light */}
+                            <pointLight position={[0, 4, -10]} intensity={1.5} color="#ffaa55" distance={20} decay={2} />
 
-                        <EffectComposer>
-                            <SMAA />
-                            {/* Subtle Vignette */}
-                            <Vignette eskil={false} offset={0.1} darkness={0.3} />
-                            {/* Drastically reduced noise */}
-                            <Noise opacity={0.015} />
-                            {/* Bloom for Neon - threshold set high so only the LED glows */}
-                            <Bloom luminanceThreshold={1.5} mipmapBlur intensity={1.5} radius={0.4} />
-                            <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
-                        </EffectComposer>
-                    </Suspense>
-                </Canvas>
-            </ErrorBoundary>
+                            <SpatialAudioZones />
 
-            <div style={{
-                position: 'absolute', bottom: '20px', left: '20px',
-                color: '#3d2b1f', opacity: 0.7, fontFamily: 'monospace', fontSize: '12px', fontWeight: 'bold'
-            }}>
-                [DAYTIME SIMULATION ACTIVE]
+                            <EffectComposer>
+                                <SMAA />
+                                <Vignette eskil={false} offset={0.1} darkness={0.3} />
+                                <Noise opacity={0.015} />
+                                <Bloom luminanceThreshold={1.5} mipmapBlur intensity={1.5} radius={0.4} />
+                                <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
+                            </EffectComposer>
+                        </Suspense>
+                    </Canvas>
+                </ErrorBoundary>
+
+                <StreamerChatOverlay />
+                <InputBar />
+
+                <div style={{
+                    position: 'absolute', bottom: '20px', left: '20px',
+                    color: '#3d2b1f', opacity: 0.7, fontFamily: 'monospace', fontSize: '12px', fontWeight: 'bold'
+                }}>
+                    [DAYTIME SIMULATION ACTIVE]
+                </div>
             </div>
-        </div>
+        </ChatProvider>
     );
 }
+

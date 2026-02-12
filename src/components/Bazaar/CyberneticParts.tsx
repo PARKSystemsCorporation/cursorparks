@@ -51,52 +51,85 @@ const SPHERE_GEO = new THREE.SphereGeometry(1, 16, 16);
 // --- COMPONENTS ---
 
 export function CyberneticHead({ skinTone, isBarker }: { skinTone: string; isBarker?: boolean }) {
-    // Synthetic skin material (dynamic based on prop)
+    // Warm organic skin material
     const matSkin = new THREE.MeshStandardMaterial({
         color: skinTone,
-        roughness: 0.5,
-        metalness: 0.1,
+        roughness: 0.65,
+        metalness: 0.02,
+    });
+    // Lip material — slightly darker/redder
+    const matLips = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(skinTone).lerp(new THREE.Color("#a04040"), 0.35).getHexString(),
+        roughness: 0.55,
+        metalness: 0.0,
     });
 
     return (
         <group>
-            {/* Cranium - Integrated Structure */}
-            <mesh position={[0, 0.06, -0.04]} scale={[0.15, 0.14, 0.18]} geometry={SPHERE_GEO} material={MAT_PRISTINE_WHITE} castShadow />
+            {/* --- Cranium (rounded, human-like) --- */}
+            <mesh position={[0, 0.06, -0.02]} scale={[0.16, 0.17, 0.19]} geometry={SPHERE_GEO} material={matSkin} castShadow />
 
-            {/* Face - Half Skin / Half Mech */}
-            <group position={[0, 0, 0.08]}>
-                {/* Right Side (Skin) */}
-                <mesh position={[0.04, 0, 0]} scale={[0.07, 0.18, 0.04]} geometry={BOX_GEO} material={matSkin} castShadow />
-                {/* Left Side (Exposed Sensor Plate) */}
-                <mesh position={[-0.04, 0, 0]} scale={[0.07, 0.18, 0.035]} geometry={BOX_GEO} material={MAT_LIGHT_TITANIUM} castShadow />
+            {/* --- Face (full skin coverage) --- */}
+            <mesh position={[0, -0.02, 0.1]} scale={[0.14, 0.16, 0.06]} geometry={BOX_GEO} material={matSkin} castShadow />
+
+            {/* --- Brow Ridge --- */}
+            <mesh position={[0, 0.04, 0.12]} scale={[0.14, 0.025, 0.03]} geometry={BOX_GEO} material={matSkin} />
+
+            {/* --- Eyes (subtle glow — cybernetic accent) --- */}
+            <group position={[0, 0.02, 0.14]}>
+                {/* Eye sockets (slight indent) */}
+                <mesh position={[-0.04, 0, -0.01]} scale={[0.032, 0.02, 0.015]} geometry={SPHERE_GEO} material={MAT_INTERNAL_MECH} />
+                <mesh position={[0.04, 0, -0.01]} scale={[0.032, 0.02, 0.015]} geometry={SPHERE_GEO} material={MAT_INTERNAL_MECH} />
+                {/* Iris glow */}
+                <mesh position={[-0.04, 0, 0]} scale={[0.018, 0.018, 0.008]} geometry={SPHERE_GEO} material={MAT_SENSOR_GLOW} />
+                <mesh position={[0.04, 0, 0]} scale={[0.018, 0.018, 0.008]} geometry={SPHERE_GEO} material={MAT_SENSOR_GLOW} />
             </group>
 
-            {/* Jaw - Engineered */}
-            <mesh position={[0, -0.11, 0.04]} scale={[0.13, 0.05, 0.12]} geometry={BOX_GEO} material={MAT_SOFT_GRAPHITE} castShadow />
-
-            {/* Eyes - Deep Set Optical Sensors */}
-            <group position={[0, 0.02, 0.1]}>
-                {/* Left Eye (Glow) */}
-                <mesh position={[-0.04, 0, 0]} scale={[0.025, 0.015, 0.01]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
-                {/* Right Eye (Glow or Lens) */}
-                <mesh position={[0.04, 0, 0]} scale={[0.025, 0.015, 0.01]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
+            {/* --- Nose --- */}
+            <group position={[0, -0.02, 0.15]}>
+                {/* Bridge */}
+                <mesh position={[0, 0.03, 0]} scale={[0.025, 0.06, 0.03]} geometry={BOX_GEO} material={matSkin} />
+                {/* Tip */}
+                <mesh position={[0, -0.01, 0.01]} scale={[0.035, 0.025, 0.025]} geometry={SPHERE_GEO} material={matSkin} />
+                {/* Nostrils */}
+                <mesh position={[-0.015, -0.02, 0]} scale={[0.012, 0.008, 0.01]} geometry={SPHERE_GEO} material={MAT_INTERNAL_MECH} />
+                <mesh position={[0.015, -0.02, 0]} scale={[0.012, 0.008, 0.01]} geometry={SPHERE_GEO} material={MAT_INTERNAL_MECH} />
             </group>
 
-            {/* Neck Connection point */}
-            <mesh position={[0, -0.16, -0.02]} scale={[0.08, 0.05, 0.08]} geometry={CYL_GEO} material={MAT_INTERNAL_MECH} />
+            {/* --- Lips / Mouth --- */}
+            <group position={[0, -0.08, 0.12]}>
+                {/* Upper lip */}
+                <mesh position={[0, 0.005, 0]} scale={[0.06, 0.012, 0.025]} geometry={BOX_GEO} material={matLips} />
+                {/* Lower lip */}
+                <mesh position={[0, -0.01, 0.003]} scale={[0.055, 0.015, 0.025]} geometry={BOX_GEO} material={matLips} />
+            </group>
+
+            {/* --- Chin --- */}
+            <mesh position={[0, -0.12, 0.08]} scale={[0.08, 0.04, 0.06]} geometry={SPHERE_GEO} material={matSkin} castShadow />
+
+            {/* --- Jaw / Cheeks --- */}
+            <mesh position={[-0.08, -0.04, 0.04]} scale={[0.05, 0.1, 0.08]} geometry={BOX_GEO} material={matSkin} />
+            <mesh position={[0.08, -0.04, 0.04]} scale={[0.05, 0.1, 0.08]} geometry={BOX_GEO} material={matSkin} />
+
+            {/* --- Ears --- */}
+            <mesh position={[-0.15, 0.01, 0]} scale={[0.03, 0.05, 0.025]} geometry={SPHERE_GEO} material={matSkin} />
+            <mesh position={[0.15, 0.01, 0]} scale={[0.03, 0.05, 0.025]} geometry={SPHERE_GEO} material={matSkin} />
+
+            {/* --- Neck --- */}
+            <mesh position={[0, -0.16, 0]} scale={[0.07, 0.06, 0.07]} geometry={CYL_GEO} material={matSkin} />
 
             {/* Barker Specifics: Sunglasses & Beard */}
             {isBarker && (
                 <>
-                    {/* Sunglasses - Premium styling */}
-                    <mesh position={[0, 0.025, 0.12]} scale={[0.15, 0.04, 0.02]} geometry={BOX_GEO} castShadow>
+                    {/* Sunglasses */}
+                    <mesh position={[0, 0.025, 0.16]} scale={[0.16, 0.04, 0.015]} geometry={BOX_GEO} castShadow>
                         <meshStandardMaterial color="#111" roughness={0.1} metalness={0.8} transparent opacity={0.95} />
                     </mesh>
-                    <mesh position={[0.08, 0.025, 0.06]} scale={[0.01, 0.005, 0.12]} geometry={BOX_GEO} material={MAT_GOLD_ACCENT} />
-                    <mesh position={[-0.08, 0.025, 0.06]} scale={[0.01, 0.005, 0.12]} geometry={BOX_GEO} material={MAT_GOLD_ACCENT} />
+                    <mesh position={[0.09, 0.025, 0.08]} scale={[0.01, 0.005, 0.14]} geometry={BOX_GEO} material={MAT_GOLD_ACCENT} />
+                    <mesh position={[-0.09, 0.025, 0.08]} scale={[0.01, 0.005, 0.14]} geometry={BOX_GEO} material={MAT_GOLD_ACCENT} />
 
-                    {/* Beard - Groomed, dense */}
-                    <mesh position={[0, -0.1, 0.11]} scale={[0.16, 0.12, 0.06]} geometry={BOX_GEO} castShadow>
+                    {/* Beard */}
+                    <mesh position={[0, -0.1, 0.11]} scale={[0.14, 0.1, 0.06]} geometry={SPHERE_GEO} castShadow>
                         <meshStandardMaterial color="#0a0a0a" roughness={1} />
                     </mesh>
                 </>

@@ -10,11 +10,8 @@ const BAZAAR_VENDORS = [
         id: "barker",
         name: "THE BARKER",
         color: "#aa2222", // Red for the vest/aggressive confident tone
-        // Placement: Right wall is at x=2. Shop is at z=-6. 
-        // We want him on the right corner of the stall on the right.
-        // Shop facade is ~5m wide, centered at z=-6.
-        // Let's place him slightly in front and to the side.
         position: [2.8, 0, -4.5] as [number, number, number],
+        rotation: [0, -Math.PI / 4, 0] as [number, number, number], // 45° facing user
         shoutBubbleOffset: [-0.8, 2.2, 0.5] as [number, number, number],
         shouts: [
             "You want the best? I got the best.",
@@ -51,6 +48,7 @@ function BazaarVendorWrapper(props: BazaarVendorWithShout) {
     return (
         <RealisticVendorBody
             {...props}
+            rotation={'rotation' in props ? (props as unknown as { rotation: [number, number, number] }).rotation : undefined}
             lastShout={lastShout}
             isTarget={props.targetId === props.id}
             setTarget={props.setTarget}

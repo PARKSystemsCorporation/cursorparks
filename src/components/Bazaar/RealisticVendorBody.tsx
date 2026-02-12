@@ -146,6 +146,7 @@ export const VENDOR_APPEARANCE: Record<string, VendorAppearanceConfig> = {
 
 export type RealisticVendorBodyProps = {
     position: readonly [number, number, number];
+    rotation?: readonly [number, number, number];
     color: string;
     isTarget: boolean;
     name: string;
@@ -160,6 +161,7 @@ const ROBOTO_FONT = "https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM
 
 export function RealisticVendorBody({
     position,
+    rotation = [0, 0, 0],
     color,
     isTarget,
     name,
@@ -260,7 +262,7 @@ export function RealisticVendorBody({
 
 
     return (
-        <group ref={group} position={position} onClick={() => setTarget(id)}>
+        <group ref={group} position={position} rotation={rotation as [number, number, number]} onClick={() => setTarget(id)}>
             {/* --- CYBERNETIC BODY --- */}
 
             {/* Hips / Pelvis */}

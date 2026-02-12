@@ -10,6 +10,9 @@ import AlleyTwoVendors from "./AlleyTwoVendors";
 import AlleyTwoCameraRig from "./AlleyTwoCameraRig";
 import InputBar from "./InputBar";
 import CodeVendorPopout from "./CodeVendorPopout";
+import { ChatProvider } from "./ChatContext";
+import FloatingMessages from "./FloatingMessage";
+import StreamerChatOverlay from "./StreamerChatOverlay";
 import "./BazaarLanding.css";
 import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
 import { BazaarMaterialsProvider } from "./BazaarMaterials";
@@ -93,6 +96,8 @@ function AlleyTwoSceneContent({
 
             <AlleyTwoEnvironment onReturn={onReturnToAlleyOne} />
             <AlleyTwoVendors setTarget={onShout} targetId={targetVendor} />
+
+            <FloatingMessages />
 
             <AlleyTwoCameraRig targetVendor={targetVendor} onExit={() => onShout("/back")} />
 
@@ -187,38 +192,41 @@ export default function AlleyTwoScene({ onReturnToAlleyOne }: AlleyTwoSceneProps
     }, []);
 
     return (
-        <div className="bazaar-canvas-container">
-            <Canvas
-                shadows
-                dpr={[1, 1.5]}
-                gl={{
-                    antialias: false,
-                    toneMapping: CONFIG.postprocessing.toneMapping,
-                    toneMappingExposure: CONFIG.postprocessing.exposure,
-                    powerPreference: "default",
-                    stencil: false,
-                    depth: true,
-                }}
-                camera={CONFIG.camera}
-            >
-                <BazaarMaterialsProvider>
-                    <Suspense fallback={null}>
-                        <AlleyTwoSceneContent
-                            targetVendor={targetVendor}
-                            onShout={onShoutTarget}
-                            onReturnToAlleyOne={onReturnToAlleyOne}
-                        />
-                    </Suspense>
-                </BazaarMaterialsProvider>
-            </Canvas>
+        <ChatProvider>
+            <div className="bazaar-canvas-container">
+                <Canvas
+                    shadows
+                    dpr={[1, 1.5]}
+                    gl={{
+                        antialias: false,
+                        toneMapping: CONFIG.postprocessing.toneMapping,
+                        toneMappingExposure: CONFIG.postprocessing.exposure,
+                        powerPreference: "default",
+                        stencil: false,
+                        depth: true,
+                    }}
+                    camera={CONFIG.camera}
+                >
+                    <BazaarMaterialsProvider>
+                        <Suspense fallback={null}>
+                            <AlleyTwoSceneContent
+                                targetVendor={targetVendor}
+                                onShout={onShoutTarget}
+                                onReturnToAlleyOne={onReturnToAlleyOne}
+                            />
+                        </Suspense>
+                    </BazaarMaterialsProvider>
+                </Canvas>
 
-            <div className="bazaar-overlay-vignette" />
+                <div className="bazaar-overlay-vignette" />
 
-            {targetVendor === "coder" && (
-                <CodeVendorPopout onClose={() => setTargetVendor(null)} />
-            )}
+                {targetVendor === "coder" && (
+                    <CodeVendorPopout onClose={() => setTargetVendor(null)} />
+                )}
 
-            <InputBar onShout={handleShout} />
-        </div>
+                <StreamerChatOverlay />
+                <InputBar />
+            </div>
+        </ChatProvider>
     );
 }
