@@ -153,14 +153,10 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                     <AlleyLighting />
                     <SpatialAudioZones />
 
-                    <EffectComposer disableNormalPass>
-                        {/* SMAA for crisp edges without heavy MSAA */}
+                    <EffectComposer>
                         <SMAA />
-                        {/* Vignette helps focus eye and hide corners */}
                         <Vignette eskil={false} offset={0.1} darkness={1.1} />
-                        {/* Noise adds texture to darkness, preventing banding */}
                         <Noise opacity={0.05} />
-                        {/* ToneMapping handled by canvas, but can enforce here if needed */}
                         <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
                     </EffectComposer>
                 </Suspense>
