@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Text, Billboard } from "@react-three/drei";
-import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
+import { PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 import VendorProfileCard from "./VendorProfileCard";
 import { CyberneticHead, CyberneticTorso, CyberneticArm, CyberneticLeg } from "./CyberneticParts";
 
@@ -259,7 +259,6 @@ export function RealisticVendorBody({
             <group ref={headRef} position={[0, 1.6, 0]}>
                 <CyberneticHead
                     skinTone={skinTone}
-                    eyeColor={eyeColor}
                     isBarker={id === 'barker'}
                 />
             </group>

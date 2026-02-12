@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import * as THREE from "three";
 
 // --- MATERIALS ---
@@ -17,11 +17,6 @@ const MAT_CARBON = new THREE.MeshStandardMaterial({
     roughness: 0.8,
 });
 
-const MAT_SYNTHETIC_SKIN = new THREE.MeshStandardMaterial({
-    color: "#a08060", // Base tone, will be overridden by props
-    roughness: 0.6,
-    metalness: 0.1,
-});
 
 const MAT_GLOW = new THREE.MeshStandardMaterial({
     color: "#00ffff",
@@ -51,7 +46,7 @@ const SPHERE_GEO = new THREE.SphereGeometry(1, 16, 16);
 
 // --- COMPONENTS ---
 
-export function CyberneticHead({ skinTone, eyeColor, isBarker }: { skinTone: string; eyeColor: string, isBarker?: boolean }) {
+export function CyberneticHead({ skinTone, isBarker }: { skinTone: string; isBarker?: boolean }) {
     return (
         <group>
             {/* Cranium Plate (Top) */}
