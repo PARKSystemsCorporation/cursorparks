@@ -6,7 +6,7 @@ function createNoiseDecal(color: string, alphaMax: number = 0.5) {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
 
     // Clear
     ctx.clearRect(0, 0, 512, 512);

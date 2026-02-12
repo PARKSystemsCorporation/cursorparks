@@ -9,7 +9,7 @@ function createCanvas(size: number) {
 }
 
 function getContext(canvas: HTMLCanvasElement) {
-    return canvas.getContext("2d")!;
+    return canvas.getContext("2d", { willReadFrequently: true })!;
 }
 
 // Fixed noise function — uses direct pixel manipulation for proper fine-grain detail

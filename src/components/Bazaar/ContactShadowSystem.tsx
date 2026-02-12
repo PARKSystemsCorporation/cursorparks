@@ -5,7 +5,7 @@ function createShadowTexture() {
     const canvas = document.createElement('canvas');
     canvas.width = 128;
     canvas.height = 128;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
 
     const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
     grad.addColorStop(0, 'rgba(0,0,0,0.8)');

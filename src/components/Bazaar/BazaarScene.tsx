@@ -22,30 +22,34 @@ function HumanCameraRig({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
         const time = state.clock.getElapsedTime();
         const t = time * 0.5;
 
-        // 1. Idle Body Sway (breathing/balance)
-        sway.current.x = Math.sin(t) * 0.05;
-        sway.current.y = Math.cos(t * 1.4) * 0.03;
+        // Stabilization factor: Starts at 1, decays to 0.25 (75% reduction) over 10 seconds
+        const stabilization = Math.max(0.25, 1.0 - (time * 0.1));
 
-        // 2. Head Bob (micro)
-        const bob = Math.sin(t * 4) * 0.005;
+        // 1. Idle Body Sway (breathing/balance) - Reduced magnitude & Applied Stabilization
+        sway.current.x = Math.sin(t) * 0.02 * stabilization; // Was 0.05
+        sway.current.y = Math.cos(t * 1.4) * 0.015 * stabilization; // Was 0.03
+
+        // 2. Head Bob (micro) - heavily reduced
+        const bob = Math.sin(t * 4) * 0.002 * stabilization;
 
         // 3. Forward Drift (very slow auto-walk)
         // We stop at -25 (portal)
         if (targetPos.current.z > -25) {
-            targetPos.current.z -= 0.008; // Very slow drift
+            targetPos.current.z -= 0.005; // Slightly slower drift
         } else {
             if (onEnterAlleyTwo) onEnterAlleyTwo();
         }
 
-        // Apply
+        // Apply with stiffer spring for stability
         camera.position.x += (targetPos.current.x + sway.current.x - camera.position.x) * 0.05;
         camera.position.y += (targetPos.current.y + sway.current.y + bob - camera.position.y) * 0.05;
         camera.position.z += (targetPos.current.z - camera.position.z) * 0.05;
 
         // Look Behavior (Focus shifting)
         // Look ahead but wander slightly
-        const wanderX = Math.sin(time * 0.3) * 2;
-        const wanderY = Math.cos(time * 0.2) * 1.0;
+        // Reduced wander amplitude
+        const wanderX = Math.sin(time * 0.3) * 0.5 * stabilization;
+        const wanderY = Math.cos(time * 0.2) * 0.2 * stabilization;
 
         const idealLookAt = new THREE.Vector3(
             wanderX,
@@ -93,11 +97,11 @@ function AlleyProps() {
         <group position={[0, 0, 0]}>
             <mesh position={[-1.2, 0.4, -4]} castShadow receiveShadow>
                 <boxGeometry args={[0.8, 0.8, 0.8]} />
-                <meshStandardMaterial color="#5c4033" roughness={0.9} />
+                <meshStandardMaterial color="#8c6043" roughness={0.9} />
             </mesh>
             <mesh position={[1.2, 0.6, -8]} rotation={[0, 0.5, 0]} castShadow receiveShadow>
                 <boxGeometry args={[1.0, 1.2, 1.0]} />
-                <meshStandardMaterial color="#4a4a55" roughness={0.6} metalness={0.4} />
+                <meshStandardMaterial color="#6a6a75" roughness={0.6} metalness={0.4} />
             </mesh>
         </group>
     );
@@ -112,14 +116,15 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                 <Canvas
                     shadows
                     dpr={[1, 1.5]}
-                    gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.0 }}
+                    // Switch to Cineon logic for better saturation in bright light
+                    gl={{ antialias: false, toneMapping: THREE.CineonToneMapping, toneMappingExposure: 1.2 }}
                     camera={{ fov: 60, position: [0, 1.65, 0] }}
                 >
                     {/* Make Suspense fallback visible in 3D space via HTML or just ensure it doesn't hang */}
                     <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="red" /></mesh>}>
-                        {/* Daytime Fog: Dusty Horizon */}
-                        <color attach="background" args={['#e6ccb2']} />
-                        <fogExp2 attach="fog" args={['#e6ccb2', 0.02]} />
+                        {/* Daytime Fog: Very light, mostly clear to show sky */}
+                        <color attach="background" args={['#87CEEB']} />
+                        <fogExp2 attach="fog" args={['#fff0dd', 0.005]} />
 
                         <HumanCameraRig onEnterAlleyTwo={onEnterAlleyTwo} />
 
@@ -131,29 +136,29 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
 
                         <AlleyProps />
 
-                        {/* Daytime Lighting Rig */}
-                        <ambientLight intensity={0.6} color="#ffeadd" />
-                        <hemisphereLight args={['#87CEEB', '#3d2b1f', 0.6]} />
+                        {/* Daytime Lighting Rig - Bright Sun */}
+                        <ambientLight intensity={1.5} color="#fff8e6" />
+                        <hemisphereLight args={['#87CEEB', '#504030', 1.2]} />
                         <directionalLight
                             position={[50, 100, 50]}
-                            intensity={3}
-                            color="#fff0dd"
+                            intensity={4}
+                            color="#fffaf0"
                             castShadow
                             shadow-bias={-0.0005}
                             shadow-mapSize={[2048, 2048]}
                         />
 
-                        {/* Subtle fill lights for alley depth */}
-                        <pointLight position={[0, 4, -10]} intensity={0.5} color="#ffaa55" distance={10} decay={2} />
+                        {/* Fill light */}
+                        <pointLight position={[0, 4, -10]} intensity={1.0} color="#ffaa55" distance={15} decay={2} />
 
                         <SpatialAudioZones />
 
                         <EffectComposer>
                             <SMAA />
-                            {/* Lighter Vignette for Day */}
-                            <Vignette eskil={false} offset={0.1} darkness={0.6} />
+                            {/* Subtle Vignette */}
+                            <Vignette eskil={false} offset={0.1} darkness={0.4} />
                             <Noise opacity={0.05} />
-                            <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
+                            <ToneMapping adaptive={false} resolution={256} middleGrey={0.7} maxLuminance={16.0} adaptationRate={1.0} />
                         </EffectComposer>
                     </Suspense>
                 </Canvas>
