@@ -9,7 +9,7 @@ interface AlleyEndingPortalProps {
     onEnterPortal?: () => void;
 }
 
-export function AlleyEndingPortal({ positionX = 0, positionZ = -30, rotationY = 0, onEnterPortal }: AlleyEndingPortalProps) {
+export function AlleyEndingPortal({ positionX = 0, positionZ = -30, rotationY = 0, onEnterPortal: _onEnterPortal }: AlleyEndingPortalProps) {
     // Reuse textures (in a real app, use a centralized asset store)
     const textures = useMemo(() => {
         const wallDiff = createConcreteWallTexture();

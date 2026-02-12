@@ -24,7 +24,6 @@ export default function MarketAtmosphere() {
         }
     });
 
-    const p = phase;
     // Afternoon Light: Warm amber sun, cream/brown fill
     const sunColor = "#ffb76b";
     const skyColor = "#ffeedd"; // Pale warm cream
