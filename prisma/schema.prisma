@@ -145,3 +145,99 @@ model FirmLeaderboard {
 
   @@unique([firmId, seasonId])
 }
+
+// --- ARIA AI MODELS ---
+
+model AriaShort {
+  id                   String   @id @default(cuid())
+  patternKey           String
+  word1                String
+  word2                String
+  correlationScore     Float
+  reinforcementCount   Int      @default(0)
+  decayCount           Int      @default(0)
+  decayAtMessage       Int
+  lastSeenMessageIndex Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([patternKey])
+  @@index([correlationScore])
+}
+
+model AriaMedium {
+  id                   String   @id @default(cuid())
+  patternKey           String
+  word1                String
+  word2                String
+  correlationScore     Float
+  reinforcementCount   Int      @default(0)
+  decayCount           Int      @default(0)
+  decayAtMessage       Int
+  lastSeenMessageIndex Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([patternKey])
+  @@index([correlationScore])
+}
+
+model AriaLong {
+  id                   String   @id @default(cuid())
+  patternKey           String
+  word1                String
+  word2                String
+  correlationScore     Float
+  reinforcementCount   Int      @default(0)
+  decayCount           Int      @default(0)
+  decayAtMessage       Int
+  lastSeenMessageIndex Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([patternKey])
+  @@index([correlationScore])
+}
+
+model AriaDecay {
+  id                   String   @id @default(cuid())
+  patternKey           String
+  word1                String
+  word2                String
+  correlationScore     Float
+  reinforcementCount   Int      @default(0)
+  decayCount           Int      @default(0)
+  decayedFrom          String
+  decayedAt            DateTime @default(now())
+}
+
+model AriaPhrase {
+  id                   String   @id @default(cuid())
+  phraseKey            String   @unique
+  words                String   // JSON string of words array
+  sourceCorrelations   String   // JSON string of correlation IDs
+  correlationScore     Float
+  reinforcementCount   Int      @default(0)
+  decayCount           Int      @default(0)
+  decayAtMessage       Int
+  tier                 String
+  lastSeenMessageIndex Int
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([correlationScore])
+}
+
+model AriaTokenStat {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  category  String?  // stable, transition, modifier, structural
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model AriaMessageCounter {
+  id           Int      @id @default(1)
+  currentIndex Int      @default(0)
+  lastUpdated  DateTime @updatedAt
+}

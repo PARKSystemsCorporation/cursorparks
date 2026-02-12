@@ -179,6 +179,33 @@ export function RealisticVendorBody({
     const lineRef = useRef<THREE.Mesh>(null);
     const animState = useRef({ opacity: 0, lastShoutSeen: null as string | null });
     const idleRef = useRef(0);
+    const [ariaResponse, setAriaResponse] = React.useState<string | null>(null);
+
+    // ARIA AI Integration: Trigger greeting when targeted
+    React.useEffect(() => {
+        if (isTarget) {
+            // Simulate a player greeting to trigger a response
+            // In a real chat, this would come from an input field
+            const context = `hello ${id} customer service`;
+
+            fetch('/api/aria/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: context, vendorId: id })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.response && data.response !== "...") {
+                        setAriaResponse(data.response);
+                    }
+                })
+                .catch(err => console.error("ARIA error:", err));
+        } else {
+            setAriaResponse(null);
+        }
+    }, [isTarget, id]);
+
+    const displayShout = ariaResponse || lastShout; // ARIA overrides shout if present
 
     const { skinTone, topColor, bottomColor, accessory, posture, build, roboticArm, goldChains } = config;
 
@@ -191,8 +218,8 @@ export function RealisticVendorBody({
 
         group.current.position.y = position[1] + Math.sin(t * 1.5) * 0.02;
 
-        if (lastShout !== animState.current.lastShoutSeen) {
-            animState.current.lastShoutSeen = lastShout;
+        if (displayShout !== animState.current.lastShoutSeen) {
+            animState.current.lastShoutSeen = displayShout;
             animState.current.opacity = 1;
         }
         if (animState.current.opacity > 0) {
@@ -307,10 +334,10 @@ export function RealisticVendorBody({
                 </mesh>
             </Billboard>
             {
-                lastShout && (
+                displayShout && (
                     <Billboard position={shoutBubbleOffset}>
                         <Text ref={textRef} fontSize={0.15} maxWidth={2.5} color="#ffffff" fillOpacity={0} outlineWidth={0.01} outlineColor="#000" outlineOpacity={0} font={ROBOTO_FONT}>
-                            {lastShout}
+                            {displayShout}
                         </Text>
                         <mesh ref={bgRef} position={[0, 0, -0.01]}>
                             <planeGeometry args={[2.6, 0.4]} />
