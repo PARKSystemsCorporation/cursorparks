@@ -10,9 +10,9 @@ const BAZAAR_VENDORS = [
         id: "barker",
         name: "THE BARKER",
         color: "#aa2222",
-        position: [1.5, 0, -2] as [number, number, number],
+        position: [2.8, 0, -4.5] as [number, number, number],
         rotation: [0, -Math.PI / 4, 0] as [number, number, number],
-        shoutBubbleOffset: [-0.6, 2.2, 0.3] as [number, number, number],
+        shoutBubbleOffset: [-0.8, 2.2, 0.5] as [number, number, number],
         shouts: [
             "You want the best? I got the best.",
             "Upgrade yourself. Don't be obsolete.",

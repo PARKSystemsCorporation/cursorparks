@@ -45,16 +45,47 @@ export function AlleyGeometry() {
                 />
             </mesh>
 
-            {/* Left Wall */}
-            <mesh position={[-ALLEY_WIDTH / 2, WALL_HEIGHT / 2, -ALLEY_LENGTH / 2]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-                <planeGeometry args={[ALLEY_LENGTH, WALL_HEIGHT, 64, 16]} />
-                <meshStandardMaterial
-                    map={textures.wallDiff}
-                    normalMap={textures.wallNorm}
-                    roughness={0.9}
-                    color="#aaa"
-                />
-            </mesh>
+            {/* Left Wall - Segmented with Vendor Booth Opening */}
+            <group position={[-ALLEY_WIDTH / 2, 0, -ALLEY_LENGTH / 2]}>
+                {/*
+                    BOOTH GAP at world Z = -2, local Z = +13
+                    Gap width: 3m, from local +11.5 to +14.5
+                    Wall local range: -15 to +15 (30m total)
+                */}
+
+                {/* Base Front Segment (local +14.5 to +15) → length 0.5, center +14.75 */}
+                <mesh position={[0, 1.25, 14.75]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                    <planeGeometry args={[0.5, 2.5]} />
+                    <meshStandardMaterial
+                        map={textures.wallDiff}
+                        normalMap={textures.wallNorm}
+                        roughness={0.9}
+                        color="#aaa"
+                    />
+                </mesh>
+
+                {/* Base Back Segment (local -15 to +11.5) → length 26.5, center -1.75 */}
+                <mesh position={[0, 1.25, -1.75]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                    <planeGeometry args={[26.5, 2.5]} />
+                    <meshStandardMaterial
+                        map={textures.wallDiff}
+                        normalMap={textures.wallNorm}
+                        roughness={0.9}
+                        color="#aaa"
+                    />
+                </mesh>
+
+                {/* Upper Wall (solid across full length, above booth opening) */}
+                <mesh position={[0, 4.75, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                    <planeGeometry args={[ALLEY_LENGTH, 4.5]} />
+                    <meshStandardMaterial
+                        map={textures.wallDiff}
+                        normalMap={textures.wallNorm}
+                        roughness={0.9}
+                        color="#aaa"
+                    />
+                </mesh>
+            </group>
 
             {/* Right Wall - Segmented with Windows for Light Shafts & Shop Entrance */}
             <group position={[ALLEY_WIDTH / 2, 0, -ALLEY_LENGTH / 2]}> {/* Group Center at World Z = -15 */}
