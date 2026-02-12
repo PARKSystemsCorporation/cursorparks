@@ -111,6 +111,17 @@ function AlleyProps() {
                     toneMapped={false}
                 />
             </mesh>
+
+            {/* Red Neon LED Strip - Left Wall Floor Junction */}
+            <mesh position={[-1.95, 0.05, -15]} rotation={[0, 0, 0]}>
+                <boxGeometry args={[0.05, 0.05, 30]} />
+                <meshStandardMaterial
+                    color="#ff0000"
+                    emissive="#ff0000"
+                    emissiveIntensity={10}
+                    toneMapped={false}
+                />
+            </mesh>
         </group>
     );
 }
