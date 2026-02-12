@@ -1,5 +1,5 @@
 import { prisma } from "../../server/db";
-import { tokenizeMessage } from "./correlator";
+import { tokenizeMessage, CorrelationData } from "./correlator";
 
 // Generator Config
 const GENERATION_CONFIG = {
@@ -49,7 +49,7 @@ async function searchByWord(word: string) {
 }
 
 // Graph Building
-function buildWordGraph(pairs: any[]) {
+function buildWordGraph(pairs: CorrelationData[]) {
     const graph = new Map<string, GraphNode>();
 
     for (const pair of pairs) {
@@ -120,7 +120,7 @@ export async function generateResponse(input: string) {
     const keywords = tokenizeMessage(input).map(t => t.word);
 
     // Fetch related pairs
-    const allPairs: any[] = [];
+    const allPairs: CorrelationData[] = [];
 
     // 1. Keyword search (Contextual)
     for (const kw of keywords) {

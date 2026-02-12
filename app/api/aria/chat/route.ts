@@ -5,7 +5,7 @@ import { generateResponse } from '../../../../src/lib/aria/generator';
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { message, vendorId } = body;
+        const { message } = body;
 
         if (!message) {
             return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
         const responseText = await generateResponse(message);
 
         const isLearned = processingResult.processed
-            ? (processingResult as any).newPhrases > 0 || (processingResult as any).newCorrelations > 0
+            ? (processingResult.newPhrases || 0) > 0 || (processingResult.newCorrelations || 0) > 0
             : false;
 
         return NextResponse.json({

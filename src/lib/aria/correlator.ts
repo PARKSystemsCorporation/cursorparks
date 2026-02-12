@@ -18,6 +18,31 @@ export interface DecayResult {
     toGraveyard: number;
 }
 
+export interface ProcessingResult {
+    processed: boolean;
+    messageIndex?: number;
+    wordCount?: number;
+    newCorrelations?: number;
+    reinforced?: number;
+    promoted?: number;
+    newPhrases?: number;
+}
+
+export interface CorrelationData {
+    id: number;
+    patternKey: string;
+    word1: string;
+    word2: string;
+    correlationScore: number;
+    reinforcementCount: number;
+    decayCount: number;
+    decayAtMessage: number;
+    lastSeenMessageIndex: number;
+    // Optional or derived
+    decayedFrom?: string;
+    decayedAt?: Date;
+}
+
 // Configuration
 export const THRESHOLDS = {
     SHORT_MAX: 0.30,
@@ -114,7 +139,7 @@ async function findExistingCorrelation(patternKey: string) {
     return null;
 }
 
-async function moveCorrelation(correlation: any, fromTier: string, toTier: string) {
+async function moveCorrelation(correlation: CorrelationData, fromTier: string, toTier: string) {
     if (fromTier === toTier) return false;
 
     // Delete from old table
@@ -386,7 +411,7 @@ async function checkDecay(currentMessageIndex: number): Promise<DecayResult> {
 }
 
 // Main Process Entry
-export async function processMessage(messageText: string) {
+export async function processMessage(messageText: string): Promise<ProcessingResult> {
     if (!messageText) return { processed: false };
 
     const messageIndex = await getAndIncrementMessageIndex();
