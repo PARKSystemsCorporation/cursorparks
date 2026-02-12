@@ -1,6 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
 import React, { Suspense, useRef } from "react";
 import * as THREE from "three";
 import { EffectComposer, ToneMapping, SMAA, Vignette, Noise, Bloom } from "@react-three/postprocessing"; // Added Bloom
@@ -75,31 +76,64 @@ function AlleyProps() {
             </mesh>
 
             {/* Horizontal Floor Lights - Every 10m (White Blue & Vibrant) */}
-            {
-                [0, -10, -20].map((z, i) => (
-                    <group key={i} position={[0, 0.02, z]}>
-                        {/* The Light Strip Mesh - 3 units wide, stretching left-right */}
-                        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-                            <planeGeometry args={[3.5, 0.3]} />
-                            <meshStandardMaterial
-                                color="#88ccff"
-                                emissive="#88ccff"
-                                emissiveIntensity={5}
-                                toneMapped={false}
-                            />
-                        </mesh>
-                        {/* The Actual Light Source to illuminate floor */}
-                        <pointLight
-                            position={[0, 0.5, 0]} // Just above the strip
-                            intensity={3}
-                            distance={8}
-                            decay={2}
-                            color="#aaddff"
+            {[0, -10, -20].map((z, i) => (
+                <group key={i} position={[0, 0.02, z]}>
+                    {/* The Light Strip Mesh - 3 units wide, stretching left-right */}
+                    <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                        <planeGeometry args={[3.5, 0.3]} />
+                        <meshStandardMaterial
+                            color="#88ccff"
+                            emissive="#88ccff"
+                            emissiveIntensity={5}
+                            toneMapped={false}
                         />
-                    </group>
-                ))
-            }
-        </group >
+                    </mesh>
+                    {/* The Actual Light Source to illuminate floor */}
+                    <pointLight
+                        position={[0, 0.5, 0]} // Just above the strip
+                        intensity={3}
+                        distance={8}
+                        decay={2}
+                        color="#aaddff"
+                    />
+                </group>
+            ))}
+
+            {/* 'The Public Bazaar' Sign (Left Wall) */}
+            <group position={[-1.9, 2.5, -10]} rotation={[0, Math.PI / 2, 0]}>
+                {/* Backing Plate */}
+                <mesh position={[0, 0, -0.05]}>
+                    <boxGeometry args={[4, 1, 0.1]} />
+                    <meshStandardMaterial color="#1a1a1a" roughness={0.2} metalness={0.8} />
+                </mesh>
+
+                {/* Text */}
+                <Text
+                    fontSize={0.5}
+                    color="#ffaa00" // Amber/Gold
+                    anchorX="center"
+                    anchorY="middle"
+                // font="/fonts/Inter-Bold.ttf" // Use default if missing
+                >
+                    The Public Bazaar
+                    <meshStandardMaterial
+                        color="#ffaa00"
+                        emissive="#ffaa00"
+                        emissiveIntensity={4}
+                        toneMapped={false}
+                    />
+                </Text>
+
+                {/* Light Source for "Reflection" */}
+                <pointLight
+                    position={[0, 0, 1]}
+                    intensity={5}
+                    distance={10}
+                    decay={2}
+                    color="#ffaa00"
+                />
+            </group>
+        </group>
     );
 }
 
