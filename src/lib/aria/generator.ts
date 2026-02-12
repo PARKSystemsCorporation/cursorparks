@@ -80,6 +80,18 @@ const VENDOR_PERSONALITIES: Record<string, VendorPersonality> = {
         ],
         defaultTopics: ["bots", "agents", "firmware", "circuits", "trade"],
     },
+    broker: {
+        name: "THE BROKER",
+        tone: "methodical",
+        fillers: ["look", "here's the deal", "bottom line", "between us"],
+        catchphrases: [
+            "Autonomous little bots — built, tuned, hustled.",
+            "Custom firmware, no questions asked.",
+            "Need a runner? I got runners.",
+            "Every unit leaves my bench tested.",
+        ],
+        defaultTopics: ["bots", "runners", "scouts", "firmware", "prototypes"],
+    },
     smith: {
         name: "THE SMITH",
         tone: "stoic",

@@ -21,6 +21,21 @@ const BAZAAR_VENDORS = [
         ],
         shoutInterval: 6000,
     },
+    {
+        id: "broker",
+        name: "THE BROKER",
+        color: "#5ba8d4", // Light blue
+        position: [-2.8, 0, -4.5] as [number, number, number],
+        rotation: [0, Math.PI / 4, 0] as [number, number, number], // Left wall, 45° facing user
+        shoutBubbleOffset: [0.8, 2.2, 0.5] as [number, number, number],
+        shouts: [
+            "Autonomous bots. Built to spec.",
+            "Need a runner? I got runners.",
+            "Custom firmware, no questions asked.",
+            "Scout units going fast today.",
+        ],
+        shoutInterval: 7000,
+    },
 ] as const;
 
 type BazaarVendorWithShout = (typeof BAZAAR_VENDORS)[number] & {
