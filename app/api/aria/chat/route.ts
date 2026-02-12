@@ -12,15 +12,19 @@ export async function POST(req: Request) {
         }
 
         // 1. Process & Learn (Async, but we await to ensure DB consistency for generation)
-        const processingResult = await processMessage(message, vendorId || "unknown");
+        const processingResult = await processMessage(message);
 
         // 2. Generate Response
         const responseText = await generateResponse(message);
 
+        const isLearned = processingResult.processed
+            ? (processingResult as any).newPhrases > 0 || (processingResult as any).newCorrelations > 0
+            : false;
+
         return NextResponse.json({
             response: responseText,
             debug: {
-                learned: processingResult.processed ? (processingResult.newPhrases > 0 || processingResult.newCorrelations > 0) : false,
+                learned: isLearned,
                 stats: processingResult
             }
         });
