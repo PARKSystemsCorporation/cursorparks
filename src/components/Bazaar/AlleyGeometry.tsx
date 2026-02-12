@@ -161,6 +161,17 @@ export function AlleyGeometry() {
                     />
                 </group>
             </group>
+
+            {/* Far End Wall (closes the alley at Z = -ALLEY_LENGTH) */}
+            <mesh position={[0, WALL_HEIGHT / 2, -ALLEY_LENGTH]} receiveShadow>
+                <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 32, 16]} />
+                <meshStandardMaterial
+                    map={textures.wallDiff}
+                    normalMap={textures.wallNorm}
+                    roughness={0.9}
+                    color="#777"
+                />
+            </mesh>
         </group>
     );
 }
