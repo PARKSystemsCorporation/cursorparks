@@ -25,11 +25,11 @@ export function ContactShadowSystem() {
     // Placeholder for where props will be. 
     // In a real system, props would register themselves or we'd map this to prop positions.
     // For now, hardcoded to match where we WILL put props.
-    const shadows = [
-        { pos: [-1.2, 0.015, -4], size: 1.5 },
-        { pos: [1.2, 0.015, -8], size: 1.8 },
-        { pos: [-1.0, 0.015, -12], size: 1.2 },
-        { pos: [1.3, 0.015, -18], size: 1.6 },
+    // Shadows for existing props only
+    const shadows: { pos: number[], size: number }[] = [
+        // Robot Shop Workbench Legs?
+        //{ pos: [3.2, 0.015, -6], size: 1.0 }, 
+        // Currently no static props in the alley need blobs, except maybe the Neon box?
     ];
 
     return (
