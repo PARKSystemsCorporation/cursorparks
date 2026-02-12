@@ -401,156 +401,156 @@ export function RealisticVendorBody({
                             <meshStandardMaterial color={handMat} roughness={0.9} />
                         </mesh>
                     </group>
-                </group>
-            <group ref={rightArmRef} position={[0.2, 1.05, 0.08]} rotation={[0, 0, posture === "arms-wide" ? 0.4 : posture === "one-arm-counter" || posture === "hammer-arm" ? -0.1 : 0]}>
-                {/* Right Arm - Logic for Robotic vs Organic */}
-                {roboticArm ? (
-                    // Cybernetic Arm (Gold)
-                    <group>
-                        {/* Shoulder Joint */}
-                        <mesh position={[0, 0, 0]} castShadow>
-                            <sphereGeometry args={[0.06, 16, 16]} />
-                            <meshStandardMaterial color="#cca300" metalness={1.0} roughness={0.2} />
+
+                    <group ref={rightArmRef} position={[0.2, 1.05, 0.08]} rotation={[0, 0, posture === "arms-wide" ? 0.4 : posture === "one-arm-counter" || posture === "hammer-arm" ? -0.1 : 0]}>
+                        {/* Right Arm - Logic for Robotic vs Organic */}
+                        {roboticArm ? (
+                            // Cybernetic Arm (Gold)
+                            <group>
+                                {/* Shoulder Joint */}
+                                <mesh position={[0, 0, 0]} castShadow>
+                                    <sphereGeometry args={[0.06, 16, 16]} />
+                                    <meshStandardMaterial color="#cca300" metalness={1.0} roughness={0.2} />
+                                </mesh>
+                                {/* Upper Arm (Mechanical) */}
+                                <mesh position={[0.02, -0.14, 0]} rotation={[0, 0, -0.05]} castShadow>
+                                    <cylinderGeometry args={[0.055, 0.05, 0.28 * buildScale.limbs, 8]} />
+                                    <meshStandardMaterial color="#cca300" metalness={0.9} roughness={0.3} />
+                                </mesh>
+                                {/* Elbow */}
+                                <mesh position={[0.04, -0.28, 0]} castShadow>
+                                    <sphereGeometry args={[0.05, 16, 16]} />
+                                    <meshStandardMaterial color="#111" metalness={0.8} roughness={0.5} />
+                                </mesh>
+                                {/* Forearm (Heavy) */}
+                                <mesh position={[0.08, -0.42, 0.05]} rotation={[0.2, 0, -0.1]} castShadow>
+                                    <cylinderGeometry args={[0.06, 0.07, 0.26 * buildScale.limbs, 8]} />
+                                    <meshStandardMaterial color="#cca300" metalness={0.9} roughness={0.3} />
+                                </mesh>
+                                {/* Hand (Mechanical) */}
+                                <mesh position={[0.12, -0.58, 0.1]} rotation={[0, 0, 0]} castShadow>
+                                    <boxGeometry args={[0.08, 0.1, 0.1]} />
+                                    <meshStandardMaterial color="#cca300" metalness={1.0} roughness={0.2} />
+                                </mesh>
+                                {/* Watch / Wrist Hardware */}
+                                <mesh position={[0.1, -0.52, 0.08]} rotation={[0, 0, 0.2]}>
+                                    <cylinderGeometry args={[0.075, 0.075, 0.05, 12]} />
+                                    <meshStandardMaterial color="#111" metalness={0.8} roughness={0.2} />
+                                </mesh>
+                            </group>
+                        ) : (
+                            // Standard Organic Arm
+                            <>
+                                <mesh position={[0, 0, 0]} castShadow>
+                                    <cylinderGeometry args={[0.05, 0.055, 0.26 * buildScale.limbs, seg.limb]} />
+                                    <meshStandardMaterial color={armMat} roughness={0.9} />
+                                </mesh>
+                                <mesh position={[0.06, -0.13, posture === "one-arm-counter" || posture === "hammer-arm" ? 0.1 : 0]} rotation={[posture === "one-arm-counter" || posture === "hammer-arm" ? 0.6 : 0, 0, -0.08]} castShadow>
+                                    <cylinderGeometry args={[0.04, 0.045, 0.24 * buildScale.limbs, seg.limb]} />
+                                    <meshStandardMaterial color={armMat} roughness={0.9} />
+                                </mesh>
+                                <mesh position={[0.12, posture === "one-arm-counter" || posture === "hammer-arm" ? -0.1 : -0.26, posture === "one-arm-counter" || posture === "hammer-arm" ? 0.2 : 0.05]} castShadow>
+                                    <sphereGeometry args={[0.035, seg.joint, seg.joint]} />
+                                    <meshStandardMaterial color={handMat} roughness={0.9} />
+                                </mesh>
+                            </>
+                        )}
+                    </group>
+                </>
+            )
+            }
+            {
+                posture === "hands-pockets" && (
+                    <group position={[0, 0.9, 0.06]}>
+                        <mesh position={[-0.2, 0, 0]} castShadow>
+                            <cylinderGeometry args={[0.04, 0.045, 0.22, seg.limb]} />
+                            <meshStandardMaterial color={armMat} roughness={0.9} />
                         </mesh>
-                        {/* Upper Arm (Mechanical) */}
-                        <mesh position={[0.02, -0.14, 0]} rotation={[0, 0, -0.05]} castShadow>
-                            <cylinderGeometry args={[0.055, 0.05, 0.28 * buildScale.limbs, 8]} />
-                            <meshStandardMaterial color="#cca300" metalness={0.9} roughness={0.3} />
-                        </mesh>
-                        {/* Elbow */}
-                        <mesh position={[0.04, -0.28, 0]} castShadow>
-                            <sphereGeometry args={[0.05, 16, 16]} />
-                            <meshStandardMaterial color="#111" metalness={0.8} roughness={0.5} />
-                        </mesh>
-                        {/* Forearm (Heavy) */}
-                        <mesh position={[0.08, -0.42, 0.05]} rotation={[0.2, 0, -0.1]} castShadow>
-                            <cylinderGeometry args={[0.06, 0.07, 0.26 * buildScale.limbs, 8]} />
-                            <meshStandardMaterial color="#cca300" metalness={0.9} roughness={0.3} />
-                        </mesh>
-                        {/* Hand (Mechanical) */}
-                        <mesh position={[0.12, -0.58, 0.1]} rotation={[0, 0, 0]} castShadow>
-                            <boxGeometry args={[0.08, 0.1, 0.1]} />
-                            <meshStandardMaterial color="#cca300" metalness={1.0} roughness={0.2} />
-                        </mesh>
-                        {/* Watch / Wrist Hardware */}
-                        <mesh position={[0.1, -0.52, 0.08]} rotation={[0, 0, 0.2]}>
-                            <cylinderGeometry args={[0.075, 0.075, 0.05, 12]} />
-                            <meshStandardMaterial color="#111" metalness={0.8} roughness={0.2} />
+                        <mesh position={[0.2, 0, 0]} castShadow>
+                            <cylinderGeometry args={[0.04, 0.045, 0.22, seg.limb]} />
+                            <meshStandardMaterial color={armMat} roughness={0.9} />
                         </mesh>
                     </group>
-                ) : (
-                    // Standard Organic Arm
-                    <>
-                        <mesh position={[0, 0, 0]} castShadow>
-                            <cylinderGeometry args={[0.05, 0.055, 0.26 * buildScale.limbs, seg.limb]} />
-                            <meshStandardMaterial color={armMat} roughness={0.9} />
+                )
+            }
+            {
+                jewelry && (
+                    <mesh position={[0.28, 0.88, 0.08]} rotation={[0, 0, Math.PI / 2]}>
+                        <torusGeometry args={[0.04, 0.008, 6, 8]} />
+                        <meshStandardMaterial color="#ffd700" metalness={0.9} roughness={0.2} />
+                    </mesh>
+                )
+            }
+            {
+                goldChains && (
+                    <group position={[0, 1.35, 0]} rotation={[0.1, 0, 0]}>
+                        {/* Chain 1 */}
+                        <mesh position={[0, -0.05, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+                            <torusGeometry args={[0.12, 0.015, 8, 24]} />
+                            <meshStandardMaterial color="#ffd700" metalness={1.0} roughness={0.1} />
                         </mesh>
-                        <mesh position={[0.06, -0.13, posture === "one-arm-counter" || posture === "hammer-arm" ? 0.1 : 0]} rotation={[posture === "one-arm-counter" || posture === "hammer-arm" ? 0.6 : 0, 0, -0.08]} castShadow>
-                            <cylinderGeometry args={[0.04, 0.045, 0.24 * buildScale.limbs, seg.limb]} />
-                            <meshStandardMaterial color={armMat} roughness={0.9} />
+                        {/* Chain 2 (Longer) */}
+                        <mesh position={[0, -0.08, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
+                            <torusGeometry args={[0.14, 0.01, 8, 24]} />
+                            <meshStandardMaterial color="#ffd700" metalness={1.0} roughness={0.1} />
                         </mesh>
-                        <mesh position={[0.12, posture === "one-arm-counter" || posture === "hammer-arm" ? -0.1 : -0.26, posture === "one-arm-counter" || posture === "hammer-arm" ? 0.2 : 0.05]} castShadow>
-                            <sphereGeometry args={[0.035, seg.joint, seg.joint]} />
-                            <meshStandardMaterial color={handMat} roughness={0.9} />
-                        </mesh>
-                    </>
-                )}
-            </group>
-        </>
-    )
-}
-{
-    posture === "hands-pockets" && (
-        <group position={[0, 0.9, 0.06]}>
-            <mesh position={[-0.2, 0, 0]} castShadow>
-                <cylinderGeometry args={[0.04, 0.045, 0.22, seg.limb]} />
-                <meshStandardMaterial color={armMat} roughness={0.9} />
-            </mesh>
-            <mesh position={[0.2, 0, 0]} castShadow>
-                <cylinderGeometry args={[0.04, 0.045, 0.22, seg.limb]} />
-                <meshStandardMaterial color={armMat} roughness={0.9} />
-            </mesh>
-        </group>
-    )
-}
-{
-    jewelry && (
-        <mesh position={[0.28, 0.88, 0.08]} rotation={[0, 0, Math.PI / 2]}>
-            <torusGeometry args={[0.04, 0.008, 6, 8]} />
-            <meshStandardMaterial color="#ffd700" metalness={0.9} roughness={0.2} />
-        </mesh>
-    )
-}
-{
-    goldChains && (
-        <group position={[0, 1.35, 0]} rotation={[0.1, 0, 0]}>
-            {/* Chain 1 */}
-            <mesh position={[0, -0.05, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[0.12, 0.015, 8, 24]} />
-                <meshStandardMaterial color="#ffd700" metalness={1.0} roughness={0.1} />
-            </mesh>
-            {/* Chain 2 (Longer) */}
-            <mesh position={[0, -0.08, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[0.14, 0.01, 8, 24]} />
-                <meshStandardMaterial color="#ffd700" metalness={1.0} roughness={0.1} />
-            </mesh>
-        </group>
-    )
-}
-{
-    accentMesh && (
-        <mesh position={[0, 1.08, 0.15]}>
-            <boxGeometry args={[0.06, 0.08, 0.02]} />
-            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE * 0.5} />
-        </mesh>
-    )
-}
+                    </group>
+                )
+            }
+            {
+                accentMesh && (
+                    <mesh position={[0, 1.08, 0.15]}>
+                        <boxGeometry args={[0.06, 0.08, 0.02]} />
+                        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={EMISSIVE_SCALE * 0.5} />
+                    </mesh>
+                )
+            }
 
-{/* --- UI --- */ }
-<Billboard position={[0, 2.3, 0]}>
-    <Text fontSize={0.12} color={color} font={ROBOTO_FONT} anchorY="bottom" outlineWidth={0.01} outlineColor="#000" outlineBlur={0.05}>
-        {name.toUpperCase()}
-    </Text>
-    <mesh position={[0, -0.02, 0]}>
-        <planeGeometry args={[0.5, 0.005]} />
-        <meshBasicMaterial color={color} />
-    </mesh>
-</Billboard>
-{
-    lastShout && (
-        <Billboard position={shoutBubbleOffset}>
-            <Text ref={textRef} fontSize={0.15} maxWidth={2.5} color="#ffffff" fillOpacity={0} outlineWidth={0.01} outlineColor="#000" outlineOpacity={0} font={ROBOTO_FONT}>
-                {lastShout}
-            </Text>
-            <mesh ref={bgRef} position={[0, 0, -0.01]}>
-                <planeGeometry args={[2.6, 0.4]} />
-                <meshBasicMaterial color="#000000" transparent opacity={0} />
-            </mesh>
-            <mesh ref={lineRef} position={[-0.8, -0.2, 0]} rotation={[0, 0, 0.5]}>
-                <planeGeometry args={[0.02, 0.5]} />
-                <meshBasicMaterial color={color} transparent opacity={0} />
-            </mesh>
-        </Billboard>
-    )
-}
-{
-    isTarget && (
-        <group position={[0, 0.1, 0]}>
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[0.5, 0.55, 32]} />
-                <meshBasicMaterial color={color} side={THREE.DoubleSide} transparent opacity={0.5} />
-            </mesh>
-            {PRACTICAL_LIGHT_INTENSITY > 0 && (
-                <pointLight distance={3} intensity={2} color={color} position={[0, 1, 0]} decay={2} />
-            )}
-        </group>
-    )
-}
-{
-    id === "broker" && (
-        <VendorProfileCard vendorId="broker" color={color} position={[0.85, 2.2, 0.45]} visible={!!isTarget} />
-    )
-}
+            {/* --- UI --- */}
+            <Billboard position={[0, 2.3, 0]}>
+                <Text fontSize={0.12} color={color} font={ROBOTO_FONT} anchorY="bottom" outlineWidth={0.01} outlineColor="#000" outlineBlur={0.05}>
+                    {name.toUpperCase()}
+                </Text>
+                <mesh position={[0, -0.02, 0]}>
+                    <planeGeometry args={[0.5, 0.005]} />
+                    <meshBasicMaterial color={color} />
+                </mesh>
+            </Billboard>
+            {
+                lastShout && (
+                    <Billboard position={shoutBubbleOffset}>
+                        <Text ref={textRef} fontSize={0.15} maxWidth={2.5} color="#ffffff" fillOpacity={0} outlineWidth={0.01} outlineColor="#000" outlineOpacity={0} font={ROBOTO_FONT}>
+                            {lastShout}
+                        </Text>
+                        <mesh ref={bgRef} position={[0, 0, -0.01]}>
+                            <planeGeometry args={[2.6, 0.4]} />
+                            <meshBasicMaterial color="#000000" transparent opacity={0} />
+                        </mesh>
+                        <mesh ref={lineRef} position={[-0.8, -0.2, 0]} rotation={[0, 0, 0.5]}>
+                            <planeGeometry args={[0.02, 0.5]} />
+                            <meshBasicMaterial color={color} transparent opacity={0} />
+                        </mesh>
+                    </Billboard>
+                )
+            }
+            {
+                isTarget && (
+                    <group position={[0, 0.1, 0]}>
+                        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+                            <ringGeometry args={[0.5, 0.55, 32]} />
+                            <meshBasicMaterial color={color} side={THREE.DoubleSide} transparent opacity={0.5} />
+                        </mesh>
+                        {PRACTICAL_LIGHT_INTENSITY > 0 && (
+                            <pointLight distance={3} intensity={2} color={color} position={[0, 1, 0]} decay={2} />
+                        )}
+                    </group>
+                )
+            }
+            {
+                id === "broker" && (
+                    <VendorProfileCard vendorId="broker" color={color} position={[0.85, 2.2, 0.45]} visible={!!isTarget} />
+                )
+            }
         </group >
     );
 }
