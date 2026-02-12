@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
             response: responseText,
             debug: {
-                learned: processingResult.newPhrases > 0 || processingResult.newCorrelations > 0,
+                learned: processingResult.processed ? (processingResult.newPhrases > 0 || processingResult.newCorrelations > 0) : false,
                 stats: processingResult
             }
         });

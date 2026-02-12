@@ -386,7 +386,7 @@ async function checkDecay(currentMessageIndex: number): Promise<DecayResult> {
 }
 
 // Main Process Entry
-export async function processMessage(messageText: string, vendorId: string) {
+export async function processMessage(messageText: string, _vendorId: string) {
     if (!messageText) return { processed: false };
 
     const messageIndex = await getAndIncrementMessageIndex();

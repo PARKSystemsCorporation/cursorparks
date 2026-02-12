@@ -1,5 +1,5 @@
 import { prisma } from "../../server/db";
-import { generatePatternKey, getTierForScore, tokenizeMessage, THRESHOLDS, CorrelationResult } from "./correlator";
+import { tokenizeMessage } from "./correlator";
 
 // Generator Config
 const GENERATION_CONFIG = {
@@ -120,7 +120,7 @@ export async function generateResponse(input: string) {
     const keywords = tokenizeMessage(input).map(t => t.word);
 
     // Fetch related pairs
-    let allPairs: any[] = [];
+    const allPairs: any[] = [];
 
     // 1. Keyword search (Contextual)
     for (const kw of keywords) {
