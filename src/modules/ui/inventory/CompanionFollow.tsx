@@ -3,14 +3,21 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef } from "react";
 import * as THREE from "three";
-import { CompanionCreature } from "./CreatureMeshes";
+import { CompanionCreature, ModularCreature } from "./CreatureMeshes";
+import type { CreatureIdentity } from "./CreatureMeshes";
 
 const FOLLOW_SPEED = 2.5;
 const FOLLOW_DISTANCE = 1.8;
 const BOB_AMPLITUDE = 0.02;
 const BOB_FREQ = 2;
 
-export function CompanionFollow({ position: initialPos }: { position: [number, number, number] }) {
+export function CompanionFollow({
+  position: initialPos,
+  identity,
+}: {
+  position: [number, number, number];
+  identity?: CreatureIdentity;
+}) {
   const { camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
 
@@ -27,7 +34,7 @@ export function CompanionFollow({ position: initialPos }: { position: [number, n
 
   return (
     <group ref={groupRef} position={initialPos}>
-      <CompanionCreature />
+      {identity ? <ModularCreature identity={identity} /> : <CompanionCreature />}
     </group>
   );
 }

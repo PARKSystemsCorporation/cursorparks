@@ -1,11 +1,13 @@
 "use client";
 
 import { useInventory } from "@/src/modules/ui/inventory/InventoryContext";
-import { WarformCreature, CompanionCreature } from "@/src/modules/ui/inventory/CreatureMeshes";
+import { WarformCreature, CompanionCreature, ModularCreature } from "@/src/modules/ui/inventory/CreatureMeshes";
+import type { CreatureIdentity } from "@/src/modules/ui/inventory/CreatureMeshes";
 import { CompanionFollow } from "@/src/modules/ui/inventory/CompanionFollow";
 import { RobotCompanion } from "@/src/modules/robot/RobotCompanion";
 
-function StaticCreature({ variant }: { variant?: string }) {
+function StaticCreature({ variant, identity }: { variant?: string; identity?: CreatureIdentity }) {
+  if (identity) return <ModularCreature identity={identity} />;
   if (variant === "warform") return <WarformCreature />;
   if (variant === "companion") return <CompanionCreature />;
   return (
@@ -22,7 +24,7 @@ function StaticCreature({ variant }: { variant?: string }) {
   );
 }
 
-/** Renders deployed creatures by variant. First companion follows player; warforms and others stay at deploy position. */
+/** Renders deployed creatures by variant/identity. First companion follows player; warforms and others stay at deploy position. */
 export function DeployedRobotsRenderer() {
   const { deployedRobots } = useInventory();
 
@@ -31,13 +33,14 @@ export function DeployedRobotsRenderer() {
       {deployedRobots.map((r, i) => {
         const pos: [number, number, number] = [r.x, r.y, r.z];
         const isFirst = i === 0;
-        if (isFirst && r.variant === "companion") {
-          return <CompanionFollow key={r.id} position={pos} />;
+        const identity = r.identity as CreatureIdentity | undefined;
+        if (isFirst && (r.variant === "companion" || identity?.role === "companion")) {
+          return <CompanionFollow key={r.id} position={pos} identity={identity} />;
         }
-        if (isFirst && r.variant === "warform") {
+        if (isFirst && (r.variant === "warform" || identity?.role === "warrior")) {
           return (
             <group key={r.id} position={pos}>
-              <WarformCreature />
+              {identity ? <ModularCreature identity={identity} /> : <WarformCreature />}
             </group>
           );
         }
@@ -46,7 +49,7 @@ export function DeployedRobotsRenderer() {
         }
         return (
           <group key={r.id} position={pos}>
-            <StaticCreature variant={r.variant} />
+            <StaticCreature variant={r.variant} identity={identity} />
           </group>
         );
       })}

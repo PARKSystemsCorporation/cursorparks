@@ -1,11 +1,13 @@
 /**
  * Creature spawn pipeline. Implements triggerCreatureSpawn(type).
- * Plugs into existing intro/renderer hooks; does not modify UI or intro.
+ * First deploy: generate identity and store. Subsequent: load identity. Spawn using identity.
  */
 
 const warformWeights = require("./warformWeights");
 const companionWeights = require("./companionWeights");
 const { buildCreature } = require("./buildCreature");
+const { getOrCreateIdentity } = require("./identityGenerator");
+const { dispatchSpawnAfterDeploy } = require("./deployWallet");
 
 const TYPES = {
   warform: "warform",
@@ -40,33 +42,40 @@ function getWeightsForType(type) {
 }
 
 /**
- * Renderer hook. Set by intro/system; called with creature object.
- * @type {(creature: { frame: string, limbs: string, sensors: string, surface: string, movement: string, behavior_flags: string[] }) => void}
+ * Renderer hook. Set by intro/system; called with creature object (may include identity).
  */
 let renderCreature = null;
 
-/**
- * Register the renderer hook. Call from intro/system.
- * @param {(creature: object) => void} fn
- */
 function setRenderCreature(fn) {
   renderCreature = typeof fn === "function" ? fn : null;
 }
 
 /**
- * Trigger a creature spawn. Determines warform vs companion, generates weighted parts, builds creature, passes to renderer.
+ * Trigger creature spawn. If creatureId provided: get or generate identity, then spawn using identity.
+ * Dispatches parks-spawn-creature with { type, identity, position, creatureId } for deploy flow.
  * @param {string} type - "warform" | "companion"
- * @param {number} [seed] - optional; for deterministic spawns
- * @returns {{ frame: string, limbs: string, sensors: string, surface: string, movement: string, behavior_flags: string[] }} creature object (also passed to renderCreature if hook set)
+ * @param {object} [options] - { creatureId, position: { x, y, z }, seed }
+ * @returns {object} creature object with identity (and legacy frame/limbs/etc if no identity)
  */
-function triggerCreatureSpawn(type, seed) {
-  const weights = getWeightsForType(type);
-  const creature = buildCreature(weights, seed);
+function triggerCreatureSpawn(type, options) {
+  const opts = options && typeof options === "object" ? options : {};
+  const creatureId = opts.creatureId;
+  const position = opts.position;
+  const seed = opts.seed;
 
-  if (renderCreature) {
-    renderCreature(creature);
+  if (creatureId && type) {
+    const identity = getOrCreateIdentity(creatureId, type, seed);
+    const creature = { type, identity, creatureId };
+    if (renderCreature) renderCreature(creature);
+    if (position && typeof window !== "undefined" && window.dispatchEvent) {
+      dispatchSpawnAfterDeploy({ type, identity, position, creatureId });
+    }
+    return creature;
   }
 
+  const weights = getWeightsForType(type);
+  const creature = buildCreature(weights, seed);
+  if (renderCreature) renderCreature(creature);
   return creature;
 }
 

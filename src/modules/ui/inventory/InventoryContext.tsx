@@ -30,7 +30,24 @@ const initialPockets: InventoryState = {
   deployTarget: null,
 };
 
-const initialDeployed: { id: string; x: number; y: number; z: number; variant?: string }[] = [];
+export type DeployedRobot = {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  variant?: string;
+  creatureId?: string;
+  identity?: {
+    gender: string;
+    role: string;
+    head_type: string;
+    body_type: string;
+    tail_type: string;
+    color_profile: Record<string, unknown>;
+  };
+};
+
+const initialDeployed: DeployedRobot[] = [];
 
 type InventoryContextValue = InventoryState & {
   setPocket: (pocket: PocketId, slots: PocketState) => void;
@@ -38,23 +55,21 @@ type InventoryContextValue = InventoryState & {
   removeItem: (pocket: PocketId, slotIndex: number) => InventoryItem | null;
   startDrag: (pocket: PocketId, slotIndex: number) => void;
   cancelDrag: () => void;
-  /** Start throw: set dragState so 3D shows capsule in hand; deploy happens on ground click */
+  /** Start throw: set dragState so 3D shows wallet card in hand; deploy happens on ground click */
   startCapsuleThrow: (pocket: PocketId, slotIndex: number) => void;
-  /** Called by 3D when user clicks ground to deploy */
   setDeployTarget: (pos: { x: number; y: number; z: number } | null) => void;
-  /** Confirm deploy: remove capsule from pocket, clear drag, spawn robot at deployTarget, return item */
+  /** Confirm deploy: remove from pocket, clear drag, dispatch wallet card deploy (card → unfold → spawn) */
   confirmDeploy: () => InventoryItem | null;
-  /** Deploy a creature at world position (e.g. from bond intro spawn in front of player) */
-  deployAt: (variant: string, x: number, y: number, z: number) => void;
-  /** Positions of deployed robots (for 3D rendering) */
-  deployedRobots: { id: string; x: number; y: number; z: number; variant?: string }[];
+  /** Add a deployed creature at world position (called after wallet card sequence) */
+  deployAt: (variant: string, x: number, y: number, z: number, options?: { identity?: DeployedRobot["identity"]; creatureId?: string }) => void;
+  deployedRobots: DeployedRobot[];
 };
 
 const InventoryContext = createContext<InventoryContextValue | null>(null);
 
 export function InventoryProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<InventoryState>(initialPockets);
-  const [deployedRobots, setDeployedRobots] = useState<{ id: string; x: number; y: number; z: number; variant?: string }[]>(initialDeployed);
+  const [deployedRobots, setDeployedRobots] = useState<DeployedRobot[]>(initialDeployed);
 
   const setPocket = useCallback((pocket: PocketId, slots: PocketState) => {
     setState((s) => ({ ...s, [pocket]: [...slots] }));
@@ -112,7 +127,8 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     let target: { x: number; y: number; z: number } | null = null;
     setState((s) => {
       if (!s.dragState || !s.deployTarget) return s;
-      deployed = s.dragState.item;
+      const item = s.dragState.item;
+      deployed = item;
       target = s.deployTarget;
       const arr = [...s[s.dragState.pocket]];
       arr[s.dragState.slotIndex] = null;
@@ -123,21 +139,33 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         deployTarget: null,
       };
     });
-    if (deployed && target) {
-      setDeployedRobots((prev) => [
-        ...prev,
-        { id: `robot-${Date.now()}`, x: target!.x, y: target!.y, z: target!.z, variant: deployed!.variant },
-      ]);
+    if (deployed && target && typeof window !== "undefined") {
+      const type = (deployed as InventoryItem).variant === "warform" ? "warform" : "companion";
+      window.dispatchEvent(
+        new CustomEvent("parks-deploy-wallet-card", {
+          detail: { type, position: target, creatureId: (deployed as InventoryItem).id },
+        })
+      );
     }
     return deployed;
   }, []);
 
-  const deployAt = useCallback((variant: string, x: number, y: number, z: number) => {
-    setDeployedRobots((prev) => [
-      ...prev,
-      { id: `creature-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, x, y, z, variant },
-    ]);
-  }, []);
+  const deployAt = useCallback(
+    (
+      variant: string,
+      x: number,
+      y: number,
+      z: number,
+      options?: { identity?: DeployedRobot["identity"]; creatureId?: string }
+    ) => {
+      const id = options?.creatureId ?? `creature-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      setDeployedRobots((prev) => [
+        ...prev,
+        { id, x, y, z, variant, creatureId: options?.creatureId, identity: options?.identity },
+      ]);
+    },
+    []
+  );
 
   const value = useMemo<InventoryContextValue>(
     () => ({

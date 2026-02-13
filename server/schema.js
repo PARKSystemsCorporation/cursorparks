@@ -66,6 +66,17 @@ function createTables(db) {
       timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS creature_identity (
+      creature_id TEXT PRIMARY KEY,
+      gender TEXT NOT NULL,
+      role TEXT NOT NULL,
+      head_type TEXT NOT NULL,
+      body_type TEXT NOT NULL,
+      tail_type TEXT NOT NULL,
+      color_profile_json TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE INDEX IF NOT EXISTS idx_bots_user ON bots(user_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(user_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);

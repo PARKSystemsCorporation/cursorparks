@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
+import { triggerCreatureSpawn as triggerSpawnWithIdentity } from "@/src/systems/creature/generator";
 
 export function triggerCreatureSpawn(type) {
   if (!type) return;
-  const e = new CustomEvent("parks-spawn-creature", { detail: { type } });
-  window.dispatchEvent(e);
+  window.dispatchEvent(new CustomEvent("parks-spawn-creature", { detail: { type } }));
 }
 
 const STYLES = {
@@ -47,32 +47,48 @@ let deployInProgress = false;
 export function deployCapsule(type) {
   if (deployInProgress) return;
   deployInProgress = true;
-  const event = new CustomEvent("parks-deploy-capsule", { detail: { type } });
-  window.dispatchEvent(event);
+  window.dispatchEvent(new CustomEvent("parks-deploy-capsule", { detail: { type } }));
 }
 
 export function DeploySequenceUI() {
-  const [active, setActive] = useState(null);
-  const [type, setType] = useState(null);
+  const [active, setActive] = useState(false);
+  const [payload, setPayload] = useState({ type: null, position: null, creatureId: null });
 
   useEffect(() => {
-    const handler = (e) => {
-      const t = e.detail && e.detail.type;
+    const onCapsule = (e) => {
+      const t = e.detail?.type;
       if (t) {
-        setType(t);
+        setPayload({ type: t, position: null, creatureId: null });
         setActive(true);
       }
     };
-    window.addEventListener("parks-deploy-capsule", handler);
-    return () => window.removeEventListener("parks-deploy-capsule", handler);
+    const onWallet = (e) => {
+      const d = e.detail;
+      if (d?.type) {
+        setPayload({ type: d.type, position: d.position ?? null, creatureId: d.creatureId ?? null });
+        setActive(true);
+      }
+    };
+    window.addEventListener("parks-deploy-capsule", onCapsule);
+    window.addEventListener("parks-deploy-wallet-card", onWallet);
+    return () => {
+      window.removeEventListener("parks-deploy-capsule", onCapsule);
+      window.removeEventListener("parks-deploy-wallet-card", onWallet);
+    };
   }, []);
 
   const finish = useCallback(() => {
-    if (type) triggerCreatureSpawn(type);
+    if (payload.type) {
+      if (payload.creatureId && payload.position) {
+        triggerSpawnWithIdentity(payload.type, { creatureId: payload.creatureId, position: payload.position });
+      } else {
+        triggerCreatureSpawn(payload.type);
+      }
+    }
     setActive(false);
-    setType(null);
+    setPayload({ type: null, position: null, creatureId: null });
     deployInProgress = false;
-  }, [type]);
+  }, [payload.type, payload.creatureId, payload.position]);
 
   useEffect(() => {
     if (!active) return;

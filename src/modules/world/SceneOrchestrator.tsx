@@ -18,7 +18,7 @@ import { FirstPersonController } from "./FirstPersonController";
 import { PerformanceTicker } from "./PerformanceTicker";
 import { TrainerNPC } from "./TrainerNPC";
 import { ArenaEntrance } from "./ArenaEntrance";
-import { CapsuleDeployment } from "@/src/modules/ui/inventory/CapsuleDeployment";
+import { WalletCardDeployment } from "@/src/modules/ui/inventory/WalletCardDeployment";
 import { DeployedRobotsRenderer } from "@/src/modules/ui/inventory/DeployedRobotsRenderer";
 import { CreatureSpawnListener } from "./CreatureSpawnListener";
 
@@ -90,7 +90,7 @@ export function SceneOrchestrator() {
       <TrainerNPC />
       <ArenaEntrance />
       <CreatureSpawnListener />
-      <CapsuleDeployment />
+      <WalletCardDeployment />
       <DeployedRobotsRenderer />
 
       <ambientLight intensity={2.5} color="#fff8e6" />
