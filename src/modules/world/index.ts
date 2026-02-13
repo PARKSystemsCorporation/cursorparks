@@ -1,0 +1,10 @@
+export { FirstPersonController } from "./FirstPersonController";
+export { BOUNDS, EYE_HEIGHT, clampPosition, ALLEY_WIDTH, ALLEY_LENGTH } from "./firstPersonBounds";
+export { SceneOrchestrator } from "./SceneOrchestrator";
+export { SceneStateProvider, useSceneState } from "./SceneStateContext";
+export type { SceneMode } from "./SceneStateContext";
+export { TrainerNPC } from "./TrainerNPC";
+export { ArenaEntrance } from "./ArenaEntrance";
+export { PerformanceTicker } from "./PerformanceTicker";
+export { TrainerProvider, useTrainer } from "./TrainerContext";
+export { TrainerOverlay } from "./TrainerOverlay";

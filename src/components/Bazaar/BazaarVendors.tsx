@@ -41,6 +41,7 @@ const BAZAAR_VENDORS = [
 type BazaarVendorWithShout = (typeof BAZAAR_VENDORS)[number] & {
     setTarget: (id: string) => void;
     targetId: string | null;
+    onRightClick?: (vendorId: string, clientX: number, clientY: number) => void;
 };
 
 function BazaarVendorWrapper(props: BazaarVendorWithShout) {
@@ -69,6 +70,7 @@ function BazaarVendorWrapper(props: BazaarVendorWithShout) {
             setTarget={props.setTarget}
             config={config}
             shoutBubbleOffset={props.shoutBubbleOffset ?? [0.8, 1.9, 0.5]}
+            onRightClick={props.onRightClick}
         />
     );
 }
@@ -76,18 +78,19 @@ function BazaarVendorWrapper(props: BazaarVendorWithShout) {
 export default function BazaarVendors({
     setTarget,
     targetId,
+    onRightClick,
 }: {
     setTarget?: (id: string) => void;
     targetId?: string | null;
+    onRightClick?: (vendorId: string, clientX: number, clientY: number) => void;
 }) {
-    // Default no-op if no interaction handler provided yet
-    const safeSetTarget = setTarget || (() => { });
-    const safeTargetId = targetId || null;
+    const safeSetTarget = setTarget ?? (() => {});
+    const safeTargetId = targetId ?? null;
 
     return (
         <group>
             {BAZAAR_VENDORS.map((v) => (
-                <BazaarVendorWrapper key={v.id} {...v} setTarget={safeSetTarget} targetId={safeTargetId} />
+                <BazaarVendorWrapper key={v.id} {...v} setTarget={safeSetTarget} targetId={safeTargetId} onRightClick={onRightClick} />
             ))}
         </group>
     );
