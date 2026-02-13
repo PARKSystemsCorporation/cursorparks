@@ -26,59 +26,64 @@ function createStarterInventory(db, userId) {
 }
 
 function enter(req, res) {
-  const handle = (req.body && req.body.handle) ? String(req.body.handle).trim() : "";
-  const password = req.body && req.body.password != null ? String(req.body.password) : "";
-  if (!handle) {
-    return res.status(400).json({ error: "Handle required." });
-  }
-  if (!password) {
-    return res.status(400).json({ error: "Password required." });
-  }
+  try {
+    const handle = (req.body && req.body.handle) ? String(req.body.handle).trim() : "";
+    const password = req.body && req.body.password != null ? String(req.body.password) : "";
+    if (!handle) {
+      return res.status(400).json({ error: "Handle required." });
+    }
+    if (!password) {
+      return res.status(400).json({ error: "Password required." });
+    }
 
-  const db = getDb();
-  const getUser = stmtGetUser(db);
-  const insertUser = stmtInsertUser(db);
-  const setPassword = stmtSetPassword(db);
-  const insertWallet = stmtInsertWallet(db);
-  const updateLastSeen = stmtUpdateLastSeen(db);
-  const getWallet = stmtGetWallet(db);
-  const getBots = stmtGetBots(db);
-  const getInventory = stmtGetInventory(db);
-  const getWorldState = stmtGetWorldState(db);
+    const db = getDb();
+    const getUser = stmtGetUser(db);
+    const insertUser = stmtInsertUser(db);
+    const setPassword = stmtSetPassword(db);
+    const insertWallet = stmtInsertWallet(db);
+    const updateLastSeen = stmtUpdateLastSeen(db);
+    const getWallet = stmtGetWallet(db);
+    const getBots = stmtGetBots(db);
+    const getInventory = stmtGetInventory(db);
+    const getWorldState = stmtGetWorldState(db);
 
-  let user = getUser.get(handle);
-  if (!user) {
-    try {
-      const passwordHash = bcrypt.hashSync(password, 10);
-      const run = insertUser.run(handle, passwordHash);
-      const id = run.lastInsertRowid;
-      insertWallet.run(id);
-      createStarterBots(db, id);
-      createStarterInventory(db, id);
-      user = getUser.get(handle);
-    } catch (e) {
-      if (e.code === "SQLITE_CONSTRAINT_UNIQUE") {
+    let user = getUser.get(handle);
+    if (!user) {
+      try {
+        const passwordHash = bcrypt.hashSync(password, 10);
+        const run = insertUser.run(handle, passwordHash);
+        const id = run.lastInsertRowid;
+        insertWallet.run(id);
+        createStarterBots(db, id);
+        createStarterInventory(db, id);
         user = getUser.get(handle);
-      } else {
-        console.error("[enter] create user error", e);
-        return res.status(500).json({ error: "Failed to create account." });
+      } catch (e) {
+        if (e.code === "SQLITE_CONSTRAINT_UNIQUE") {
+          user = getUser.get(handle);
+        } else {
+          console.error("[enter] create user error", e);
+          return res.status(500).json({ error: "Failed to create account." });
+        }
       }
-    }
-  } else {
-    if (user.password_hash == null || user.password_hash === "") {
-      const passwordHash = bcrypt.hashSync(password, 10);
-      setPassword.run(passwordHash, user.id);
     } else {
-      const ok = bcrypt.compareSync(password, user.password_hash);
-      if (!ok) {
-        return res.status(401).json({ error: "Wrong password." });
+      if (user.password_hash == null || user.password_hash === "") {
+        const passwordHash = bcrypt.hashSync(password, 10);
+        setPassword.run(passwordHash, user.id);
+      } else {
+        const ok = bcrypt.compareSync(password, user.password_hash);
+        if (!ok) {
+          return res.status(401).json({ error: "Wrong password." });
+        }
       }
+      updateLastSeen.run(user.id);
+      user = getUser.get(handle);
     }
-    updateLastSeen.run(user.id);
-    user = getUser.get(handle);
-  }
 
-  res.json(buildPayload(db, user, getWallet, getBots, getInventory, getWorldState));
+    return res.json(buildPayload(db, user, getWallet, getBots, getInventory, getWorldState));
+  } catch (err) {
+    console.error("[enter] error", err);
+    return res.status(500).json({ error: "Enter failed. Please try again." });
+  }
 }
 
 function buildPayload(db, user, getWallet, getBots, getInventory, getWorldState) {

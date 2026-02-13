@@ -31,7 +31,45 @@ const insertMessage = db.prepare("INSERT INTO messages (content, x, y, z, timest
 const getRecentMessages = db.prepare("SELECT * FROM messages ORDER BY timestamp DESC LIMIT 50");
 const pruneMessages = db.prepare("DELETE FROM messages WHERE id NOT IN (SELECT id FROM messages ORDER BY timestamp DESC LIMIT 50)");
 
+// Bazaar enter/set-password API (uses server/db + server/schema)
+const { initSchema: initBazaarSchema } = require("./server/db");
+const { enter: enterHandler, setPassword: setPasswordHandler } = require("./server/routes/enter");
+initBazaarSchema();
+
 let isReady = false;
+
+function serveBazaarEnterApi(req, res, parsedUrl) {
+  const pathname = parsedUrl.pathname || req.url?.split("?")[0] || "";
+  const isEnter = pathname === "/enter";
+  const isSetPassword = pathname === "/set-password";
+  if (req.method !== "POST" || (!isEnter && !isSetPassword)) return false;
+
+  const chunks = [];
+  req.on("data", (chunk) => chunks.push(chunk));
+  req.on("end", () => {
+    let body = {};
+    try {
+      const raw = Buffer.concat(chunks).toString();
+      if (raw) body = JSON.parse(raw);
+    } catch (_) {}
+    const fakeReq = { body };
+    let statusCode = 200;
+    const origWriteHead = res.writeHead.bind(res);
+    const origEnd = res.end.bind(res);
+    res.status = (code) => {
+      statusCode = code;
+      return res;
+    };
+    res.json = (obj) => {
+      res.setHeader("Content-Type", "application/json");
+      res.writeHead(statusCode);
+      res.end(JSON.stringify(obj));
+    };
+    if (isEnter) enterHandler(fakeReq, res);
+    else setPasswordHandler(fakeReq, res);
+  });
+  return true;
+}
 
 const server = http.createServer((req, res) => {
   if (!isReady) {
@@ -39,6 +77,8 @@ const server = http.createServer((req, res) => {
     res.end("OK");
     return;
   }
+  const parsedUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  if (serveBazaarEnterApi(req, res, parsedUrl)) return;
   handle(req, res);
 });
 
