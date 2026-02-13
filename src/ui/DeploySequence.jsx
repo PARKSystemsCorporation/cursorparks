@@ -53,7 +53,7 @@ export function deployCapsule(type) {
 
 export function DeploySequenceUI() {
   const [active, setActive] = useState(false);
-  const [payload, setPayload] = useState({ type: null, position: null, creatureId: null });
+  const [payload, setPayload] = useState({ type: null, position: null, creatureId: null, gender: null });
   const [phase, setPhase] = useState("animating"); // "animating" | "naming" | "spawning"
 
   useEffect(() => {
@@ -70,7 +70,8 @@ export function DeploySequenceUI() {
       if (!d?.type) return;
       const creatureId = d.creatureId ?? null;
       const position = d.position ?? null;
-      setPayload({ type: d.type, position, creatureId });
+      const gender = d.gender === "male" || d.gender === "female" ? d.gender : null;
+      setPayload({ type: d.type, position, creatureId, gender });
       setActive(true);
 
       if (creatureId && position) {
@@ -104,7 +105,7 @@ export function DeploySequenceUI() {
     }
     setActive(false);
     setPhase("animating");
-    setPayload({ type: null, position: null, creatureId: null });
+    setPayload({ type: null, position: null, creatureId: null, gender: null });
     deployInProgress = false;
   }, [payload.type, payload.creatureId, payload.position]);
 
@@ -131,7 +132,7 @@ export function DeploySequenceUI() {
       } finally {
         setActive(false);
         setPhase("animating");
-        setPayload({ type: null, position: null, creatureId: null });
+        setPayload({ type: null, position: null, creatureId: null, gender: null });
         deployInProgress = false;
       }
     },
@@ -150,6 +151,7 @@ export function DeploySequenceUI() {
         type={payload.type}
         creatureId={payload.creatureId}
         position={payload.position}
+        initialGender={payload.gender}
         onSubmit={handleNamingSubmit}
       />
     );

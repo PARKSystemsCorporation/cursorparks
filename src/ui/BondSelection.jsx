@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import Capsule from "./Capsule";
 import { deployCapsule } from "./DeploySequence";
 
@@ -44,13 +44,69 @@ const STYLES = {
 };
 
 export default function BondSelection({ onDeploy, onCancel }) {
-  const handleDeploy = useCallback(
-    (type) => {
-      deployCapsule(type);
-      onDeploy && onDeploy(type);
+  const [selectedType, setSelectedType] = useState(null);
+
+  const handleStylePick = useCallback((type) => {
+    setSelectedType(type);
+  }, []);
+
+  const handleGenderPick = useCallback(
+    (gender) => {
+      deployCapsule(selectedType);
+      onDeploy && onDeploy(selectedType, gender);
     },
-    [onDeploy]
+    [selectedType, onDeploy]
   );
+
+  const handleBack = useCallback(() => {
+    setSelectedType(null);
+  }, []);
+
+  if (selectedType) {
+    return (
+      <div style={STYLES.overlay}>
+        <div style={STYLES.panel}>
+          <div style={STYLES.title}>Male or female</div>
+          <div style={STYLES.row}>
+            <div style={STYLES.col}>
+              <Capsule
+                label="MALE"
+                sublabel={selectedType === "warform" ? "Combat frame" : "Support unit"}
+                type="male"
+                onDeploy={() => handleGenderPick("male")}
+              />
+            </div>
+            <div style={STYLES.col}>
+              <Capsule
+                label="FEMALE"
+                sublabel={selectedType === "warform" ? "Combat frame" : "Support unit"}
+                type="female"
+                onDeploy={() => handleGenderPick("female")}
+              />
+            </div>
+          </div>
+          <div style={{ marginTop: "20px", textAlign: "center" }}>
+            <button
+              type="button"
+              onClick={handleBack}
+              style={{
+                padding: "8px 16px",
+                border: "1px solid #4a4238",
+                background: "transparent",
+                color: "#7a6e5e",
+                fontSize: "10px",
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                cursor: "pointer",
+              }}
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={STYLES.overlay}>
@@ -62,7 +118,7 @@ export default function BondSelection({ onDeploy, onCancel }) {
               label="WARFORM"
               sublabel="Combat frame"
               type="warform"
-              onDeploy={handleDeploy}
+              onDeploy={handleStylePick}
             />
           </div>
           <div style={STYLES.col}>
@@ -70,7 +126,7 @@ export default function BondSelection({ onDeploy, onCancel }) {
               label="COMPANION"
               sublabel="Support unit"
               type="companion"
-              onDeploy={handleDeploy}
+              onDeploy={handleStylePick}
             />
           </div>
         </div>

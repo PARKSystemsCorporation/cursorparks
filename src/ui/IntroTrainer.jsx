@@ -68,12 +68,13 @@ export default function IntroTrainer({ visible, onComplete }) {
   }, [lineIndex]);
 
   const handleBondComplete = useCallback(
-    (type) => {
+    (type, gender) => {
       if (type) {
         addItem("pocketA", {
           id: `cap-${type}-${Date.now()}`,
           type: "capsule",
           variant: type,
+          ...(gender && { gender }),
         });
       }
       setShowBondSelection(false);

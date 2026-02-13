@@ -141,10 +141,12 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       };
     });
     if (deployed && target && typeof window !== "undefined") {
-      const type = (deployed as InventoryItem).variant === "warform" ? "warform" : "companion";
+      const item = deployed as InventoryItem;
+      const type = item.variant === "warform" ? "warform" : "companion";
+      const gender = item.gender ?? undefined;
       window.dispatchEvent(
         new CustomEvent("parks-deploy-wallet-card", {
-          detail: { type, position: target, creatureId: (deployed as InventoryItem).id },
+          detail: { type, position: target, creatureId: item.id, gender },
         })
       );
     }

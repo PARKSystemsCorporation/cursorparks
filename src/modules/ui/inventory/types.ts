@@ -5,6 +5,8 @@ export interface InventoryItem {
   type: ItemType;
   /** For capsule: robot id or "training" */
   variant?: string;
+  /** For capsule: chosen at bond selection (male | female) */
+  gender?: "male" | "female";
   /** For token: amount */
   amount?: number;
 }

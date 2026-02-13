@@ -14,12 +14,14 @@ type ExokinNamingScreenProps = {
   type: string;
   creatureId: string;
   position: { x: number; y: number; z: number } | null;
+  /** Pre-selected from bond selection (MALE / FEMALE step). */
+  initialGender?: "male" | "female" | null;
   onSubmit: (data: { name: string; gender: "male" | "female" }) => void;
 };
 
-export function ExokinNamingScreen({ type, creatureId, position, onSubmit }: ExokinNamingScreenProps) {
+export function ExokinNamingScreen({ type, creatureId, position, initialGender, onSubmit }: ExokinNamingScreenProps) {
   const [name, setName] = useState("");
-  const [gender, setGender] = useState<"male" | "female">("male");
+  const [gender, setGender] = useState<"male" | "female">(initialGender === "female" ? "female" : "male");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = useCallback(
