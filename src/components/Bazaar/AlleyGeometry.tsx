@@ -45,11 +45,11 @@ export function AlleyGeometry() {
                 />
             </mesh>
 
-            {/* Left Wall - Segmented with Vendor Booth Opening */}
+            {/* Left Wall - Segmented with Vendor Booth + Hallway Opening */}
             <group position={[-ALLEY_WIDTH / 2, 0, -ALLEY_LENGTH / 2]}>
                 {/*
-                    BOOTH GAP at world Z = -2, local Z = +13
-                    Gap width: 3m, from local +11.5 to +14.5
+                    BOOTH GAP at world Z = -2, local Z = +13 (gap +11.5 to +14.5)
+                    HALLWAY GAP at world Z = -7, local Z = +8 (gap +7 to +9)
                     Wall local range: -15 to +15 (30m total)
                 */}
 
@@ -64,9 +64,20 @@ export function AlleyGeometry() {
                     />
                 </mesh>
 
-                {/* Base Back Segment (local -15 to +11.5) → length 26.5, center -1.75 */}
-                <mesh position={[0, 1.25, -1.75]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
-                    <planeGeometry args={[26.5, 2.5]} />
+                {/* Base segment (local -15 to +7) → length 22, center -4 */}
+                <mesh position={[0, 1.25, -4]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                    <planeGeometry args={[22, 2.5]} />
+                    <meshStandardMaterial
+                        map={textures.wallDiff}
+                        normalMap={textures.wallNorm}
+                        roughness={0.9}
+                        color="#aaa"
+                    />
+                </mesh>
+
+                {/* Base segment (local +9 to +11.5) → length 2.5, center +10.25 — between hallway and booth */}
+                <mesh position={[0, 1.25, 10.25]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                    <planeGeometry args={[2.5, 2.5]} />
                     <meshStandardMaterial
                         map={textures.wallDiff}
                         normalMap={textures.wallNorm}
