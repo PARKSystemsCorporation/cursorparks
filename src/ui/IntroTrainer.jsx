@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from "react";
 import BondSelection from "./BondSelection";
 import { useInventory } from "@/src/modules/ui/inventory/InventoryContext";
+import { getOrCreateIdentity } from "@/src/systems/creature/identityGenerator";
 
 const LINES = [
   "Bazaar doesn't remember faces.",
@@ -68,15 +69,31 @@ export default function IntroTrainer({ visible, onComplete }) {
   }, [lineIndex]);
 
   const handleBondComplete = useCallback(
-    (type, gender) => {
-      if (type) {
-        addItem("pocketA", {
-          id: `cap-${type}-${Date.now()}`,
-          type: "capsule",
-          variant: type,
-          ...(gender && { gender }),
+    async (type, gender) => {
+      if (!type || !gender) return;
+      const creatureId = `exo-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const identity = getOrCreateIdentity(creatureId, type, undefined, { gender });
+      try {
+        await fetch("/api/exokin/creature", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            creatureId,
+            type,
+            gender,
+            head_type: identity.head_type,
+            body_type: identity.body_type,
+            tail_type: identity.tail_type,
+            color_profile: identity.color_profile,
+          }),
         });
-      }
+      } catch (_) {}
+      addItem("pocketA", {
+        id: creatureId,
+        type: "capsule",
+        variant: type,
+        gender,
+      });
       setShowBondSelection(false);
       onComplete && onComplete();
     },

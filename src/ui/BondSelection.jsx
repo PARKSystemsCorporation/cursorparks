@@ -2,7 +2,6 @@
 
 import React, { useState, useCallback } from "react";
 import Capsule from "./Capsule";
-import { deployCapsule } from "./DeploySequence";
 
 const STYLES = {
   overlay: {
@@ -52,7 +51,6 @@ export default function BondSelection({ onDeploy, onCancel }) {
 
   const handleGenderPick = useCallback(
     (gender) => {
-      deployCapsule(selectedType);
       onDeploy && onDeploy(selectedType, gender);
     },
     [selectedType, onDeploy]
