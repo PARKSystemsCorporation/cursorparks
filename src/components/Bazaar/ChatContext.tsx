@@ -56,29 +56,41 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             setMessages((prev) => [...prev, userMsg].slice(-50));
             setLatestUserMessage(userMsg);
 
-            // Call ARIA API for vendor response
-            const vendorId = targetVendorId || "barker"; // default vendor
-            fetch("/api/aria/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: text, vendorId }),
-            })
-                .then((res) => res.json())
-                .then((data) => {
-                    if (data.response && data.response !== "...") {
-                        const vendorMsg: ChatMessage = {
-                            id: `chat-${++idCounter.current}`,
-                            sender: vendorId.toUpperCase(),
-                            senderType: "vendor",
-                            text: data.response,
-                            color: "#ffaa00",
-                            timestamp: Date.now(),
-                        };
-                        setMessages((prev) => [...prev, vendorMsg].slice(-50));
-                        setLatestVendorMessage(vendorMsg);
-                    }
-                })
-                .catch((err) => console.error("Chat ARIA error:", err));
+            // Which vendors respond
+            const activeVendors = targetVendorId
+                ? [{ id: targetVendorId, color: "#ffaa00" }]
+                : [
+                    { id: "barker", color: "#ffaa00" },
+                    { id: "broker", color: "#5ba8d4" },
+                ];
+
+            // Each vendor calls the ARIA API with their own personality
+            activeVendors.forEach((vendor, index) => {
+                // Stagger responses so they feel natural
+                setTimeout(() => {
+                    fetch("/api/aria/chat", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ message: text, vendorId: vendor.id }),
+                    })
+                        .then((res) => res.json())
+                        .then((data) => {
+                            if (data.response && data.response !== "...") {
+                                const vendorMsg: ChatMessage = {
+                                    id: `chat-${++idCounter.current}`,
+                                    sender: vendor.id.toUpperCase(),
+                                    senderType: "vendor",
+                                    text: data.response,
+                                    color: vendor.color,
+                                    timestamp: Date.now(),
+                                };
+                                setMessages((prev) => [...prev, vendorMsg].slice(-50));
+                                setLatestVendorMessage(vendorMsg);
+                            }
+                        })
+                        .catch((err) => console.error(`Chat ARIA error (${vendor.id}):`, err));
+                }, index * 800); // 800ms stagger between vendors
+            });
         },
         []
     );
