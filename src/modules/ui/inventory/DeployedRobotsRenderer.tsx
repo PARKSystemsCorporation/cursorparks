@@ -1,29 +1,55 @@
 "use client";
 
 import { useInventory } from "@/src/modules/ui/inventory/InventoryContext";
+import { WarformCreature, CompanionCreature } from "@/src/modules/ui/inventory/CreatureMeshes";
+import { CompanionFollow } from "@/src/modules/ui/inventory/CompanionFollow";
 import { RobotCompanion } from "@/src/modules/robot/RobotCompanion";
 
-/** Renders first deployed robot as RobotCompanion (with follow + chat); others as simple placeholder. */
+function StaticCreature({ variant }: { variant?: string }) {
+  if (variant === "warform") return <WarformCreature />;
+  if (variant === "companion") return <CompanionCreature />;
+  return (
+    <>
+      <mesh position={[0, 0.3, 0]} castShadow>
+        <boxGeometry args={[0.3, 0.4, 0.2]} />
+        <meshStandardMaterial color="#4a4238" roughness={0.7} metalness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.7, 0]} castShadow>
+        <sphereGeometry args={[0.15, 12, 12]} />
+        <meshStandardMaterial color="#5c5044" roughness={0.6} />
+      </mesh>
+    </>
+  );
+}
+
+/** Renders deployed creatures by variant. First companion follows player; warforms and others stay at deploy position. */
 export function DeployedRobotsRenderer() {
   const { deployedRobots } = useInventory();
 
   return (
     <>
-      {deployedRobots.length > 0 && (
-        <RobotCompanion position={[deployedRobots[0].x, deployedRobots[0].y, deployedRobots[0].z]} />
-      )}
-      {deployedRobots.slice(1).map((r) => (
-        <group key={r.id} position={[r.x, r.y, r.z]}>
-          <mesh position={[0, 0.3, 0]} castShadow>
-            <boxGeometry args={[0.3, 0.4, 0.2]} />
-            <meshStandardMaterial color="#ff6b1a" roughness={0.6} metalness={0.2} />
-          </mesh>
-          <mesh position={[0, 0.7, 0]} castShadow>
-            <sphereGeometry args={[0.15, 12, 12]} />
-            <meshStandardMaterial color="#c0392b" emissive="#661111" emissiveIntensity={0.5} />
-          </mesh>
-        </group>
-      ))}
+      {deployedRobots.map((r, i) => {
+        const pos: [number, number, number] = [r.x, r.y, r.z];
+        const isFirst = i === 0;
+        if (isFirst && r.variant === "companion") {
+          return <CompanionFollow key={r.id} position={pos} />;
+        }
+        if (isFirst && r.variant === "warform") {
+          return (
+            <group key={r.id} position={pos}>
+              <WarformCreature />
+            </group>
+          );
+        }
+        if (isFirst && !r.variant) {
+          return <RobotCompanion key={r.id} position={pos} />;
+        }
+        return (
+          <group key={r.id} position={pos}>
+            <StaticCreature variant={r.variant} />
+          </group>
+        );
+      })}
     </>
   );
 }

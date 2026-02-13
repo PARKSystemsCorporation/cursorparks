@@ -20,6 +20,7 @@ import { TrainerNPC } from "./TrainerNPC";
 import { ArenaEntrance } from "./ArenaEntrance";
 import { CapsuleDeployment } from "@/src/modules/ui/inventory/CapsuleDeployment";
 import { DeployedRobotsRenderer } from "@/src/modules/ui/inventory/DeployedRobotsRenderer";
+import { CreatureSpawnListener } from "./CreatureSpawnListener";
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
 function AlleyProps() {
@@ -88,6 +89,7 @@ export function SceneOrchestrator() {
 
       <TrainerNPC />
       <ArenaEntrance />
+      <CreatureSpawnListener />
       <CapsuleDeployment />
       <DeployedRobotsRenderer />
 

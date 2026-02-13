@@ -44,6 +44,8 @@ type InventoryContextValue = InventoryState & {
   setDeployTarget: (pos: { x: number; y: number; z: number } | null) => void;
   /** Confirm deploy: remove capsule from pocket, clear drag, spawn robot at deployTarget, return item */
   confirmDeploy: () => InventoryItem | null;
+  /** Deploy a creature at world position (e.g. from bond intro spawn in front of player) */
+  deployAt: (variant: string, x: number, y: number, z: number) => void;
   /** Positions of deployed robots (for 3D rendering) */
   deployedRobots: { id: string; x: number; y: number; z: number; variant?: string }[];
 };
@@ -130,6 +132,13 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     return deployed;
   }, []);
 
+  const deployAt = useCallback((variant: string, x: number, y: number, z: number) => {
+    setDeployedRobots((prev) => [
+      ...prev,
+      { id: `creature-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`, x, y, z, variant },
+    ]);
+  }, []);
+
   const value = useMemo<InventoryContextValue>(
     () => ({
       ...state,
@@ -141,9 +150,10 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       startCapsuleThrow,
       setDeployTarget,
       confirmDeploy,
+      deployAt,
       deployedRobots,
     }),
-    [state, setPocket, addItem, removeItem, startDrag, cancelDrag, startCapsuleThrow, setDeployTarget, confirmDeploy, deployedRobots]
+    [state, setPocket, addItem, removeItem, startDrag, cancelDrag, startCapsuleThrow, setDeployTarget, confirmDeploy, deployAt, deployedRobots]
   );
 
   return <InventoryContext.Provider value={value}>{children}</InventoryContext.Provider>;
@@ -162,6 +172,7 @@ export function useInventory(): InventoryContextValue {
       startCapsuleThrow: () => {},
       setDeployTarget: () => {},
       confirmDeploy: () => null,
+      deployAt: () => {},
       deployedRobots: [],
     };
   }

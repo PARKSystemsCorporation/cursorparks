@@ -2,8 +2,10 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 
-export function triggerCreatureSpawn(/* type */) {
-  // Intentionally empty. Implemented by another module.
+export function triggerCreatureSpawn(type) {
+  if (!type) return;
+  const e = new CustomEvent("parks-spawn-creature", { detail: { type } });
+  window.dispatchEvent(e);
 }
 
 const STYLES = {
