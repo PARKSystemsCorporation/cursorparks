@@ -11,6 +11,8 @@ type InventoryState = {
   pocketB: PocketState;
   cargoC: PocketState;
   cargoD: PocketState;
+  /** EXOKIN bond capsule (device under chat); not shown in quick bar */
+  bondCapsule: InventoryItem | null;
   /** When user is dragging a capsule to throw */
   dragState: DragState | null;
   /** World position where user wants to deploy (set by 3D raycast) */
@@ -26,6 +28,7 @@ const initialPockets: InventoryState = {
   pocketB: makeEmptyPocket(POCKET_SLOTS.pocketB),
   cargoC: makeEmptyPocket(POCKET_SLOTS.cargoC),
   cargoD: makeEmptyPocket(POCKET_SLOTS.cargoD),
+  bondCapsule: null,
   dragState: null,
   deployTarget: null,
 };
@@ -53,12 +56,15 @@ type InventoryContextValue = InventoryState & {
   setPocket: (pocket: PocketId, slots: PocketState) => void;
   addItem: (pocket: PocketId, item: InventoryItem) => boolean;
   removeItem: (pocket: PocketId, slotIndex: number) => InventoryItem | null;
+  setBondCapsule: (item: InventoryItem | null) => void;
   startDrag: (pocket: PocketId, slotIndex: number) => void;
   cancelDrag: () => void;
-  /** Start throw: set dragState so 3D shows wallet card in hand; deploy happens on ground click */
+  /** Start throw from quick bar pocket */
   startCapsuleThrow: (pocket: PocketId, slotIndex: number) => void;
+  /** Start deploy from EXOKIN device (bond); only bond uses drag-from-diamond. */
+  startBondDeploy: () => void;
   setDeployTarget: (pos: { x: number; y: number; z: number } | null) => void;
-  /** Confirm deploy: remove from pocket, clear drag, dispatch wallet card deploy. Pass position when calling from click (avoids state timing). */
+  /** Confirm deploy: remove from pocket or bond, clear drag, dispatch wallet card deploy. */
   confirmDeploy: (position?: { x: number; y: number; z: number } | null) => InventoryItem | null;
   /** Add a deployed creature at world position (called after wallet card sequence) */
   deployAt: (variant: string, x: number, y: number, z: number, options?: { identity?: DeployedRobot["identity"]; creatureId?: string }) => void;
@@ -105,6 +111,10 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, dragState: null, deployTarget: null }));
   }, []);
 
+  const setBondCapsule = useCallback((item: InventoryItem | null) => {
+    setState((s) => ({ ...s, bondCapsule: item }));
+  }, []);
+
   const startCapsuleThrow = useCallback((pocket: PocketId, slotIndex: number) => {
     setState((s) => {
       const arr = s[pocket];
@@ -113,6 +123,17 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       return {
         ...s,
         dragState: { item, pocket, slotIndex },
+        deployTarget: null,
+      };
+    });
+  }, []);
+
+  const startBondDeploy = useCallback(() => {
+    setState((s) => {
+      if (!s.bondCapsule || s.bondCapsule.type !== "capsule") return s;
+      return {
+        ...s,
+        dragState: { item: s.bondCapsule, pocket: "pocketA", slotIndex: 0, fromBond: true },
         deployTarget: null,
       };
     });
@@ -131,6 +152,9 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       const item = s.dragState.item;
       deployed = item;
       target = useTarget;
+      if (s.dragState.fromBond) {
+        return { ...s, bondCapsule: null, dragState: null, deployTarget: null };
+      }
       const arr = [...s[s.dragState.pocket]];
       arr[s.dragState.slotIndex] = null;
       return {
@@ -185,15 +209,17 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       setPocket,
       addItem,
       removeItem,
+      setBondCapsule,
       startDrag,
       cancelDrag,
       startCapsuleThrow,
+      startBondDeploy,
       setDeployTarget,
       confirmDeploy,
       deployAt,
       deployedRobots,
     }),
-    [state, setPocket, addItem, removeItem, startDrag, cancelDrag, startCapsuleThrow, setDeployTarget, confirmDeploy, deployAt, deployedRobots]
+    [state, setPocket, addItem, removeItem, setBondCapsule, startDrag, cancelDrag, startCapsuleThrow, startBondDeploy, setDeployTarget, confirmDeploy, deployAt, deployedRobots]
   );
 
   return <InventoryContext.Provider value={value}>{children}</InventoryContext.Provider>;
@@ -207,9 +233,11 @@ export function useInventory(): InventoryContextValue {
       setPocket: () => {},
       addItem: () => false,
       removeItem: () => null,
+      setBondCapsule: () => {},
       startDrag: () => {},
       cancelDrag: () => {},
       startCapsuleThrow: () => {},
+      startBondDeploy: () => {},
       setDeployTarget: () => {},
       confirmDeploy: () => null,
       deployAt: () => {},

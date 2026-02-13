@@ -4,7 +4,7 @@ const { getDb } = require("../db");
 
 function getCreature(db, creatureId) {
   const row = db.prepare(
-    "SELECT creature_id, name, gender, role, head_type, body_type, tail_type, color_profile_json, eare_state_json, created_at FROM creature_identity WHERE creature_id = ?"
+    "SELECT creature_id, name, gender, role, head_type, body_type, tail_type, color_profile_json, eare_state_json, morphology_seed, created_at FROM creature_identity WHERE creature_id = ?"
   ).get(creatureId);
   return row ? {
     creatureId: row.creature_id,
@@ -16,15 +16,16 @@ function getCreature(db, creatureId) {
     tail_type: row.tail_type,
     color_profile: row.color_profile_json ? JSON.parse(row.color_profile_json) : null,
     eare_state_json: row.eare_state_json || null,
+    morphology_seed: row.morphology_seed != null ? row.morphology_seed : null,
     created_at: row.created_at,
   } : null;
 }
 
 function upsertCreature(db, data) {
-  const { creatureId, name, gender, role, head_type, body_type, tail_type, color_profile_json, eare_state_json } = data;
+  const { creatureId, name, gender, role, head_type, body_type, tail_type, color_profile_json, eare_state_json, morphology_seed } = data;
   db.prepare(`
-    INSERT INTO creature_identity (creature_id, name, gender, role, head_type, body_type, tail_type, color_profile_json, eare_state_json)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO creature_identity (creature_id, name, gender, role, head_type, body_type, tail_type, color_profile_json, eare_state_json, morphology_seed)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(creature_id) DO UPDATE SET
       name = COALESCE(excluded.name, name),
       gender = excluded.gender,
@@ -33,7 +34,8 @@ function upsertCreature(db, data) {
       body_type = excluded.body_type,
       tail_type = excluded.tail_type,
       color_profile_json = COALESCE(excluded.color_profile_json, color_profile_json),
-      eare_state_json = COALESCE(excluded.eare_state_json, eare_state_json)
+      eare_state_json = COALESCE(excluded.eare_state_json, eare_state_json),
+      morphology_seed = COALESCE(excluded.morphology_seed, morphology_seed)
   `).run(
     creatureId,
     name || null,
@@ -43,7 +45,8 @@ function upsertCreature(db, data) {
     body_type || "slug_form",
     tail_type || "cable_tail",
     color_profile_json || null,
-    eare_state_json || null
+    eare_state_json || null,
+    morphology_seed != null ? morphology_seed : null
   );
 }
 
@@ -103,6 +106,8 @@ function handlePostCreature(req, res, body) {
   const body_type = body.body_type || "slug_form";
   const tail_type = body.tail_type || "cable_tail";
   const color_profile_json = body.color_profile ? JSON.stringify(body.color_profile) : null;
+  const morphology_seed = body.morphology_seed != null ? (typeof body.morphology_seed === "number" ? body.morphology_seed : parseInt(body.morphology_seed, 10)) : null;
+  const eare_state_json = body.eare_state_json != null ? (typeof body.eare_state_json === "string" ? body.eare_state_json : JSON.stringify(body.eare_state_json)) : null;
   try {
     const db = getDb();
     upsertCreature(db, {
@@ -114,7 +119,8 @@ function handlePostCreature(req, res, body) {
       body_type,
       tail_type,
       color_profile_json,
-      eare_state_json: null,
+      eare_state_json: eare_state_json || null,
+      morphology_seed: Number.isFinite(morphology_seed) ? morphology_seed : null,
     });
     res.status(200).json({ ok: true, creatureId, name, gender });
   } catch (e) {

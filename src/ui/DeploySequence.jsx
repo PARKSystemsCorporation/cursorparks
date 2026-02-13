@@ -9,40 +9,6 @@ export function triggerCreatureSpawn(type) {
   window.dispatchEvent(new CustomEvent("parks-spawn-creature", { detail: { type } }));
 }
 
-const STYLES = {
-  anchor: {
-    position: "fixed",
-    left: "50%",
-    bottom: "28%",
-    transform: "translateX(-50%)",
-    width: 80,
-    height: 80,
-    pointerEvents: "none",
-    zIndex: 90,
-  },
-  groundDistortion: {
-    position: "absolute",
-    left: "50%",
-    top: "50%",
-    transform: "translate(-50%, -50%)",
-    width: 120,
-    height: 40,
-    borderRadius: "50%",
-    background: "radial-gradient(ellipse, rgba(139, 115, 85, 0.25) 0%, transparent 70%)",
-    opacity: 0.8,
-  },
-  assembly: {
-    position: "absolute",
-    left: "50%",
-    top: "50%",
-    transform: "translate(-50%, -50%)",
-    width: 60,
-    height: 60,
-    border: "2px solid rgba(139, 115, 85, 0.5)",
-    background: "rgba(20, 18, 16, 0.3)",
-  },
-};
-
 let deployInProgress = false;
 
 export function deployCapsule(type) {
@@ -51,18 +17,17 @@ export function deployCapsule(type) {
   window.dispatchEvent(new CustomEvent("parks-deploy-capsule", { detail: { type } }));
 }
 
+/** Coordinates deploy flow: listens for parks-deploy-wallet-card, shows naming only if creature has no name, then triggers spawn. No floating visuals. */
 export function DeploySequenceUI() {
-  const [active, setActive] = useState(false);
   const [payload, setPayload] = useState({ type: null, position: null, creatureId: null, gender: null });
-  const [phase, setPhase] = useState("animating"); // "animating" | "naming" | "spawning"
+  const [phase, setPhase] = useState("idle"); // "idle" | "naming" | "spawning"
 
   useEffect(() => {
     const onCapsule = (e) => {
       const t = e.detail?.type;
       if (t) {
-        setPayload({ type: t, position: null, creatureId: null });
-        setPhase("animating");
-        setActive(true);
+        setPayload({ type: t, position: null, creatureId: null, gender: null });
+        setPhase("spawning");
       }
     };
     const onWallet = async (e) => {
@@ -72,7 +37,6 @@ export function DeploySequenceUI() {
       const position = d.position ?? null;
       const gender = d.gender === "male" || d.gender === "female" ? d.gender : null;
       setPayload({ type: d.type, position, creatureId, gender });
-      setActive(true);
 
       if (creatureId && position) {
         try {
@@ -85,7 +49,7 @@ export function DeploySequenceUI() {
           }
         } catch (_) {}
       }
-      setPhase("animating");
+      setPhase("spawning");
     };
     window.addEventListener("parks-deploy-capsule", onCapsule);
     window.addEventListener("parks-deploy-wallet-card", onWallet);
@@ -103,11 +67,15 @@ export function DeploySequenceUI() {
         triggerCreatureSpawn(payload.type);
       }
     }
-    setActive(false);
-    setPhase("animating");
     setPayload({ type: null, position: null, creatureId: null, gender: null });
+    setPhase("idle");
     deployInProgress = false;
   }, [payload.type, payload.creatureId, payload.position]);
+
+  useEffect(() => {
+    if (phase !== "spawning" || !payload.type) return;
+    finish();
+  }, [phase, payload.type, finish]);
 
   const handleNamingSubmit = useCallback(
     async (data) => {
@@ -130,20 +98,13 @@ export function DeploySequenceUI() {
           identityOverride: { gender },
         });
       } finally {
-        setActive(false);
-        setPhase("animating");
         setPayload({ type: null, position: null, creatureId: null, gender: null });
+        setPhase("idle");
         deployInProgress = false;
       }
     },
     [payload.creatureId, payload.type, payload.position]
   );
-
-  useEffect(() => {
-    if (!active || phase !== "animating") return;
-    const t = setTimeout(finish, 1800);
-    return () => clearTimeout(t);
-  }, [active, phase, finish]);
 
   if (phase === "naming" && payload.creatureId && payload.type) {
     return (
@@ -157,12 +118,5 @@ export function DeploySequenceUI() {
     );
   }
 
-  if (!active) return null;
-
-  return (
-    <div style={STYLES.anchor} aria-hidden>
-      <div style={STYLES.groundDistortion} />
-      <div style={STYLES.assembly} />
-    </div>
-  );
+  return null;
 }

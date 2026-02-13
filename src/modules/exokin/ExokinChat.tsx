@@ -13,15 +13,13 @@ const COLORS = {
   exokin: "rgba(255, 230, 200, 0.95)",
 };
 
-const BOTTOM_OFFSET = 100;
-
 export function ExokinChat() {
-  const { deployedRobots, pocketA, pocketB, cargoC, cargoD } = useInventory();
+  const { deployedRobots, bondCapsule, pocketA, pocketB, cargoC, cargoD } = useInventory();
   const robot = useRobot();
   const pockets = [pocketA, pocketB, cargoC, cargoD].flat();
   const firstCapsule = pockets.find((item) => item?.type === "capsule" && item?.id);
   const firstDeployed = deployedRobots[0];
-  const activeCreatureId = firstDeployed?.creatureId ?? firstCapsule?.id ?? null;
+  const activeCreatureId = firstDeployed?.creatureId ?? bondCapsule?.id ?? firstCapsule?.id ?? null;
 
   const [messages, setMessages] = useState<{ id: number | string; speaker: string; content: string; createdAt?: string }[]>([]);
   const [input, setInput] = useState("");
@@ -87,13 +85,11 @@ export function ExokinChat() {
   return (
     <div
       style={{
-        position: "absolute",
-        top: 16,
-        left: 16,
-        bottom: BOTTOM_OFFSET,
-        width: 300,
+        width: "100%",
+        flex: 1,
+        minHeight: 0,
         border: `1px solid ${COLORS.border}`,
-        borderRadius: 6,
+        borderRadius: "6px 6px 0 0",
         background: COLORS.bg,
         boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
         overflow: "hidden",

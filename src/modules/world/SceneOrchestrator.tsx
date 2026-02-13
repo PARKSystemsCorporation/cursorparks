@@ -1,6 +1,8 @@
 "use client";
 
 import React, { Suspense } from "react";
+import { CameraOverrideProvider } from "./CameraOverrideContext";
+import { CameraProfileMoment } from "./CameraProfileMoment";
 import { EffectComposer, ToneMapping, SMAA, Vignette, Noise, Bloom } from "@react-three/postprocessing";
 import { AlleyGeometry } from "@/src/components/Bazaar/AlleyGeometry";
 import { AlleyEndingPortal } from "@/src/components/Bazaar/AlleyEnding";
@@ -70,8 +72,10 @@ export function SceneOrchestrator() {
       <color attach="background" args={["#eacca7"]} />
       <fogExp2 attach="fog" args={["#fff0dd", 0.005]} />
 
-      <PerformanceTicker />
-      <FirstPersonController />
+      <CameraOverrideProvider>
+        <PerformanceTicker />
+        <FirstPersonController />
+        <CameraProfileMoment />
 
       <AlleyGeometry />
       <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
@@ -92,6 +96,7 @@ export function SceneOrchestrator() {
       <CreatureSpawnListener />
       <WalletCardDeployment />
       <DeployedRobotsRenderer />
+      </CameraOverrideProvider>
 
       <ambientLight intensity={2.5} color="#fff8e6" />
       <hemisphereLight args={["#e8d5b7", "#504030", 1.5]} />

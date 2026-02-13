@@ -1,11 +1,10 @@
 "use client";
 
-import React, { Suspense, useState, useCallback, useEffect } from "react";
+import React, { Suspense, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import EntryScreen from "@/src/ui/EntryScreen";
 import IntroTrainer from "@/src/ui/IntroTrainer";
 import { DeploySequenceUI } from "@/src/ui/DeploySequence";
-import { ExokinRevealOverlay } from "@/src/ui/ExokinRevealOverlay";
 import { isFirstTimeUser, markIntroDone } from "@/src/state/introFlow";
 import { InventoryProvider } from "@/src/modules/ui/inventory/InventoryContext";
 import { PocketInventory } from "@/src/modules/ui/inventory/PocketInventory";
@@ -46,7 +45,6 @@ export default function BazaarLanding() {
   const [entered, setEntered] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [alley, setAlley] = useState<Alley>("one");
-  const [showDeployHint, setShowDeployHint] = useState(false);
 
   const onEntryEnter = useCallback(() => {
     setEntered(true);
@@ -59,14 +57,7 @@ export default function BazaarLanding() {
   const onIntroComplete = useCallback(() => {
     markIntroDone();
     setShowIntro(false);
-    setShowDeployHint(true);
   }, []);
-
-  useEffect(() => {
-    if (!showDeployHint) return;
-    const t = setTimeout(() => setShowDeployHint(false), 8000);
-    return () => clearTimeout(t);
-  }, [showDeployHint]);
 
   return (
     <div
@@ -109,39 +100,12 @@ export default function BazaarLanding() {
           </ErrorBoundary>
         </div>
 
-        {entered && (
-          <>
-            <PocketInventory />
-            {showDeployHint && (
-              <div
-                style={{
-                  position: "fixed",
-                  bottom: 100,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  padding: "10px 16px",
-                  background: "rgba(26, 20, 16, 0.95)",
-                  border: "1px solid #8b6914",
-                  borderRadius: 8,
-                  color: "#e8d5b7",
-                  fontSize: 12,
-                  fontFamily: "monospace",
-                  zIndex: 50,
-                  maxWidth: 320,
-                  textAlign: "center",
-                }}
-              >
-                Click the ◆ in the bar below, then click the ground to deploy your runner.
-              </div>
-            )}
-          </>
-        )}
+        {entered && <PocketInventory />}
 
         {entered && showIntro && (
           <IntroTrainer visible onComplete={onIntroComplete} />
         )}
         <DeploySequenceUI />
-        <ExokinRevealOverlay />
       </InventoryProvider>
     </div>
   );

@@ -86,8 +86,15 @@ function Pocket({
   );
 }
 
+/** Quick bar: EXOKIN bond capsule is never shown here (reserved for physical tools). */
+function filterBondFromPocket(items: (InventoryItem | null)[], bondId: string | null): (InventoryItem | null)[] {
+  if (!bondId) return items;
+  return items.map((item) => (item?.id === bondId ? null : item));
+}
+
 export function PocketInventory() {
-  const { pocketA, pocketB, cargoC, cargoD, startCapsuleThrow } = useInventory();
+  const { pocketA, pocketB, cargoC, cargoD, bondCapsule, startCapsuleThrow } = useInventory();
+  const bondId = bondCapsule?.id ?? null;
 
   const handleThrowCapsule = useCallback(
     (pocket: PocketId, slotIndex: number) => {
@@ -114,28 +121,28 @@ export function PocketInventory() {
         id="pocketA"
         label="Quick"
         slots={POCKET_SLOTS.pocketA}
-        items={pocketA}
+        items={filterBondFromPocket(pocketA, bondId)}
         onThrowCapsule={handleThrowCapsule}
       />
       <Pocket
         id="pocketB"
         label="Wallet"
         slots={POCKET_SLOTS.pocketB}
-        items={pocketB}
+        items={filterBondFromPocket(pocketB, bondId)}
         onThrowCapsule={handleThrowCapsule}
       />
       <Pocket
         id="cargoC"
         label="Cargo C"
         slots={POCKET_SLOTS.cargoC}
-        items={cargoC}
+        items={filterBondFromPocket(cargoC, bondId)}
         onThrowCapsule={handleThrowCapsule}
       />
       <Pocket
         id="cargoD"
         label="Cargo D"
         slots={POCKET_SLOTS.cargoD}
-        items={cargoD}
+        items={filterBondFromPocket(cargoD, bondId)}
         onThrowCapsule={handleThrowCapsule}
       />
     </div>

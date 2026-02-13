@@ -39,12 +39,12 @@ function useCreatureName(creatureId: string | null) {
 }
 
 export function ExokinPanel() {
-  const { deployedRobots, pocketA, pocketB, cargoC, cargoD } = useInventory();
+  const { deployedRobots, bondCapsule, pocketA, pocketB, cargoC, cargoD } = useInventory();
   const robot = useRobot();
   const pockets = [pocketA, pocketB, cargoC, cargoD].flat();
   const firstCapsule = pockets.find((item) => item?.type === "capsule" && item?.id);
   const firstDeployed = deployedRobots[0];
-  const activeCreatureId = firstDeployed?.creatureId ?? firstCapsule?.id ?? null;
+  const activeCreatureId = firstDeployed?.creatureId ?? bondCapsule?.id ?? firstCapsule?.id ?? null;
   const inPocket = activeCreatureId && !deployedRobots.some((r) => r.creatureId === activeCreatureId);
   const name = useCreatureName(activeCreatureId);
   const chatContext = robot.getChatContext();
@@ -81,6 +81,11 @@ export function ExokinPanel() {
       >
         {name || "EXOKIN"}
       </div>
+      {!inPocket && (
+        <div style={{ padding: "4px 10px", fontSize: 9, color: COLORS.muted, textTransform: "uppercase" }}>
+          IN WORLD / ACTIVE
+        </div>
+      )}
       <div style={{ padding: 10 }}>
         {inPocket ? (
           <div

@@ -24,4 +24,6 @@ export interface DragState {
   item: InventoryItem;
   pocket: PocketId;
   slotIndex: number;
+  /** True when drag started from EXOKIN device (bond), not quick bar */
+  fromBond?: boolean;
 }

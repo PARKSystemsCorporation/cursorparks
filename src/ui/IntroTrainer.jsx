@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from "react";
 import BondSelection from "./BondSelection";
 import { useInventory } from "@/src/modules/ui/inventory/InventoryContext";
-import { getOrCreateIdentity } from "@/src/systems/creature/identityGenerator";
+import { generateIdentity, setIdentity } from "@/src/systems/creature/identityGenerator";
 
 const LINES = [
   "Bazaar doesn't remember faces.",
@@ -58,7 +58,7 @@ export default function IntroTrainer({ visible, onComplete }) {
   const [lineIndex, setLineIndex] = useState(0);
   const [showBondSelection, setShowBondSelection] = useState(false);
 
-  const { addItem } = useInventory();
+  const { setBondCapsule } = useInventory();
 
   const advance = useCallback(() => {
     if (lineIndex < LINES.length - 1) {
@@ -68,19 +68,28 @@ export default function IntroTrainer({ visible, onComplete }) {
     }
   }, [lineIndex]);
 
+  /** Birth moment: after name confirm we randomize morphology (seed from name+time), persist, add to bond slot. */
   const handleBondComplete = useCallback(
-    async (type, gender) => {
-      if (!type || !gender) return;
+    async ({ gender, type, name: chosenName }) => {
+      if (!type || !gender || !chosenName?.trim()) return;
       const creatureId = `exo-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      const identity = getOrCreateIdentity(creatureId, type, undefined, { gender });
+      const ts = Date.now();
+      const seedStr = `${chosenName.trim()}-${ts}`;
+      let morphology_seed = 0;
+      for (let i = 0; i < seedStr.length; i++) morphology_seed = (morphology_seed << 5) - morphology_seed + seedStr.charCodeAt(i);
+      morphology_seed = morphology_seed >>> 0;
+      const identity = generateIdentity(type, morphology_seed, { gender });
+      setIdentity(creatureId, identity);
       try {
         await fetch("/api/exokin/creature", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             creatureId,
-            type,
+            name: chosenName.trim(),
             gender,
+            type,
+            morphology_seed,
             head_type: identity.head_type,
             body_type: identity.body_type,
             tail_type: identity.tail_type,
@@ -88,7 +97,7 @@ export default function IntroTrainer({ visible, onComplete }) {
           }),
         });
       } catch (_) {}
-      addItem("pocketA", {
+      setBondCapsule({
         id: creatureId,
         type: "capsule",
         variant: type,
@@ -97,7 +106,7 @@ export default function IntroTrainer({ visible, onComplete }) {
       setShowBondSelection(false);
       onComplete && onComplete();
     },
-    [addItem, onComplete]
+    [setBondCapsule, onComplete]
   );
 
   if (!visible) return null;

@@ -14,7 +14,7 @@ import { RadialMenu, VendorTalkPanel, BarterTable } from "@/src/modules/vendors"
 import { TrainerProvider } from "@/src/modules/world/TrainerContext";
 import { TrainerOverlay } from "@/src/modules/world/TrainerOverlay";
 import { ArenaUI } from "@/src/modules/arena";
-import { ExokinPanel, ExokinChat } from "@/src/modules/exokin";
+import { ExokinPanel, ExokinChat, ExokinDevice } from "@/src/modules/exokin";
 import { DebugOverlay } from "@/src/modules/ui/DebugOverlay";
 import "./BazaarLanding.css";
 
@@ -63,7 +63,27 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
             </ErrorBoundary>
 
             <DebugOverlay />
-            <ExokinChat />
+            <div
+              style={{
+                position: "absolute",
+                top: 16,
+                left: 16,
+                bottom: 100,
+                width: 300,
+                display: "flex",
+                flexDirection: "column",
+                zIndex: 25,
+                pointerEvents: "none",
+              }}
+            >
+              <div style={{ flex: 1, minHeight: 0, pointerEvents: "auto" }}>
+                <ExokinChat />
+              </div>
+              <ExokinDevice />
+              <div style={{ pointerEvents: "auto" }}>
+                <ExokinPanel />
+              </div>
+            </div>
             <GlobalChatStream />
             <VendorTalkPanel />
             <BarterTable />
@@ -75,8 +95,6 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
             <div style={{ position: "absolute", bottom: "20px", left: "20px", color: "#3d2b1f", opacity: 0.7, fontFamily: "monospace", fontSize: "12px", fontWeight: "bold" }}>
               [PARKS PUBLIC BAZAAR]
             </div>
-
-            <ExokinPanel />
           </div>
             </TrainerProvider>
             </RobotProvider>

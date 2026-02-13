@@ -4,12 +4,14 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useState, useCallback, useEffect } from "react";
 import * as THREE from "three";
 import { EYE_HEIGHT, clampPosition } from "./firstPersonBounds";
+import { useCameraOverride } from "./CameraOverrideContext";
 
 const MOUSE_SENSITIVITY = 0.002;
 const MOVE_SPEED = 4;
 
 export function FirstPersonController() {
   const { camera, gl } = useThree();
+  const { active: cameraOverrideActive } = useCameraOverride();
   const [locked, setLocked] = useState(false);
   const rotation = useRef({ yaw: 0, pitch: 0 });
   const keys = useRef({ w: false, a: false, s: false, d: false });
@@ -69,6 +71,7 @@ export function FirstPersonController() {
   }, [gl.domElement, requestLock]);
 
   useFrame((_, delta) => {
+    if (cameraOverrideActive) return;
     camera.position.y = EYE_HEIGHT;
 
     if (document.pointerLockElement !== gl.domElement) return;

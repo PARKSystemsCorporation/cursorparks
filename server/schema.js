@@ -76,6 +76,7 @@ function createTables(db) {
       color_profile_json TEXT,
       name TEXT,
       eare_state_json TEXT,
+      morphology_seed INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -101,8 +102,10 @@ function addExokinColumnsIfMissing(db) {
     const info = db.prepare("PRAGMA table_info(creature_identity)").all();
     const hasName = info.some((c) => c.name === "name");
     const hasEare = info.some((c) => c.name === "eare_state_json");
+    const hasMorphologySeed = info.some((c) => c.name === "morphology_seed");
     if (!hasName) db.exec("ALTER TABLE creature_identity ADD COLUMN name TEXT");
     if (!hasEare) db.exec("ALTER TABLE creature_identity ADD COLUMN eare_state_json TEXT");
+    if (!hasMorphologySeed) db.exec("ALTER TABLE creature_identity ADD COLUMN morphology_seed INTEGER");
   } catch (_) {}
 }
 
