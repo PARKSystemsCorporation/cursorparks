@@ -54,7 +54,7 @@ function setRenderCreature(fn) {
  * Trigger creature spawn. If creatureId provided: get or generate identity, then spawn using identity.
  * Dispatches parks-spawn-creature with { type, identity, position, creatureId } for deploy flow.
  * @param {string} type - "warform" | "companion"
- * @param {object} [options] - { creatureId, position: { x, y, z }, seed }
+ * @param {object} [options] - { creatureId, position: { x, y, z }, seed, identityOverride: { gender } }
  * @returns {object} creature object with identity (and legacy frame/limbs/etc if no identity)
  */
 function triggerCreatureSpawn(type, options) {
@@ -62,9 +62,10 @@ function triggerCreatureSpawn(type, options) {
   const creatureId = opts.creatureId;
   const position = opts.position;
   const seed = opts.seed;
+  const identityOverride = opts.identityOverride;
 
   if (creatureId && type) {
-    const identity = getOrCreateIdentity(creatureId, type, seed);
+    const identity = getOrCreateIdentity(creatureId, type, seed, identityOverride);
     const creature = { type, identity, creatureId };
     if (renderCreature) renderCreature(creature);
     if (position && typeof window !== "undefined" && window.dispatchEvent) {

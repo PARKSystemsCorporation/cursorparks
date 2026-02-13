@@ -74,14 +74,36 @@ function createTables(db) {
       body_type TEXT NOT NULL,
       tail_type TEXT NOT NULL,
       color_profile_json TEXT,
+      name TEXT,
+      eare_state_json TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS exokin_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      creature_id TEXT NOT NULL,
+      speaker TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_exokin_messages_creature ON exokin_messages(creature_id);
     CREATE INDEX IF NOT EXISTS idx_bots_user ON bots(user_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(user_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
   `);
   addPasswordColumnIfMissing(db);
+  addExokinColumnsIfMissing(db);
 }
 
-module.exports = { createTables, addPasswordColumnIfMissing };
+function addExokinColumnsIfMissing(db) {
+  try {
+    const info = db.prepare("PRAGMA table_info(creature_identity)").all();
+    const hasName = info.some((c) => c.name === "name");
+    const hasEare = info.some((c) => c.name === "eare_state_json");
+    if (!hasName) db.exec("ALTER TABLE creature_identity ADD COLUMN name TEXT");
+    if (!hasEare) db.exec("ALTER TABLE creature_identity ADD COLUMN eare_state_json TEXT");
+  } catch (_) {}
+}
+
+module.exports = { createTables, addPasswordColumnIfMissing, addExokinColumnsIfMissing };

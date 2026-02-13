@@ -33,16 +33,20 @@ function pickOne(arr, rng) {
  * Generate identity for first deploy. role = warrior | companion from type.
  * @param {string} type - "warform" | "companion"
  * @param {number} [seed]
+ * @param {{ gender?: string }} [override] - optional gender override (male|female)
  * @returns {{ gender: string, role: string, head_type: string, body_type: string, tail_type: string, color_profile: object }}
  */
-function generateIdentity(type, seed) {
+function generateIdentity(type, seed, override) {
   const effectiveSeed =
     seed !== undefined && Number.isFinite(seed)
       ? Math.floor(seed)
       : Math.floor((Date.now() || 0) * 1000 + Math.random() * 1e9);
   const rng = createSeededRng(effectiveSeed);
 
-  const gender = pickOne(anatomyParts.GENDERS, rng);
+  const gender =
+    override && (override.gender === "male" || override.gender === "female")
+      ? override.gender
+      : pickOne(anatomyParts.GENDERS, rng);
   const role = type === "warform" ? "warrior" : "companion";
   const headOptions = anatomyParts.headOptions(gender, role);
   const bodyOptions = anatomyParts.bodyOptions(gender, role);
@@ -60,12 +64,14 @@ function generateIdentity(type, seed) {
 }
 
 /**
- * Get or create identity for creature. First deploy: generate and store. Else: load.
+ * Get or create identity for creature. First deploy: generate and store (optionally with gender override). Else: load.
+ * @param {object} [opts] - { gender?: string } applied when creating new identity
  */
-function getOrCreateIdentity(creatureId, type, seed) {
+function getOrCreateIdentity(creatureId, type, seed, opts) {
   let identity = getIdentity(creatureId);
   if (!identity) {
-    identity = generateIdentity(type, seed);
+    const override = opts && typeof opts === "object" ? opts : undefined;
+    identity = generateIdentity(type, seed, override);
     setIdentity(creatureId, identity);
   }
   return identity;

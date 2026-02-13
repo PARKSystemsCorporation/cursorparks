@@ -15,3 +15,6 @@ export type {
   EAREChatContext,
   EAREEventType,
 } from "./types";
+
+export { ExokinPanel } from "./ExokinPanel";
+export { ExokinChat } from "./ExokinChat";

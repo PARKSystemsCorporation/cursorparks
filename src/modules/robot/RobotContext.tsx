@@ -6,7 +6,7 @@ import { RobotMemory } from "./memorySystem";
 import { RobotChatEngine } from "./robotChatEngine";
 import { EAREEngine } from "@/src/modules/exokin";
 import type { CombatCalibration } from "@/src/modules/exokin";
-import type { EAREEventType } from "@/src/modules/exokin";
+import type { EAREChatContext, EAREEventType } from "@/src/modules/exokin";
 
 type RobotContextValue = {
   sendToRobot: (text: string) => string;
@@ -17,6 +17,8 @@ type RobotContextValue = {
   recordEvent: (type: EAREEventType, intensity?: number) => void;
   /** EARE: combat stats calibration from emergent role and neuro state. */
   getCombatCalibration: () => CombatCalibration;
+  /** EARE: chat context and emotional/neuro stats for UI (panel, chat tone). */
+  getChatContext: () => EAREChatContext;
 };
 
 const RobotContext = createContext<RobotContextValue | null>(null);
@@ -52,9 +54,13 @@ export function RobotProvider({ children }: { children: React.ReactNode }) {
     return eare.getCombatCalibration();
   }, []);
 
+  const getChatContext = useCallback((): EAREChatContext => {
+    return eare.getChatContext();
+  }, []);
+
   const value = useMemo<RobotContextValue>(
-    () => ({ sendToRobot, lastResponse, getMood, tick, recordEvent, getCombatCalibration }),
-    [sendToRobot, lastResponse, getMood, tick, recordEvent, getCombatCalibration]
+    () => ({ sendToRobot, lastResponse, getMood, tick, recordEvent, getCombatCalibration, getChatContext }),
+    [sendToRobot, lastResponse, getMood, tick, recordEvent, getCombatCalibration, getChatContext]
   );
 
   return <RobotContext.Provider value={value}>{children}</RobotContext.Provider>;
@@ -76,6 +82,22 @@ export function useRobot(): RobotContextValue {
         staminaBias: 1,
         tacticsBias: 1,
         temperBias: 1,
+      }),
+      getChatContext: () => ({
+        valence: 0.5,
+        arousal: 0.5,
+        dominance: 0.5,
+        roleDrift: 0,
+        combatConfidence: 0.5,
+        bondingState: 0.5,
+        neuro: {
+          aggression: 0.5,
+          bonding: 0.5,
+          alertness: 0.5,
+          curiosity: 0.5,
+          territoriality: 0.5,
+          playDrive: 0.5,
+        },
       }),
     };
   }

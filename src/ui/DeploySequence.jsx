@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from "react";
 import { triggerCreatureSpawn as triggerSpawnWithIdentity } from "@/src/systems/creature/generator";
+import { ExokinNamingScreen } from "@/src/ui/ExokinNamingScreen";
 
 export function triggerCreatureSpawn(type) {
   if (!type) return;
@@ -53,21 +54,37 @@ export function deployCapsule(type) {
 export function DeploySequenceUI() {
   const [active, setActive] = useState(false);
   const [payload, setPayload] = useState({ type: null, position: null, creatureId: null });
+  const [phase, setPhase] = useState("animating"); // "animating" | "naming" | "spawning"
 
   useEffect(() => {
     const onCapsule = (e) => {
       const t = e.detail?.type;
       if (t) {
         setPayload({ type: t, position: null, creatureId: null });
+        setPhase("animating");
         setActive(true);
       }
     };
-    const onWallet = (e) => {
+    const onWallet = async (e) => {
       const d = e.detail;
-      if (d?.type) {
-        setPayload({ type: d.type, position: d.position ?? null, creatureId: d.creatureId ?? null });
-        setActive(true);
+      if (!d?.type) return;
+      const creatureId = d.creatureId ?? null;
+      const position = d.position ?? null;
+      setPayload({ type: d.type, position, creatureId });
+      setActive(true);
+
+      if (creatureId && position) {
+        try {
+          const res = await fetch(`/api/exokin/creature?id=${encodeURIComponent(creatureId)}`);
+          const data = res.ok ? await res.json() : null;
+          const needsNaming = !data || !data.name;
+          if (needsNaming) {
+            setPhase("naming");
+            return;
+          }
+        } catch (_) {}
       }
+      setPhase("animating");
     };
     window.addEventListener("parks-deploy-capsule", onCapsule);
     window.addEventListener("parks-deploy-wallet-card", onWallet);
@@ -86,15 +103,57 @@ export function DeploySequenceUI() {
       }
     }
     setActive(false);
+    setPhase("animating");
     setPayload({ type: null, position: null, creatureId: null });
     deployInProgress = false;
   }, [payload.type, payload.creatureId, payload.position]);
 
+  const handleNamingSubmit = useCallback(
+    async (data) => {
+      const { name, gender } = data;
+      if (!payload.creatureId || !payload.type) return;
+      try {
+        await fetch("/api/exokin/creature", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            creatureId: payload.creatureId,
+            name,
+            gender,
+            type: payload.type,
+          }),
+        });
+        triggerSpawnWithIdentity(payload.type, {
+          creatureId: payload.creatureId,
+          position: payload.position,
+          identityOverride: { gender },
+        });
+      } finally {
+        setActive(false);
+        setPhase("animating");
+        setPayload({ type: null, position: null, creatureId: null });
+        deployInProgress = false;
+      }
+    },
+    [payload.creatureId, payload.type, payload.position]
+  );
+
   useEffect(() => {
-    if (!active) return;
+    if (!active || phase !== "animating") return;
     const t = setTimeout(finish, 1800);
     return () => clearTimeout(t);
-  }, [active, finish]);
+  }, [active, phase, finish]);
+
+  if (phase === "naming" && payload.creatureId && payload.type) {
+    return (
+      <ExokinNamingScreen
+        type={payload.type}
+        creatureId={payload.creatureId}
+        position={payload.position}
+        onSubmit={handleNamingSubmit}
+      />
+    );
+  }
 
   if (!active) return null;
 

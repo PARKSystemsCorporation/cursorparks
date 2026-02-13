@@ -34,9 +34,51 @@ const pruneMessages = db.prepare("DELETE FROM messages WHERE id NOT IN (SELECT i
 // Bazaar enter/set-password API (uses server/db + server/schema)
 const { initSchema: initBazaarSchema } = require("./server/db");
 const { enter: enterHandler, setPassword: setPasswordHandler } = require("./server/routes/enter");
+const exokinRoutes = require("./server/routes/exokin");
 initBazaarSchema();
 
 let isReady = false;
+
+function serveExokinApi(req, res, parsedUrl) {
+  const pathname = parsedUrl.pathname || req.url?.split("?")[0] || "";
+  const isCreature = pathname === "/api/exokin/creature";
+  const isChat = pathname === "/api/exokin/chat";
+  if (!isCreature && !isChat) return false;
+
+  const creatureId = parsedUrl.searchParams?.get("id") || parsedUrl.searchParams?.get("creatureId") || null;
+
+  const sendJson = (status, obj) => {
+    res.setHeader("Content-Type", "application/json");
+    res.writeHead(status);
+    res.end(JSON.stringify(obj));
+  };
+  res.status = (code) => ({ json: (obj) => sendJson(code, obj) });
+
+  if (req.method === "GET" && isCreature) {
+    exokinRoutes.handleGetCreature(req, res, creatureId);
+    return true;
+  }
+  if (req.method === "GET" && isChat) {
+    exokinRoutes.handleGetChat(req, res, creatureId);
+    return true;
+  }
+  if (req.method === "POST") {
+    const chunks = [];
+    req.on("data", (chunk) => chunks.push(chunk));
+    req.on("end", () => {
+      let body = {};
+      try {
+        const raw = Buffer.concat(chunks).toString();
+        if (raw) body = JSON.parse(raw);
+      } catch (_) {}
+      if (isCreature) exokinRoutes.handlePostCreature(req, res, body);
+      else if (isChat) exokinRoutes.handlePostChat(req, res, body);
+    });
+    return true;
+  }
+  sendJson(405, { error: "Method not allowed" });
+  return true;
+}
 
 function serveBazaarEnterApi(req, res, parsedUrl) {
   const pathname = parsedUrl.pathname || req.url?.split("?")[0] || "";
@@ -78,6 +120,7 @@ const server = http.createServer((req, res) => {
     return;
   }
   const parsedUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
+  if (serveExokinApi(req, res, parsedUrl)) return;
   if (serveBazaarEnterApi(req, res, parsedUrl)) return;
   handle(req, res);
 });
