@@ -12,6 +12,7 @@ import { ContactShadowSystem } from "./ContactShadowSystem";
 import { EnvironmentalMicroMotion } from "./EnvironmentalMicroMotion";
 import { SpatialAudioZones } from "./SpatialAudioZones";
 import { RobotRepairShop } from "./RobotRepairShop";
+import { BrokerBooth } from "./BrokerBooth";
 
 import { HotspotNavigation } from "./HotspotNavigation";
 import BazaarVendors from "./BazaarVendors";
@@ -172,6 +173,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                             <AlleyProps />
                             <RobotRepairShop />
                             <BazaarVendors />
+                            <BrokerBooth />
 
                             <FloatingMessages />
 
