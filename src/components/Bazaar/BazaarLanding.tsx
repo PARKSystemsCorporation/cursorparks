@@ -1,8 +1,11 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
-import LandingPage from "./LandingPage";
+import EntryScreen from "@/src/ui/EntryScreen";
+import IntroTrainer from "@/src/ui/IntroTrainer";
+import { DeploySequenceUI } from "@/src/ui/DeploySequence";
+import { isFirstTimeUser, markIntroDone } from "@/src/state/introFlow";
 
 // Dynamic import for Canvas components to avoid SSR issues with Three.js
 const BazaarScene = dynamic(() => import("./BazaarScene"), { ssr: false });
@@ -37,16 +40,28 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
 export default function BazaarLanding() {
     const [entered, setEntered] = useState(false);
+    const [showIntro, setShowIntro] = useState(false);
     const [alley, setAlley] = useState<Alley>("one");
+
+    const onEntryEnter = useCallback(() => {
+        setEntered(true);
+    }, []);
+
+    const onFirstTimeIntro = useCallback(() => {
+        if (isFirstTimeUser()) setShowIntro(true);
+    }, []);
+
+    const onIntroComplete = useCallback(() => {
+        markIntroDone();
+        setShowIntro(false);
+    }, []);
 
     return (
         <div style={{ width: "100vw", height: "100vh", position: "relative", background: "#050510", overflow: "hidden" }}>
-            {/* Landing Page Overlay */}
             {!entered && (
-                <LandingPage onEnter={() => setEntered(true)} />
+                <EntryScreen onEnter={onEntryEnter} onFirstTimeIntro={onFirstTimeIntro} />
             )}
 
-            {/* 3D Scene - Always rendered to preload */}
             <div style={{
                 position: "absolute",
                 inset: 0,
@@ -64,6 +79,11 @@ export default function BazaarLanding() {
                     </Suspense>
                 </ErrorBoundary>
             </div>
+
+            {entered && showIntro && (
+                <IntroTrainer visible onComplete={onIntroComplete} />
+            )}
+            <DeploySequenceUI />
         </div>
     );
 }
