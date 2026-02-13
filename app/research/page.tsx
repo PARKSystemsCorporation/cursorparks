@@ -45,7 +45,7 @@ export default function ResearchPage() {
                 </p>
                 <div className="rh-stats-bar">
                     <div className="rh-stat">
-                        <span className="rh-stat-value">1</span>
+                        <span className="rh-stat-value">2</span>
                         <span className="rh-stat-label">Publications</span>
                     </div>
                     <div className="rh-stat">
@@ -93,6 +93,11 @@ export default function ResearchPage() {
                             </li>
                             <li className="rh-tag-item">
                                 <span className="rh-tag-dot" style={{ background: "#00e5ff" }} />
+                                EXOKIN
+                                <span className="rh-tag-count">1</span>
+                            </li>
+                            <li className="rh-tag-item">
+                                <span className="rh-tag-dot" style={{ background: "#00e5ff" }} />
                                 ARIA
                                 <span className="rh-tag-count">0</span>
                             </li>
@@ -115,7 +120,99 @@ export default function ResearchPage() {
                         </div>
                     </div>
 
-                    {/* ═══ POST 1: EURO-DRIVE ═══ */}
+                    {/* ═══ POST: EARE — EXOKIN Autonomous Regulation Engine ═══ */}
+                    <article className="rh-post">
+                        <div className="rh-post-header">
+                            <span className="rh-post-classification rh-class-spec">SPEC</span>
+                            <span className="rh-post-meta">2026-02-13 · v1.0</span>
+                        </div>
+
+                        <h2 className="rh-post-title">
+                            <a href="#">EARE — EXOKIN Autonomous Regulation Engine</a>
+                        </h2>
+                        <p className="rh-post-subtitle">
+                            Anti-gravity prompt: convert EXOKIN from a static ruleset into a self-regulating, autonomous species layer. No manual tuning; roles and behavior emerge from experience.
+                        </p>
+
+                        <div className="rh-post-tags">
+                            <span className="rh-post-tag">EXOKIN</span>
+                            <span className="rh-post-tag">EARE</span>
+                            <span className="rh-post-tag">AUTONOMOUS</span>
+                            <span className="rh-post-tag">NEUROCHEMISTRY</span>
+                            <span className="rh-post-tag">SELF-REGULATION</span>
+                        </div>
+
+                        <div className="rh-post-body">
+                            <h3>Summary</h3>
+                            <p>
+                                The <strong>EXOKIN Autonomous Regulation Engine (EARE)</strong> is a persistent system layer that sits above morphology, color, and AI chat. It does not implement a single feature: it implements a <strong>living system</strong> that self-evaluates, self-balances, self-adjusts, and evolves behavior automatically. There are no manual stat sliders, hardcoded outcomes, or static classes—it behaves like an ecosystem, not a game mechanic.
+                            </p>
+
+                            <h3>What EARE Controls</h3>
+                            <p>
+                                The engine runs continuously and regulates: combat effectiveness calibration, temperament drift, neurochemical balance, interaction tendencies, role stabilization (warrior vs companion), and personality evolution. It interprets physical form, color, and chat and governs their outcomes rather than being driven by them.
+                            </p>
+
+                            <h3>Input Layers (What the System Watches)</h3>
+                            <ul>
+                                <li><strong>Physical:</strong> body structure, geometry, mass, limb configuration, balance.</li>
+                                <li><strong>Visual identity:</strong> color spectrum, surface material, visual aggression vs warmth.</li>
+                                <li><strong>Behavioral:</strong> combat frequency, chat frequency, roaming, proximity to user, wins/losses.</li>
+                                <li><strong>Neurochemical (real-time synthetic levels):</strong> aggression, bonding, alertness, curiosity, territoriality, play drive.</li>
+                            </ul>
+
+                            <h3>Core Loop: Observe → Evaluate → Adjust → Stabilize → Repeat</h3>
+                            <p>
+                                EARE detects imbalances, adjusts neurochemistry, shifts behavioral tendencies, and updates combat calibration. Examples: repeated combat losses with high aggression → reduce aggression bias, increase caution and adaptability. Long social time with little combat → drift role toward Companion. Frequent wins and low bonding → reinforce Warrior tendencies.
+                            </p>
+
+                            <h3>Role Emergence (Not Assigned)</h3>
+                            <p>
+                                Warrior vs Companion is not selected—it emerges from structure, experience, neuro state, environment, and owner interaction. Roles drift slowly over time. Color and morphology are <strong>baselines only</strong> (starting biases); a warm-colored warrior or cold-colored companion can still emerge from behavior.
+                            </p>
+
+                            <h3>Neurochemistry as Feedback Economy</h3>
+                            <p>
+                                Neuro levels are not static sliders. They rise and decay naturally in loops: <em>stimulus → response → chemical shift → behavioral outcome → new stimulus</em>. Example: fight → adrenaline spike → aggression rise → victory → dominance reinforcement; or fight → loss → caution increase → bonding increase → reduced combat seeking.
+                            </p>
+
+                            <h3>Chat AI Governed by EARE</h3>
+                            <p>
+                                Chat is not standalone. It reads current neuro levels, role drift, combat confidence, and bonding state. Speech tone shifts dynamically with internal state.
+                            </p>
+
+                            <h3>Self-Balancing and Long-Term Evolution</h3>
+                            <p>
+                                The engine auto-corrects extremes: too aggressive → fatigue/instability; too passive → stimulation/curiosity; too dominant → unpredictability; too social → independence. It also tracks lifetime combat exposure, social interaction, owner dependency, and environmental stress to form a personality arc. No two EXOKIN converge—they diverge over time.
+                            </p>
+
+                            <h3>Implementation Directive</h3>
+                            <p>
+                                EARE must exist as a <strong>persistent system layer</strong>—not a visual feature or stat sheet. It runs in the background, rewriting internal weights, rebalancing tendencies, shifting behavior probabilities, and guiding chat tone and combat instincts. Design intent: not AI enemies, but a <strong>self-regulating robotic species</strong> that learns equilibrium, drifts, adapts, stabilizes, and becomes itself. This engine is the core governing intelligence layer of the EXOKIN schematic.
+                            </p>
+                        </div>
+
+                        <div className="rh-post-footer">
+                            <button className="rh-post-action">
+                                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" /></svg>
+                                0
+                            </button>
+                            <button className="rh-post-action">
+                                <svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z" /></svg>
+                                0
+                            </button>
+                            <button className="rh-post-action">
+                                <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13" /></svg>
+                                SHARE
+                            </button>
+                            <button className="rh-post-action" style={{ marginLeft: "auto" }}>
+                                <svg viewBox="0 0 24 24"><path d="M5 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-7-3.5L5 21V5z" /></svg>
+                                BOOKMARK
+                            </button>
+                        </div>
+                    </article>
+
+                    {/* ═══ POST: EURO-DRIVE ═══ */}
                     <article className="rh-post">
                         <div className="rh-post-header">
                             <span className="rh-post-classification rh-class-spec">SPEC</span>
@@ -379,6 +476,13 @@ drive_task = asyncio.create_task(active_loop.run())`}</code></pre>
                         <div className="rh-activity-item">
                             <span className="rh-activity-dot" style={{ background: "#00aaff" }} />
                             <div>
+                                <span className="rh-activity-text">EARE — EXOKIN Autonomous Regulation Engine</span>
+                                <span className="rh-activity-time">JUST NOW</span>
+                            </div>
+                        </div>
+                        <div className="rh-activity-item">
+                            <span className="rh-activity-dot" style={{ background: "#00aaff" }} />
+                            <div>
                                 <span className="rh-activity-text">EURO-DRIVE spec published</span>
                                 <span className="rh-activity-time">2 MIN AGO</span>
                             </div>
@@ -409,7 +513,7 @@ drive_task = asyncio.create_task(active_loop.run())`}</code></pre>
                     <div className="rh-sidebar-section">
                         <h4 className="rh-sidebar-title">System Tags</h4>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                            {["NeuroDriveLoop", "KiraState", "IntentEngine", "EnvironmentModel", "Unity Bridge", "PersistentWorkLoop", "MotivationEngine", "TaskGenerator"].map((tag) => (
+                            {["EARE", "EXOKIN", "NeuroDriveLoop", "KiraState", "IntentEngine", "EnvironmentModel", "Unity Bridge", "PersistentWorkLoop", "MotivationEngine", "TaskGenerator"].map((tag) => (
                                 <span className="rh-post-tag" key={tag}>{tag}</span>
                             ))}
                         </div>

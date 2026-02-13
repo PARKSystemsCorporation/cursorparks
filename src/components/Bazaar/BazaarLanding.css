@@ -584,6 +584,58 @@ body {
     color: rgba(200, 200, 210, 0.75);
 }
 
+/* --- Landing page links (bronze, right side, staggered drop-in) --- */
+.bazaar-links-panel {
+    position: absolute;
+    top: 50%;
+    right: 24px;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    z-index: 25;
+    pointer-events: auto;
+}
+
+.bazaar-link {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #5c4a32;
+    text-decoration: none;
+    padding: 4px 0;
+    opacity: 0;
+    animation: bazaarLinkDrop 0.4s ease-out forwards;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    border-bottom: 1px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.bazaar-link:hover {
+    color: #8b6914;
+    border-bottom-color: #8b6914;
+}
+
+.bazaar-link:nth-child(1) { animation-delay: 0.15s; }
+.bazaar-link:nth-child(2) { animation-delay: 0.3s; }
+.bazaar-link:nth-child(3) { animation-delay: 0.45s; }
+.bazaar-link:nth-child(4) { animation-delay: 0.6s; }
+.bazaar-link:nth-child(5) { animation-delay: 0.75s; }
+
+@keyframes bazaarLinkDrop {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @keyframes streamerMsgSlideIn {
     from {
         opacity: 0;
