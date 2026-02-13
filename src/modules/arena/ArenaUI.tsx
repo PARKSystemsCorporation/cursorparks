@@ -2,9 +2,11 @@
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useSceneState } from "@/src/modules/world/SceneStateContext";
+import { useRobot } from "@/src/modules/robot/RobotContext";
 import {
   resolveTurn,
   createDefaultRobotStats,
+  applyCalibration,
   type RobotStats,
   type TurnResult,
 } from "./combatResolver";
@@ -18,28 +20,50 @@ const COLORS = {
 
 export function ArenaUI() {
   const { sceneMode, setSceneMode } = useSceneState();
-  const [robotA, setRobotA] = useState<RobotStats>(() => createDefaultRobotStats({ strike: 55 }));
+  const { getCombatCalibration, recordEvent } = useRobot();
+  const [robotA, setRobotA] = useState<RobotStats | null>(null);
   const [robotB, setRobotB] = useState<RobotStats>(() => createDefaultRobotStats({ block: 48 }));
   const [log, setLog] = useState<string[]>([]);
   const [attacker, setAttacker] = useState<"A" | "B">("A");
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const arenaInitRef = useRef(false);
+
+  useEffect(() => {
+    if (sceneMode !== "in_arena") {
+      arenaInitRef.current = false;
+      return;
+    }
+    if (!arenaInitRef.current) {
+      arenaInitRef.current = true;
+      const cal = getCombatCalibration();
+      setRobotA(applyCalibration(createDefaultRobotStats({ strike: 55 }), cal));
+      setRobotB(createDefaultRobotStats({ block: 48 }));
+      setLog([]);
+      setAttacker("A");
+      recordEvent("combat_engage", 0.5);
+    }
+  }, [sceneMode, getCombatCalibration, recordEvent]);
 
   const doTurn = useCallback(() => {
-    if (robotA.hp <= 0 || robotB.hp <= 0) return;
+    if (robotA == null || robotA.hp <= 0 || robotB.hp <= 0) return;
     const result: TurnResult =
       attacker === "A"
         ? resolveTurn("Robot A", "Robot B", robotA, robotB)
         : resolveTurn("Robot B", "Robot A", robotB, robotA);
     setLog((prev) => [...prev.slice(-19), result.logLine]);
+    if (result.defenderHp <= 0) {
+      if (result.defenderId === "Robot B") recordEvent("combat_win", 1);
+      else recordEvent("combat_loss", 1);
+    }
     if (attacker === "A") {
-      setRobotA((prev) => ({ ...prev, stamina: result.attackerStamina }));
+      setRobotA((prev) => (prev ? { ...prev, stamina: result.attackerStamina } : prev));
       setRobotB((prev) => ({ ...prev, hp: result.defenderHp }));
     } else {
       setRobotB((prev) => ({ ...prev, stamina: result.attackerStamina }));
-      setRobotA((prev) => ({ ...prev, hp: result.defenderHp }));
+      setRobotA((prev) => (prev ? { ...prev, hp: result.defenderHp } : prev));
     }
     setAttacker((prev) => (prev === "A" ? "B" : "A"));
-  }, [attacker, robotA, robotB]);
+  }, [attacker, robotA, robotB, recordEvent]);
 
   useEffect(() => {
     if (sceneMode !== "in_arena") return;
@@ -50,6 +74,7 @@ export function ArenaUI() {
   }, [sceneMode, doTurn]);
 
   if (sceneMode !== "in_arena") return null;
+  if (robotA == null) return null;
 
   const leave = () => setSceneMode("idle");
 

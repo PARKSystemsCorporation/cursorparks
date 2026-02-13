@@ -13,11 +13,14 @@ const BOB_AMPLITUDE = 0.03;
 const BOB_FREQ = 2;
 const SPEECH_DURATION_MS = 4000;
 
+const PROXIMITY_REPORT_INTERVAL = 2;
+
 export function RobotCompanion({ position: initialPos }: { position: [number, number, number] }) {
   const { camera } = useThree();
-  const { getMood, lastResponse, tick } = useRobot();
+  const { getMood, lastResponse, tick, recordEvent } = useRobot();
   const groupRef = useRef<THREE.Group>(null);
   const ledRef = useRef<THREE.Mesh>(null);
+  const proximityAccum = useRef(0);
   const [speechVisible, setSpeechVisible] = useState(false);
 
   useEffect(() => {
@@ -30,6 +33,11 @@ export function RobotCompanion({ position: initialPos }: { position: [number, nu
 
   useFrame((state, delta) => {
     tick(delta);
+    proximityAccum.current += delta;
+    if (proximityAccum.current >= PROXIMITY_REPORT_INTERVAL) {
+      proximityAccum.current = 0;
+      recordEvent("proximity_high", 0.3);
+    }
     if (!groupRef.current) return;
     const target = new THREE.Vector3(
       camera.position.x - Math.sin(camera.rotation.y) * FOLLOW_DISTANCE,

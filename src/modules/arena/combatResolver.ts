@@ -89,3 +89,34 @@ export function createDefaultRobotStats(overrides?: Partial<RobotStats>): RobotS
     ...overrides,
   };
 }
+
+/** EARE combat calibration: bias multipliers (e.g. 0.8–1.2). Scale base stats for emergent role/neuro state. */
+export interface CombatCalibrationBias {
+  strikeBias: number;
+  blockBias: number;
+  dodgeBias: number;
+  staminaBias: number;
+  tacticsBias: number;
+  temperBias: number;
+}
+
+function clampStat(v: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+export function applyCalibration(
+  base: RobotStats,
+  cal: CombatCalibrationBias
+): RobotStats {
+  const s = (v: number, bias: number, lo: number, hi: number) =>
+    clampStat(v * (bias ?? 1), lo, hi);
+  return {
+    strike: s(base.strike, cal.strikeBias, 25, 75),
+    block: s(base.block, cal.blockBias, 25, 65),
+    dodge: s(base.dodge, cal.dodgeBias, 25, 70),
+    stamina: clampStat(base.stamina * (cal.staminaBias ?? 1), 80, 100),
+    tactics: s(base.tactics, cal.tacticsBias, 30, 70),
+    temper: s(base.temper, cal.temperBias, 30, 70),
+    hp: base.hp,
+  };
+}

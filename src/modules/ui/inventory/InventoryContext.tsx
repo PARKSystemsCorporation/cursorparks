@@ -58,8 +58,8 @@ type InventoryContextValue = InventoryState & {
   /** Start throw: set dragState so 3D shows wallet card in hand; deploy happens on ground click */
   startCapsuleThrow: (pocket: PocketId, slotIndex: number) => void;
   setDeployTarget: (pos: { x: number; y: number; z: number } | null) => void;
-  /** Confirm deploy: remove from pocket, clear drag, dispatch wallet card deploy (card → unfold → spawn) */
-  confirmDeploy: () => InventoryItem | null;
+  /** Confirm deploy: remove from pocket, clear drag, dispatch wallet card deploy. Pass position when calling from click (avoids state timing). */
+  confirmDeploy: (position?: { x: number; y: number; z: number } | null) => InventoryItem | null;
   /** Add a deployed creature at world position (called after wallet card sequence) */
   deployAt: (variant: string, x: number, y: number, z: number, options?: { identity?: DeployedRobot["identity"]; creatureId?: string }) => void;
   deployedRobots: DeployedRobot[];
@@ -122,14 +122,15 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, deployTarget: pos }));
   }, []);
 
-  const confirmDeploy = useCallback((): InventoryItem | null => {
+  const confirmDeploy = useCallback((position?: { x: number; y: number; z: number } | null): InventoryItem | null => {
     let deployed: InventoryItem | null = null;
-    let target: { x: number; y: number; z: number } | null = null;
+    let target: { x: number; y: number; z: number } | null = position ?? null;
     setState((s) => {
-      if (!s.dragState || !s.deployTarget) return s;
+      const useTarget = position ?? s.deployTarget;
+      if (!s.dragState || !useTarget) return s;
       const item = s.dragState.item;
       deployed = item;
-      target = s.deployTarget;
+      target = useTarget;
       const arr = [...s[s.dragState.pocket]];
       arr[s.dragState.slotIndex] = null;
       return {
@@ -199,7 +200,7 @@ export function useInventory(): InventoryContextValue {
       cancelDrag: () => {},
       startCapsuleThrow: () => {},
       setDeployTarget: () => {},
-      confirmDeploy: () => null,
+      confirmDeploy: (_position?) => null,
       deployAt: () => {},
       deployedRobots: [],
     };
