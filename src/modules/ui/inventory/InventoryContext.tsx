@@ -160,10 +160,19 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       options?: { identity?: DeployedRobot["identity"]; creatureId?: string }
     ) => {
       const id = options?.creatureId ?? `creature-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const creatureId = options?.creatureId ?? id;
+      const identity = options?.identity;
       setDeployedRobots((prev) => [
         ...prev,
-        { id, x, y, z, variant, creatureId: options?.creatureId, identity: options?.identity },
+        { id, x, y, z, variant, creatureId, identity },
       ]);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("exokin-deployed", {
+            detail: { id, creatureId, variant, identity },
+          })
+        );
+      }
     },
     []
   );

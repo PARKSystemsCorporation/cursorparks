@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import EntryScreen from "@/src/ui/EntryScreen";
 import IntroTrainer from "@/src/ui/IntroTrainer";
 import { DeploySequenceUI } from "@/src/ui/DeploySequence";
+import { ExokinRevealOverlay } from "@/src/ui/ExokinRevealOverlay";
 import { isFirstTimeUser, markIntroDone } from "@/src/state/introFlow";
 import { InventoryProvider } from "@/src/modules/ui/inventory/InventoryContext";
 import { PocketInventory } from "@/src/modules/ui/inventory/PocketInventory";
@@ -140,6 +141,7 @@ export default function BazaarLanding() {
           <IntroTrainer visible onComplete={onIntroComplete} />
         )}
         <DeploySequenceUI />
+        <ExokinRevealOverlay />
       </InventoryProvider>
     </div>
   );
