@@ -7,6 +7,7 @@ import { Text, Billboard } from "@react-three/drei";
 import { PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 import VendorProfileCard from "./VendorProfileCard";
 import { CyberneticHead, CyberneticTorso, CyberneticArm, CyberneticLeg } from "./CyberneticParts";
+import { BrokerAvatar } from "./BrokerAvatar";
 
 // --- Vendor appearance config (one per vendor id) ---
 export type HairStyle = "cap" | "slicked" | "bald" | "long" | "turban" | "hood";
@@ -310,50 +311,47 @@ export function RealisticVendorBody({
         >
             {/* --- CYBERNETIC BODY --- */}
 
-            {/* Hips / Pelvis */}
-            <mesh position={[0, 0.9, 0]} scale={[0.3, 0.15, 0.2]} castShadow>
-                <boxGeometry args={[1, 1, 1]} />
-                <meshStandardMaterial color="#1a1a1a" metalness={0.8} roughness={0.5} />
-            </mesh>
-
-            {/* Legs */}
-            <group position={[-0.15 * buildScale.limbs, 0.9, 0]}>
-                <CyberneticLeg color={bottomColor} />
-            </group>
-            <group position={[0.15 * buildScale.limbs, 0.9, 0]}>
-                <CyberneticLeg color={bottomColor} />
-            </group>
-
-            {/* Torso — Broker: dark jacket, no chest glow (collar glow is on head) */}
-            <group position={[0, 1.25, 0]}>
-                <CyberneticTorso topColor={topColor} buildScale={buildScale.torso} noChestGlow={id === "broker"} />
-            </group>
-
-            {/* Head */}
-            <group ref={headRef} position={[0, 1.6, 0]}>
-                <CyberneticHead
-                    skinTone={skinTone}
-                    isBarker={id === "barker"}
-                    isBroker={id === "broker"}
-                />
-            </group>
-
-            {/* Arms */}
-            {posture !== "hands-pockets" && (
+            {id === "broker" ? (
+                <group scale={[1.02, 1.02, 1.02]}>
+                    <BrokerAvatar ref={headRef} />
+                </group>
+            ) : (
                 <>
-                    {/* Left Arm */}
-                    <group ref={leftArmRef} position={[-0.22 * buildScale.torso, 1.45, 0]} rotation={[0, 0, posture === "arms-wide" ? -0.4 : 0.15]}>
-                        <CyberneticArm isRight={false} robotic={false} skinTone={skinTone} />
+                    {/* Hips / Pelvis */}
+                    <mesh position={[0, 0.9, 0]} scale={[0.3, 0.15, 0.2]} castShadow>
+                        <boxGeometry args={[1, 1, 1]} />
+                        <meshStandardMaterial color="#1a1a1a" metalness={0.8} roughness={0.5} />
+                    </mesh>
+
+                    {/* Legs */}
+                    <group position={[-0.15 * buildScale.limbs, 0.9, 0]}>
+                        <CyberneticLeg color={bottomColor} />
+                    </group>
+                    <group position={[0.15 * buildScale.limbs, 0.9, 0]}>
+                        <CyberneticLeg color={bottomColor} />
                     </group>
 
-                    {/* Right Arm */}
-                    <group ref={rightArmRef} position={[0.22 * buildScale.torso, 1.45, 0]} rotation={[0, 0, posture === "arms-wide" ? 0.4 : posture === "one-arm-counter" || posture === "hammer-arm" ? -0.1 : 0]}>
-                        <CyberneticArm
-                            isRight={true}
-                            robotic={roboticArm || false}
-                            skinTone={skinTone}
-                        />
+                    {/* Torso */}
+                    <group position={[0, 1.25, 0]}>
+                        <CyberneticTorso topColor={topColor} buildScale={buildScale.torso} noChestGlow={false} />
                     </group>
+
+                    {/* Head */}
+                    <group ref={headRef} position={[0, 1.6, 0]}>
+                        <CyberneticHead skinTone={skinTone} isBarker={id === "barker"} />
+                    </group>
+
+                    {/* Arms */}
+                    {posture !== "hands-pockets" && (
+                        <>
+                            <group ref={leftArmRef} position={[-0.22 * buildScale.torso, 1.45, 0]} rotation={[0, 0, posture === "arms-wide" ? -0.4 : 0.15]}>
+                                <CyberneticArm isRight={false} robotic={false} skinTone={skinTone} />
+                            </group>
+                            <group ref={rightArmRef} position={[0.22 * buildScale.torso, 1.45, 0]} rotation={[0, 0, posture === "arms-wide" ? 0.4 : posture === "one-arm-counter" || posture === "hammer-arm" ? -0.1 : 0]}>
+                                <CyberneticArm isRight={true} robotic={roboticArm || false} skinTone={skinTone} />
+                            </group>
+                        </>
+                    )}
                 </>
             )}
 
