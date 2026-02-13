@@ -324,9 +324,9 @@ export function RealisticVendorBody({
                 <CyberneticLeg color={bottomColor} />
             </group>
 
-            {/* Torso */}
+            {/* Torso — Broker: dark jacket, no chest glow (collar glow is on head) */}
             <group position={[0, 1.25, 0]}>
-                <CyberneticTorso topColor={topColor} buildScale={buildScale.torso} />
+                <CyberneticTorso topColor={topColor} buildScale={buildScale.torso} noChestGlow={id === "broker"} />
             </group>
 
             {/* Head */}

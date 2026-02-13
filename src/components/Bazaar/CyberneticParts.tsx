@@ -80,6 +80,60 @@ export function CyberneticHead({ skinTone, isBarker, isBroker }: { skinTone: str
         metalness: 0.0,
     });
 
+    // Broker: dedicated head only (no generic base) so photo-accurate design is visible
+    if (isBroker) {
+        return (
+            <group>
+                {/* Minimal base: skull + face + nose + lips + chin + neck (no blocky generic, no cyan eyes) */}
+                <mesh position={[0, 0.02, -0.02]} scale={[0.15, 0.16, 0.16]} geometry={SPHERE_GEO} material={matSkin} castShadow />
+                <mesh position={[0, -0.02, 0.08]} scale={[0.12, 0.14, 0.04]} geometry={BOX_GEO} material={matSkin} castShadow />
+                <mesh position={[0, -0.02, 0.14]} scale={[0.022, 0.05, 0.025]} geometry={BOX_GEO} material={matSkin} />
+                <mesh position={[0, -0.06, 0.12]} scale={[0.03, 0.02, 0.02]} geometry={SPHERE_GEO} material={matSkin} />
+                <group position={[0, -0.08, 0.12]}>
+                    <mesh position={[0, 0.005, 0]} scale={[0.055, 0.01, 0.02]} geometry={BOX_GEO} material={matLips} />
+                    <mesh position={[0, -0.01, 0.003]} scale={[0.05, 0.012, 0.02]} geometry={BOX_GEO} material={matLips} />
+                </group>
+                <mesh position={[0, -0.11, 0.07]} scale={[0.07, 0.035, 0.05]} geometry={SPHERE_GEO} material={matSkin} castShadow />
+                <mesh position={[0, -0.16, 0]} scale={[0.065, 0.055, 0.065]} geometry={CYL_GEO} material={matSkin} />
+
+                {/* Hair — long purple-pink swept right */}
+                <mesh
+                    position={[0.06, -0.05, -0.08]}
+                    scale={[0.14, 0.25, 0.15]}
+                    rotation={[0, 0, -0.26]}
+                    geometry={SPHERE_GEO}
+                    castShadow
+                >
+                    <meshStandardMaterial color="#8b5cf6" emissive="#d946ef" emissiveIntensity={0.15} roughness={0.6} metalness={0} />
+                </mesh>
+                <mesh position={[0.02, 0.1, -0.06]} scale={[0.12, 0.08, 0.14]} geometry={SPHERE_GEO} castShadow>
+                    <meshStandardMaterial color="#8b5cf6" emissive="#d946ef" emissiveIntensity={0.15} roughness={0.6} metalness={0} />
+                </mesh>
+
+                {/* Left eye cybernetic implant — orange/amber geometric traces */}
+                <group position={[-0.06, 0.01, 0.12]}>
+                    <mesh position={[0, 0, 0]} scale={[0.04, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                    <mesh position={[0.02, 0.01, 0]} rotation={[0, 0, 0.52]} scale={[0.04, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                    <mesh position={[-0.01, -0.015, 0]} rotation={[0, 0, -0.79]} scale={[0.035, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                    <mesh position={[0.01, -0.01, 0]} rotation={[0, 0, 1.05]} scale={[0.03, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                    <mesh position={[0, 0, 0.002]} scale={[0.012, 0.012, 0.003]} rotation={[0, 0, Math.PI / 4]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                </group>
+
+                {/* Eye makeup — dark smoky shadow on both eyes */}
+                <group position={[0, 0.02, 0.14]}>
+                    <mesh position={[-0.04, 0, 0.005]} scale={[0.038, 0.025, 0.006]} geometry={BOX_GEO} material={MAT_SMOKY_EYE} />
+                    <mesh position={[0.04, 0, 0.005]} scale={[0.038, 0.025, 0.006]} geometry={BOX_GEO} material={MAT_SMOKY_EYE} />
+                </group>
+
+                {/* Glowing cyan collar — V at neck */}
+                <group position={[0, -0.18, 0.04]}>
+                    <mesh position={[-0.03, 0, 0]} rotation={[0, 0, 0.52]} scale={[0.06, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
+                    <mesh position={[0.03, 0, 0]} rotation={[0, 0, -0.52]} scale={[0.06, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
+                </group>
+            </group>
+        );
+    }
+
     return (
         <group>
             {/* --- Cranium (rounded, human-like) --- */}
@@ -150,51 +204,11 @@ export function CyberneticHead({ skinTone, isBarker, isBroker }: { skinTone: str
                     </mesh>
                 </>
             )}
-
-            {/* Broker: photo-accurate cyberpunk woman — hair, implant, makeup, collar */}
-            {isBroker && (
-                <>
-                    {/* Hair — long purple-pink swept right (no hair on left / undercut) */}
-                    <mesh
-                        position={[0.06, -0.05, -0.08]}
-                        scale={[0.14, 0.25, 0.15]}
-                        rotation={[0, 0, -0.26]}
-                        geometry={SPHERE_GEO}
-                        castShadow
-                    >
-                        <meshStandardMaterial color="#8b5cf6" emissive="#d946ef" emissiveIntensity={0.15} roughness={0.6} metalness={0} />
-                    </mesh>
-                    <mesh position={[0.02, 0.1, -0.06]} scale={[0.12, 0.08, 0.14]} geometry={SPHERE_GEO} castShadow>
-                        <meshStandardMaterial color="#8b5cf6" emissive="#d946ef" emissiveIntensity={0.15} roughness={0.6} metalness={0} />
-                    </mesh>
-
-                    {/* Left eye cybernetic implant — orange/amber geometric traces */}
-                    <group position={[-0.06, 0.01, 0.12]}>
-                        <mesh position={[0, 0, 0]} scale={[0.04, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
-                        <mesh position={[0.02, 0.01, 0]} rotation={[0, 0, 0.52]} scale={[0.04, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
-                        <mesh position={[-0.01, -0.015, 0]} rotation={[0, 0, -0.79]} scale={[0.035, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
-                        <mesh position={[0.01, -0.01, 0]} rotation={[0, 0, 1.05]} scale={[0.03, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
-                        <mesh position={[0, 0, 0.002]} scale={[0.012, 0.012, 0.003]} rotation={[0, 0, Math.PI / 4]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
-                    </group>
-
-                    {/* Eye makeup — dark smoky shadow on both eyes */}
-                    <group position={[0, 0.02, 0.14]}>
-                        <mesh position={[-0.04, 0, 0.005]} scale={[0.038, 0.025, 0.006]} geometry={BOX_GEO} material={MAT_SMOKY_EYE} />
-                        <mesh position={[0.04, 0, 0.005]} scale={[0.038, 0.025, 0.006]} geometry={BOX_GEO} material={MAT_SMOKY_EYE} />
-                    </group>
-
-                    {/* Glowing cyan collar — V at neck */}
-                    <group position={[0, -0.18, 0.04]}>
-                        <mesh position={[-0.03, 0, 0]} rotation={[0, 0, 0.52]} scale={[0.06, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
-                        <mesh position={[0.03, 0, 0]} rotation={[0, 0, -0.52]} scale={[0.06, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
-                    </group>
-                </>
-            )}
         </group>
     );
 }
 
-export function CyberneticTorso({ topColor, buildScale }: { topColor: string; buildScale: number }) {
+export function CyberneticTorso({ topColor, buildScale, noChestGlow }: { topColor: string; buildScale: number; noChestGlow?: boolean }) {
     const scale = buildScale;
 
     return (
@@ -206,8 +220,9 @@ export function CyberneticTorso({ topColor, buildScale }: { topColor: string; bu
             <mesh position={[0, 0.25, 0.08]} scale={[0.38 * scale, 0.25, 0.12]} geometry={BOX_GEO} castShadow>
                 <meshStandardMaterial color={topColor} metalness={0.4} roughness={0.4} />
             </mesh>
-            {/* Center Chest Light */}
-            <mesh position={[0, 0.25, 0.141]} scale={[0.04, 0.12, 0.01]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
+            {!noChestGlow && (
+                <mesh position={[0, 0.25, 0.141]} scale={[0.04, 0.12, 0.01]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
+            )}
 
             {/* Abdomen - Layered Plating (Articulated look) */}
             <mesh position={[0, 0, 0.06]} scale={[0.26 * scale, 0.08, 0.1]} geometry={BOX_GEO} material={MAT_SOFT_GRAPHITE} castShadow />
