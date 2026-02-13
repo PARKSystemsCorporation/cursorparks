@@ -7,8 +7,6 @@ import { ChatProvider } from "./ChatContext";
 import { PerformanceProvider } from "@/src/modules/performance";
 import { SceneStateProvider } from "@/src/modules/world/SceneStateContext";
 import { SceneOrchestrator } from "@/src/modules/world/SceneOrchestrator";
-import { InventoryProvider } from "@/src/modules/ui/inventory/InventoryContext";
-import { PocketInventory } from "@/src/modules/ui/inventory/PocketInventory";
 import { RobotProvider } from "@/src/modules/robot/RobotContext";
 import { GlobalChatStream, ChatInput } from "@/src/modules/chat";
 import { RadialMenu, VendorTalkPanel, BarterTable } from "@/src/modules/vendors";
@@ -42,13 +40,12 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
-export default function BazaarScene({ onEnterAlleyTwo: _onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
+export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
   return (
     <ChatProvider>
       <PerformanceProvider>
-        <SceneStateProvider>
-          <InventoryProvider>
-            <RobotProvider>
+        <SceneStateProvider onEnterAlleyTwo={onEnterAlleyTwo ?? null}>
+          <RobotProvider>
             <TrainerProvider>
             <div style={{ width: "100vw", height: "100vh", background: "#e6ccb2" }}>
             <ErrorBoundary>
@@ -70,7 +67,6 @@ export default function BazaarScene({ onEnterAlleyTwo: _onEnterAlleyTwo }: { onE
             <RadialMenu />
             <TrainerOverlay />
             <ChatInput />
-            <PocketInventory />
 
             <div style={{ position: "absolute", bottom: "20px", left: "20px", color: "#3d2b1f", opacity: 0.7, fontFamily: "monospace", fontSize: "12px", fontWeight: "bold" }}>
               [PARKS PUBLIC BAZAAR]
@@ -78,7 +74,6 @@ export default function BazaarScene({ onEnterAlleyTwo: _onEnterAlleyTwo }: { onE
           </div>
             </TrainerProvider>
             </RobotProvider>
-          </InventoryProvider>
         </SceneStateProvider>
       </PerformanceProvider>
     </ChatProvider>

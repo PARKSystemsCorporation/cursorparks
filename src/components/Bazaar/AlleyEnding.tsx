@@ -9,7 +9,7 @@ interface AlleyEndingPortalProps {
     onEnterPortal?: () => void;
 }
 
-export function AlleyEndingPortal({ positionX = 0, positionZ = -30, rotationY = 0, onEnterPortal: _onEnterPortal }: AlleyEndingPortalProps) {
+export function AlleyEndingPortal({ positionX = 0, positionZ = -30, rotationY = 0, onEnterPortal }: AlleyEndingPortalProps) {
     // Reuse textures (in a real app, use a centralized asset store)
     const textures = useMemo(() => {
         const wallDiff = createConcreteWallTexture();
@@ -88,6 +88,27 @@ export function AlleyEndingPortal({ positionX = 0, positionZ = -30, rotationY = 
                 <meshStandardMaterial color="#444" roughness={0.5} />
             </mesh>
 
+            {/* Clickable portal to back alley: walk through the turn */}
+            {onEnterPortal && (
+                <mesh
+                    position={[-2, 1.8, -EXT_DEPTH / 2]}
+                    rotation={[0, 0, 0]}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onEnterPortal();
+                    }}
+                    onPointerOver={(e) => {
+                        e.stopPropagation();
+                        document.body.style.cursor = "pointer";
+                    }}
+                    onPointerOut={() => {
+                        document.body.style.cursor = "default";
+                    }}
+                >
+                    <planeGeometry args={[ALLEY_WIDTH + 2, 3.5]} />
+                    <meshBasicMaterial color="#3a2a1a" transparent opacity={0.4} />
+                </mesh>
+            )}
         </group>
     );
 }

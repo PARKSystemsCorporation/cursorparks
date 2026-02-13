@@ -5,7 +5,6 @@ import {
   createGuestSessionId,
   isFirstTimeUser,
   enterWithHandle,
-  setPasswordForHandle,
 } from "@/src/state/introFlow";
 
 const STYLES = {
@@ -99,17 +98,13 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
         setError("Password must be at least 6 characters.");
         return;
       }
-      if ((mode === "create" || mode === "setpassword") && password !== confirmPassword) {
+      if (mode === "create" && password !== confirmPassword) {
         setError("Passwords do not match.");
         return;
       }
       setBusy(true);
       try {
-        if (mode === "setpassword") {
-          await setPasswordForHandle(trimmed, password);
-        } else {
-          await enterWithHandle(trimmed, password);
-        }
+        await enterWithHandle(trimmed, password);
         const firstTime = isFirstTimeUser();
         onEnter({ type: "handle", handle: trimmed });
         if (firstTime && onFirstTimeIntro) onFirstTimeIntro();
@@ -129,16 +124,10 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
     if (firstTime && onFirstTimeIntro) onFirstTimeIntro();
   }, [onEnter, onFirstTimeIntro]);
 
-  if (mode === "signin" || mode === "create" || mode === "setpassword") {
-    const isSetPassword = mode === "setpassword";
+  if (mode === "signin" || mode === "create") {
     return (
       <div style={STYLES.screen}>
         <div style={STYLES.title}>PARKS BAZAAR</div>
-        {isSetPassword && (
-          <div style={{ ...STYLES.error, color: "#8b7355", marginBottom: "0.5rem" }}>
-            Set a password for your existing account (min 6 characters).
-          </div>
-        )}
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
@@ -155,7 +144,7 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
           />
           <input
             type="password"
-            placeholder={isSetPassword ? "New password" : "Password"}
+            placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={STYLES.input}
@@ -163,7 +152,7 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
             minLength={6}
             autoComplete={mode === "create" ? "new-password" : "current-password"}
           />
-          {(mode === "create" || mode === "setpassword") && (
+          {mode === "create" && (
             <input
               type="password"
               placeholder="Confirm password"
@@ -188,7 +177,7 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
                 e.target.style.color = STYLES.button.color;
               }}
             >
-              {busy ? "..." : isSetPassword ? "Set password & Enter" : mode === "create" ? "Create & Enter" : "Sign In"}
+              {busy ? "..." : mode === "create" ? "Create & Enter" : "Sign In"}
             </button>
             <button
               type="button"
@@ -211,18 +200,16 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
               Back
             </button>
           </div>
-          {!isSetPassword && (
-            <button
-              type="button"
-              style={{ ...STYLES.button, background: "transparent", border: "none", fontSize: "10px", marginTop: "0.5rem" }}
-              onClick={() => setShowForgotHelp(!showForgotHelp)}
-            >
-              Forgot password?
-            </button>
-          )}
+          <button
+            type="button"
+            style={{ ...STYLES.button, background: "transparent", border: "none", fontSize: "10px", marginTop: "0.5rem" }}
+            onClick={() => setShowForgotHelp(!showForgotHelp)}
+          >
+            Forgot password?
+          </button>
           {showForgotHelp && (
             <div style={{ ...STYLES.error, color: "#8b7355", marginTop: "0.25rem", fontSize: "10px" }}>
-              Legacy account? Use Set password on the main screen. Otherwise contact support to reset your password.
+              Contact support to reset your password.
             </div>
           )}
         </form>
@@ -257,18 +244,6 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
           }}
         >
           Create Handle
-        </button>
-        <button
-          style={STYLES.button}
-          onClick={() => setMode("setpassword")}
-          onMouseEnter={(e) => Object.assign(e.target.style, STYLES.buttonHover)}
-          onMouseLeave={(e) => {
-            e.target.style.borderColor = STYLES.button.border;
-            e.target.style.background = STYLES.button.background;
-            e.target.style.color = STYLES.button.color;
-          }}
-        >
-          Set password (legacy account)
         </button>
         <button
           style={STYLES.button}

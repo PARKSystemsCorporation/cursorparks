@@ -63,7 +63,7 @@ function AlleyProps() {
  * Use inside Canvas. Expects PerformanceProvider and SceneStateProvider above.
  */
 export function SceneOrchestrator() {
-  const { setRadialMenu } = useSceneState();
+  const { setRadialMenu, onEnterAlleyTwo } = useSceneState();
 
   return (
     <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="#ff6b1a" /></mesh>}>
@@ -74,7 +74,7 @@ export function SceneOrchestrator() {
       <FirstPersonController />
 
       <AlleyGeometry />
-      <AlleyEndingPortal />
+      <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
       <AlleySurfaceBreakupLayer />
       <ContactShadowSystem />
       <EnvironmentalMicroMotion />

@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import BondSelection from "./BondSelection";
+import { useInventory } from "@/src/modules/ui/inventory/InventoryContext";
 
 const LINES = [
   "Bazaar doesn't remember faces.",
@@ -56,6 +57,8 @@ export default function IntroTrainer({ visible, onComplete }) {
   const [lineIndex, setLineIndex] = useState(0);
   const [showBondSelection, setShowBondSelection] = useState(false);
 
+  const { addItem } = useInventory();
+
   const advance = useCallback(() => {
     if (lineIndex < LINES.length - 1) {
       setLineIndex((i) => i + 1);
@@ -64,10 +67,20 @@ export default function IntroTrainer({ visible, onComplete }) {
     }
   }, [lineIndex]);
 
-  const handleBondComplete = useCallback(() => {
-    setShowBondSelection(false);
-    onComplete && onComplete();
-  }, [onComplete]);
+  const handleBondComplete = useCallback(
+    (type) => {
+      if (type) {
+        addItem("pocketA", {
+          id: `cap-${type}-${Date.now()}`,
+          type: "capsule",
+          variant: type,
+        });
+      }
+      setShowBondSelection(false);
+      onComplete && onComplete();
+    },
+    [addItem, onComplete]
+  );
 
   if (!visible) return null;
 

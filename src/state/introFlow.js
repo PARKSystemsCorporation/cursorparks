@@ -69,9 +69,14 @@ export async function setPasswordForHandle(handle, password) {
       password: password != null ? String(password) : "",
     }),
   });
+  const text = await res.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch (_) {}
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || "Set password failed.");
+    const msg = data.error || (res.status === 404 ? "No account with that handle." : res.status >= 500 ? "Server error. Try again." : `Set password failed (${res.status}).`);
+    throw new Error(msg);
   }
-  return res.json();
+  return data;
 }

@@ -99,40 +99,45 @@ function buildPayload(db, user, getWallet, getBots, getInventory, getWorldState)
 }
 
 function setPassword(req, res) {
-  const handle = (req.body && req.body.handle) ? String(req.body.handle).trim() : "";
-  const password = req.body && req.body.password != null ? String(req.body.password) : "";
-  if (!handle) {
-    return res.status(400).json({ error: "Handle required." });
-  }
-  if (!password) {
-    return res.status(400).json({ error: "Password required." });
-  }
-  if (password.length < 6) {
-    return res.status(400).json({ error: "Password must be at least 6 characters." });
-  }
+  try {
+    const handle = (req.body && req.body.handle) ? String(req.body.handle).trim() : "";
+    const password = req.body && req.body.password != null ? String(req.body.password) : "";
+    if (!handle) {
+      return res.status(400).json({ error: "Handle required." });
+    }
+    if (!password) {
+      return res.status(400).json({ error: "Password required." });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters." });
+    }
 
-  const db = getDb();
-  const getUser = stmtGetUser(db);
-  const setPasswordStmt = stmtSetPassword(db);
-  const updateLastSeen = stmtUpdateLastSeen(db);
-  const getWallet = stmtGetWallet(db);
-  const getBots = stmtGetBots(db);
-  const getInventory = stmtGetInventory(db);
-  const getWorldState = stmtGetWorldState(db);
+    const db = getDb();
+    const getUser = stmtGetUser(db);
+    const setPasswordStmt = stmtSetPassword(db);
+    const updateLastSeen = stmtUpdateLastSeen(db);
+    const getWallet = stmtGetWallet(db);
+    const getBots = stmtGetBots(db);
+    const getInventory = stmtGetInventory(db);
+    const getWorldState = stmtGetWorldState(db);
 
-  const user = getUser.get(handle);
-  if (!user) {
-    return res.status(404).json({ error: "No account with that handle." });
-  }
-  if (user.password_hash != null && user.password_hash !== "") {
-    return res.status(400).json({ error: "Account already has a password. Use Sign In." });
-  }
+    const user = getUser.get(handle);
+    if (!user) {
+      return res.status(404).json({ error: "No account with that handle." });
+    }
+    if (user.password_hash != null && user.password_hash !== "") {
+      return res.status(400).json({ error: "Account already has a password. Use Sign In." });
+    }
 
-  const passwordHash = bcrypt.hashSync(password, 10);
-  setPasswordStmt.run(passwordHash, user.id);
-  updateLastSeen.run(user.id);
-  const updated = getUser.get(handle);
-  res.json(buildPayload(db, updated, getWallet, getBots, getInventory, getWorldState));
+    const passwordHash = bcrypt.hashSync(password, 10);
+    setPasswordStmt.run(passwordHash, user.id);
+    updateLastSeen.run(user.id);
+    const updated = getUser.get(handle);
+    return res.json(buildPayload(db, updated, getWallet, getBots, getInventory, getWorldState));
+  } catch (err) {
+    console.error("[set-password] error", err);
+    return res.status(500).json({ error: "Set password failed. Please try again." });
+  }
 }
 
 module.exports = { enter, setPassword };

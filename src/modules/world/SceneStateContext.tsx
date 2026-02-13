@@ -13,11 +13,18 @@ type SceneStateContextValue = {
   setSelectedVendorId: (id: string | null) => void;
   radialMenu: RadialMenuState;
   setRadialMenu: (v: RadialMenuState) => void;
+  onEnterAlleyTwo: (() => void) | null;
 };
 
 const SceneStateContext = createContext<SceneStateContextValue | null>(null);
 
-export function SceneStateProvider({ children }: { children: React.ReactNode }) {
+export function SceneStateProvider({
+  children,
+  onEnterAlleyTwo = null,
+}: {
+  children: React.ReactNode;
+  onEnterAlleyTwo?: (() => void) | null;
+}) {
   const [sceneMode, setSceneMode] = useState<SceneMode>("idle");
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
   const [radialMenu, setRadialMenu] = useState<RadialMenuState>(null);
@@ -30,6 +37,7 @@ export function SceneStateProvider({ children }: { children: React.ReactNode }) 
         setSelectedVendorId,
         radialMenu,
         setRadialMenu,
+        onEnterAlleyTwo,
       }}
     >
       {children}
@@ -47,6 +55,7 @@ export function useSceneState(): SceneStateContextValue {
       setSelectedVendorId: () => {},
       radialMenu: null,
       setRadialMenu: () => {},
+      onEnterAlleyTwo: null,
     };
   }
   return ctx;
