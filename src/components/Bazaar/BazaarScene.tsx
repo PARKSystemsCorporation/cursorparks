@@ -2,7 +2,6 @@
 
 import { Canvas } from "@react-three/fiber";
 import React from "react";
-import Link from "next/link";
 import * as THREE from "three";
 import { ChatProvider } from "./ChatContext";
 import { PerformanceProvider } from "@/src/modules/performance";
@@ -72,11 +71,6 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
             <div style={{ position: "absolute", bottom: "20px", left: "20px", color: "#3d2b1f", opacity: 0.7, fontFamily: "monospace", fontSize: "12px", fontWeight: "bold" }}>
               [PARKS PUBLIC BAZAAR]
             </div>
-
-            <nav className="bazaar-links-panel" aria-label="Quick links">
-              <Link href="/research" className="bazaar-link">Research</Link>
-              <Link href="/mmotrader" className="bazaar-link">Market</Link>
-            </nav>
           </div>
             </TrainerProvider>
             </RobotProvider>

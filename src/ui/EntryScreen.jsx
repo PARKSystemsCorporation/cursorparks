@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import Link from "next/link";
 import {
   createGuestSessionId,
   isFirstTimeUser,
@@ -70,6 +71,27 @@ const STYLES = {
     maxWidth: 280,
     textAlign: "center",
   },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: "16px 24px",
+    display: "flex",
+    justifyContent: "center",
+    gap: "2rem",
+    borderTop: "1px solid rgba(139, 105, 20, 0.4)",
+    background: "rgba(10, 8, 6, 0.6)",
+  },
+  footerLink: {
+    color: "#c9a227",
+    fontSize: "14px",
+    fontWeight: 600,
+    letterSpacing: "0.12em",
+    textTransform: "uppercase",
+    textDecoration: "none",
+    fontFamily: "monospace",
+  },
 };
 
 export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
@@ -127,7 +149,7 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
   if (mode === "signin" || mode === "create") {
     return (
       <div style={STYLES.screen}>
-        <div style={STYLES.title}>PARKS BAZAAR</div>
+        <div style={STYLES.title}>THE PUBLIC BAZAAR</div>
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
@@ -213,13 +235,17 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
             </div>
           )}
         </form>
+        <nav style={STYLES.footer} aria-label="Quick links">
+          <Link href="/research" style={STYLES.footerLink}>Research</Link>
+          <Link href="/mmotrader" style={STYLES.footerLink}>Market</Link>
+        </nav>
       </div>
     );
   }
 
   return (
     <div style={STYLES.screen}>
-      <div style={STYLES.title}>PARKS BAZAAR</div>
+      <div style={STYLES.title}>THE PUBLIC BAZAAR</div>
       <div style={STYLES.buttonGroup}>
         <button
           style={STYLES.button}
@@ -258,6 +284,10 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
           Continue as Guest
         </button>
       </div>
+      <nav style={STYLES.footer} aria-label="Quick links">
+        <Link href="/research" style={STYLES.footerLink}>Research</Link>
+        <Link href="/mmotrader" style={STYLES.footerLink}>Market</Link>
+      </nav>
     </div>
   );
 }
