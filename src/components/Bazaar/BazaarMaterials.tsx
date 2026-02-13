@@ -164,3 +164,8 @@ export function useBazaarMaterials() {
     }
     return ctx;
 }
+
+/** Returns materials when inside BazaarMaterialsProvider, otherwise null. Use for components that render in multiple scenes. */
+export function useOptionalBazaarMaterials(): BazaarMaterials | null {
+    return useContext(BazaarMaterialsContext);
+}

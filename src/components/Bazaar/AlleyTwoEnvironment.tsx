@@ -6,11 +6,11 @@ import { BAZAAR_BRIGHTNESS } from "./brightness";
 import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 import LedBar from "./LedBar";
 import NeonSign from "./NeonSign";
+import { AlleyEndingPortal, RoadClosedBarrier } from "./AlleyEnding";
 
 // Alley Two: narrower back alley (x ± 3), extends z 0 → -22
 const ALLEY_TWO_WIDTH = 6;
 const WALL_X = 3;
-const Z_END = -22;
 
 const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
 const MAT_DARKER = new THREE.MeshStandardMaterial({ color: "#333" });
@@ -313,8 +313,7 @@ function ConstructedWalls() {
             <WallBlock position={[WALL_X, wallY, -5]} size={[2, wallH, 10]} material={concreteWallRight} />
             <WallBlock position={[WALL_X, wallY, -16]} size={[2, wallH, 12]} material={concreteWallRight} />
 
-            {/* Back wall */}
-            <WallBlock position={[0, wallY, Z_END - 1]} size={[ALLEY_TWO_WIDTH + 4, wallH, 2]} material={concreteWall} />
+            {/* Back wall replaced by AlleyEndingPortal (gateway + underpass) */}
         </group>
     );
 }
@@ -559,6 +558,9 @@ export default function AlleyTwoEnvironment({ onReturn }: AlleyTwoEnvironmentPro
             <mesh position={[2, 0.4, -7]} rotation={[0, -0.2, 0]} castShadow receiveShadow material={woodCrate}>
                 <boxGeometry args={[0.5, 0.4, 0.6]} />
             </mesh>
+
+            <AlleyEndingPortal positionZ={-18} />
+            <RoadClosedBarrier position={[0, 0.25, 4.5]} />
 
             <AlleyTwoReturnPortal onReturn={onReturn} />
         </group>
