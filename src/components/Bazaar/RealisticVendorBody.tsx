@@ -56,8 +56,8 @@ export const VENDOR_APPEARANCE: Record<string, VendorAppearanceConfig> = {
         accentMesh: true,
     },
     broker: {
-        skinTone: "#d4b896",
-        hairColor: "#1a1a1a",
+        skinTone: "#e0c0a8",
+        hairColor: "#8b5cf6",
         hairStyle: "slicked",
         topColor: "#1a1a2a",
         bottomColor: "#151520",
@@ -333,7 +333,8 @@ export function RealisticVendorBody({
             <group ref={headRef} position={[0, 1.6, 0]}>
                 <CyberneticHead
                     skinTone={skinTone}
-                    isBarker={id === 'barker'}
+                    isBarker={id === "barker"}
+                    isBroker={id === "broker"}
                 />
             </group>
 

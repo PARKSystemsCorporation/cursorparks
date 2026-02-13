@@ -42,6 +42,21 @@ const MAT_GOLD_ACCENT = new THREE.MeshStandardMaterial({
     roughness: 0.15,
 });
 
+const MAT_IMPLANT_AMBER = new THREE.MeshStandardMaterial({
+    color: "#f97316",
+    emissive: "#f97316",
+    emissiveIntensity: 1.2,
+    toneMapped: false,
+});
+
+const MAT_SMOKY_EYE = new THREE.MeshStandardMaterial({
+    color: "#2a1030",
+    emissive: "#3b0764",
+    emissiveIntensity: 0.1,
+    roughness: 0.9,
+    metalness: 0,
+});
+
 // --- GEOMETRY HELPERS ---
 
 const BOX_GEO = new THREE.BoxGeometry(1, 1, 1);
@@ -50,16 +65,17 @@ const SPHERE_GEO = new THREE.SphereGeometry(1, 16, 16);
 
 // --- COMPONENTS ---
 
-export function CyberneticHead({ skinTone, isBarker }: { skinTone: string; isBarker?: boolean }) {
+export function CyberneticHead({ skinTone, isBarker, isBroker }: { skinTone: string; isBarker?: boolean; isBroker?: boolean }) {
     // Warm organic skin material
     const matSkin = new THREE.MeshStandardMaterial({
         color: skinTone,
         roughness: 0.65,
         metalness: 0.02,
     });
-    // Lip material — slightly darker/redder
+    // Lip material — pinkish-nude for broker, else slightly darker/redder
+    const lipTint = isBroker ? "#c08080" : "#a04040";
     const matLips = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(skinTone).lerp(new THREE.Color("#a04040"), 0.35).getHexString(),
+        color: new THREE.Color(skinTone).lerp(new THREE.Color(lipTint), isBroker ? 0.25 : 0.35).getHexString(),
         roughness: 0.55,
         metalness: 0.0,
     });
@@ -132,6 +148,46 @@ export function CyberneticHead({ skinTone, isBarker }: { skinTone: string; isBar
                     <mesh position={[0, -0.1, 0.11]} scale={[0.14, 0.1, 0.06]} geometry={SPHERE_GEO} castShadow>
                         <meshStandardMaterial color="#0a0a0a" roughness={1} />
                     </mesh>
+                </>
+            )}
+
+            {/* Broker: photo-accurate cyberpunk woman — hair, implant, makeup, collar */}
+            {isBroker && (
+                <>
+                    {/* Hair — long purple-pink swept right (no hair on left / undercut) */}
+                    <mesh
+                        position={[0.06, -0.05, -0.08]}
+                        scale={[0.14, 0.25, 0.15]}
+                        rotation={[0, 0, -0.26]}
+                        geometry={SPHERE_GEO}
+                        castShadow
+                    >
+                        <meshStandardMaterial color="#8b5cf6" emissive="#d946ef" emissiveIntensity={0.15} roughness={0.6} metalness={0} />
+                    </mesh>
+                    <mesh position={[0.02, 0.1, -0.06]} scale={[0.12, 0.08, 0.14]} geometry={SPHERE_GEO} castShadow>
+                        <meshStandardMaterial color="#8b5cf6" emissive="#d946ef" emissiveIntensity={0.15} roughness={0.6} metalness={0} />
+                    </mesh>
+
+                    {/* Left eye cybernetic implant — orange/amber geometric traces */}
+                    <group position={[-0.06, 0.01, 0.12]}>
+                        <mesh position={[0, 0, 0]} scale={[0.04, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                        <mesh position={[0.02, 0.01, 0]} rotation={[0, 0, 0.52]} scale={[0.04, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                        <mesh position={[-0.01, -0.015, 0]} rotation={[0, 0, -0.79]} scale={[0.035, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                        <mesh position={[0.01, -0.01, 0]} rotation={[0, 0, 1.05]} scale={[0.03, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                        <mesh position={[0, 0, 0.002]} scale={[0.012, 0.012, 0.003]} rotation={[0, 0, Math.PI / 4]} geometry={BOX_GEO} material={MAT_IMPLANT_AMBER} />
+                    </group>
+
+                    {/* Eye makeup — dark smoky shadow on both eyes */}
+                    <group position={[0, 0.02, 0.14]}>
+                        <mesh position={[-0.04, 0, 0.005]} scale={[0.038, 0.025, 0.006]} geometry={BOX_GEO} material={MAT_SMOKY_EYE} />
+                        <mesh position={[0.04, 0, 0.005]} scale={[0.038, 0.025, 0.006]} geometry={BOX_GEO} material={MAT_SMOKY_EYE} />
+                    </group>
+
+                    {/* Glowing cyan collar — V at neck */}
+                    <group position={[0, -0.18, 0.04]}>
+                        <mesh position={[-0.03, 0, 0]} rotation={[0, 0, 0.52]} scale={[0.06, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
+                        <mesh position={[0.03, 0, 0]} rotation={[0, 0, -0.52]} scale={[0.06, 0.005, 0.005]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
+                    </group>
                 </>
             )}
         </group>
