@@ -155,9 +155,26 @@ export type RealisticVendorBodyProps = {
     id: string;
     shoutBubbleOffset?: [number, number, number];
     config: VendorAppearanceConfig;
+    sceneId?: string;
+    /** Right-click: open radial menu (vendorId, clientX, clientY) */
+    onRightClick?: (vendorId: string, clientX: number, clientY: number) => void;
 };
 
 const ROBOTO_FONT = "https://fonts.gstatic.com/s/roboto/v18/KFOmCnqEu92Fr1Mu4mxM.woff";
+
+function emitNpcPerceive(npcId: string, actionObserved: string, sceneId: string) {
+    import("../../engine/socketClient").then(({ getSocket }) => {
+        const socket = getSocket();
+        if (socket?.connected) {
+            socket.emit("npc:perceive", {
+                npcId,
+                actionObserved,
+                sceneId,
+                timestamp: Date.now(),
+            });
+        }
+    });
+}
 
 export function RealisticVendorBody({
     position,
@@ -170,6 +187,8 @@ export function RealisticVendorBody({
     id,
     shoutBubbleOffset = [0.8, 1.9, 0.5],
     config,
+    sceneId = "bazaar",
+    onRightClick,
 }: RealisticVendorBodyProps) {
     const group = useRef<THREE.Group>(null);
     const headRef = useRef<THREE.Group>(null);
@@ -182,32 +201,45 @@ export function RealisticVendorBody({
     const animState = useRef({ opacity: 0, lastShoutSeen: null as string | null });
     const idleRef = useRef(0);
     const [ariaResponse, setAriaResponse] = React.useState<string | null>(null);
+    const [cognitiveSpeech, setCognitiveSpeech] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        let unsubscribe: (() => void) | null = null;
+        import("../../engine/socketClient").then(({ getSocket }) => {
+            const socket = getSocket();
+            const onNpcSpeak = (data: { npcId?: string; text?: string }) => {
+                if (data?.npcId === id && data?.text) setCognitiveSpeech(data.text);
+            };
+            socket.on("npc:speak", onNpcSpeak);
+            unsubscribe = () => socket.off("npc:speak", onNpcSpeak);
+        });
+        return () => {
+            unsubscribe?.();
+        };
+    }, [id]);
 
     // ARIA AI Integration: Trigger greeting when targeted
     React.useEffect(() => {
         if (isTarget) {
-            // Simulate a player greeting to trigger a response
-            // In a real chat, this would come from an input field
             const context = `hello ${id} customer service`;
-
-            fetch('/api/aria/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: context, vendorId: id })
+            fetch("/api/aria/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: context, vendorId: id }),
             })
-                .then(res => res.json())
-                .then(data => {
+                .then((res) => res.json())
+                .then((data) => {
                     if (data.response && data.response !== "...") {
                         setAriaResponse(data.response);
                     }
                 })
-                .catch(err => console.error("ARIA error:", err));
+                .catch((err) => console.error("ARIA error:", err));
         } else {
             setAriaResponse(null);
         }
     }, [isTarget, id]);
 
-    const displayShout = ariaResponse || lastShout; // ARIA overrides shout if present
+    const displayShout = cognitiveSpeech || ariaResponse || lastShout;
 
     const { skinTone, topColor, bottomColor, accessory, posture, build, roboticArm, goldChains } = config;
 
@@ -262,7 +294,20 @@ export function RealisticVendorBody({
 
 
     return (
-        <group ref={group} position={position} rotation={rotation as [number, number, number]} onClick={() => setTarget(id)}>
+        <group
+            ref={group}
+            position={position}
+            rotation={rotation as [number, number, number]}
+            onClick={() => {
+                setTarget(id);
+                emitNpcPerceive(id, "targeted", sceneId);
+            }}
+            onContextMenu={(e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRightClick?.(id, e.clientX, e.clientY);
+            }}
+        >
             {/* --- CYBERNETIC BODY --- */}
 
             {/* Hips / Pelvis */}

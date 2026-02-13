@@ -72,7 +72,14 @@ const io = new Server(server, {
   const crypto = require("crypto");
   const { prisma } = require("./src/server/db.js");
   const { getEngine } = require("./src/server/marketEngine");
+  const npcBrain = require("./src/server/npcBrain.js");
   setIO(io);
+
+  npcBrain.initNpcBrain({ clearSession: false });
+
+  setInterval(() => {
+    npcBrain.runMinimalTick(io, onlineCount);
+  }, 3000);
 
   let onlineCount = 0;
   let totalVisitors = 0;
@@ -151,6 +158,11 @@ const io = new Server(server, {
       assignUserRoom(refreshedUser);
     });
 
+    // Performance: ping for client latency (roundtrip ms)
+    socket.on("ping", (cb) => {
+      if (typeof cb === "function") cb();
+    });
+
     socket.on("trade:submit", async (payload) => {
       const { side, size } = payload || {};
       if (!side || !size || !Number.isFinite(size)) return;
@@ -166,6 +178,21 @@ const io = new Server(server, {
     });
 
     // Bazaar Events
+    socket.on("npc:perceive", (data) => {
+      if (data && data.npcId) {
+        try {
+          npcBrain.applyPerception({
+            npcId: data.npcId,
+            actionObserved: data.actionObserved || null,
+            entitySeen: data.entitySeen || null,
+            phraseHeard: data.phraseHeard || null,
+          });
+        } catch (err) {
+          console.error("NPC perceive error:", err);
+        }
+      }
+    });
+
     socket.on("bazaar:shout", (data) => {
       if (!data || !data.content) return;
 
@@ -204,6 +231,7 @@ const io = new Server(server, {
     console.log("Shutting down...");
     engine.stop();
     io.close();
+    npcBrain.closeNpcBrain();
     server.close(() => {
       db.close(); // Close SQLite
       prisma.$disconnect().then(() => process.exit(0));

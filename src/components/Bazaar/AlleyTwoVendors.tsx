@@ -99,6 +99,7 @@ function AlleyTwoVendorWrapper(props: AlleyTwoVendorWithShout) {
             setTarget={props.setTarget}
             config={config}
             shoutBubbleOffset={props.shoutBubbleOffset ?? [0.8, 1.9, 0.5]}
+            sceneId="alley2"
         />
     );
 }

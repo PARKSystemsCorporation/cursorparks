@@ -1,5 +1,8 @@
+import type { NpcDb } from "../npc/brain";
 import { prisma } from "../../server/db";
 import { tokenizeMessage, type CorrelationData } from "./correlator";
+import { getCorrelationClusters, mergeAriaWordsIntoClusters } from "../npc/correlation";
+import type { EnvironmentContext } from "../npc/types";
 
 // ─────────────────────────────────────────────
 // 1.  INTENT  DETECTOR
@@ -314,26 +317,75 @@ function extractTopicFromInput(text: string, keywords: string[]): string {
 }
 
 // ─────────────────────────────────────────────
-// 6.  MAIN  EXPORT
+// 6.  CORRELATION-DRIVEN RESPONSE (when npc brain available)
 // ─────────────────────────────────────────────
 
-export async function generateResponse(input: string, vendorId: string = "barker"): Promise<string> {
+const CORRELATION_PHRASE_PATTERNS = [
+    "{filler}, {cluster}. {catchphrase}",
+    "About {topic} — {cluster}. {catchphrase}",
+    "{cluster}. {filler}, that's where it's at.",
+    "You're asking about {topic}? {cluster}.",
+    "{filler}. {cluster}. Come back when you're ready.",
+];
+
+function buildResponseFromCluster(
+    clusterWords: string[],
+    topic: string,
+    personality: VendorPersonality
+): string {
+    const cluster = clusterWords.length > 0
+        ? clusterWords.slice(0, 3).join(" ")
+        : pickRandom(personality.defaultTopics);
+    const pattern = pickRandom(CORRELATION_PHRASE_PATTERNS);
+    let out = pattern
+        .replace(/\{cluster\}/g, cluster)
+        .replace(/\{topic\}/g, topic)
+        .replace(/\{filler\}/g, pickRandom(personality.fillers))
+        .replace(/\{catchphrase\}/g, pickRandom(personality.catchphrases));
+    out = out.charAt(0).toUpperCase() + out.slice(1);
+    return out;
+}
+
+// ─────────────────────────────────────────────
+// 7.  MAIN  EXPORT
+// ─────────────────────────────────────────────
+
+export interface GenerateResponseOptions {
+    npcDb?: NpcDb | null;
+    environmentContext?: EnvironmentContext | null;
+    socialOverlap?: number;
+}
+
+export async function generateResponse(
+    input: string,
+    vendorId: string = "barker",
+    options?: GenerateResponseOptions
+): Promise<string> {
     if (!input.trim()) return "...";
 
     const personality = getPersonality(vendorId);
     const intent = detectIntent(input);
     const keywords = tokenizeMessage(input).map(t => t.word);
-
-    // Fetch memory associations
-    const memoryWords = await fetchMemoryWords(keywords);
-
-    // Determine topic
     const topic = extractTopicFromInput(input, keywords);
 
-    // Pick and fill template
+    // Correlation-driven path when NPC brain DB is provided
+    if (options?.npcDb) {
+        const clusters = getCorrelationClusters(options.npcDb, {
+            npcId: vendorId,
+            inputWords: keywords,
+            environmentContext: options.environmentContext ?? null,
+            socialOverlap: options.socialOverlap ?? 0,
+        });
+        const ariaWords = await fetchMemoryWords(keywords);
+        const merged = mergeAriaWordsIntoClusters(ariaWords, clusters);
+        const top = merged[0];
+        const clusterWords = top?.words ?? [pickRandom(personality.defaultTopics)];
+        return buildResponseFromCluster(clusterWords, topic, personality);
+    }
+
+    // Fallback: template-based
+    const memoryWords = await fetchMemoryWords(keywords);
     const templates = TEMPLATES[intent];
     const template = pickRandom(templates);
-    const response = fillTemplate(template, topic, memoryWords, personality);
-
-    return response;
+    return fillTemplate(template, topic, memoryWords, personality);
 }
