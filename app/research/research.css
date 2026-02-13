@@ -26,6 +26,16 @@
     --rh-sans: 'Inter', -apple-system, sans-serif;
 }
 
+/* ── Allow page scroll when Research Hub is present ── */
+html:has(.research-hub),
+body:has(.research-hub) {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* ── Reset & Base ── */
 .research-hub {
     min-height: 100vh;
@@ -34,6 +44,7 @@
     font-family: var(--rh-sans);
     position: relative;
     overflow-x: hidden;
+    overflow-y: visible;
 }
 
 .research-hub *,
@@ -756,7 +767,7 @@
     font-size: 11px;
 }
 
-/* ── Responsive ── */
+/* ── Responsive & Mobile ── */
 @media (max-width: 1200px) {
     .rh-content {
         grid-template-columns: 1fr;
@@ -771,18 +782,112 @@
 @media (max-width: 768px) {
     .rh-nav {
         padding: 0 1rem;
+        height: 52px;
+        gap: 0.5rem;
     }
 
     .rh-nav-links {
+        display: flex;
+        gap: 8px;
+    }
+
+    .rh-nav-links li:nth-child(2),
+    .rh-nav-links li:nth-child(3) {
         display: none;
+    }
+
+    .rh-nav-links a {
+        padding: 8px 12px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .rh-nav-brand {
+        min-height: 44px;
+        min-width: 44px;
+        align-items: center;
+    }
+
+    .rh-nav-status {
+        font-size: 9px;
+    }
+
+    .rh-hero {
+        padding: 2rem 1rem 1.5rem;
+    }
+
+    .rh-hero h1 {
+        font-size: clamp(22px, 6vw, 32px);
+    }
+
+    .rh-stats-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0;
+    }
+
+    .rh-stat {
+        min-width: 90px;
+        padding: 10px 14px;
     }
 
     .rh-feed {
         padding: 1rem;
     }
 
-    .rh-hero {
-        padding: 2rem 1rem 1.5rem;
+    .rh-feed-header {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .rh-post-header {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 1rem 1rem 0;
+    }
+
+    .rh-post-title {
+        padding: 10px 1rem 4px;
+        font-size: 16px;
+    }
+
+    .rh-post-subtitle,
+    .rh-post-tags {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .rh-post-body {
+        padding: 1rem;
+        overflow-x: auto;
+    }
+
+    .rh-post-body pre,
+    .rh-post-body table {
+        min-width: 280px;
+    }
+
+    .rh-post-footer {
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 10px 1rem;
+    }
+
+    .rh-post-action {
+        min-height: 44px;
+        padding: 8px 0;
+    }
+}
+
+/* Touch-friendly and prevent zoom on inputs (optional, keep scroll) */
+@media (max-width: 768px) {
+    .rh-sort-btn,
+    .rh-post-action,
+    .rh-tag-item {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
     }
 }
 
