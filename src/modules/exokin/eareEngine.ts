@@ -14,11 +14,12 @@ import type {
   EAREEventType,
 } from "./types";
 
+export type { EAREEventType };
+
 const CLAMP = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
 const BASELINE = 0.5;
 const NEURO_DECAY_RATE = 0.015;
 const ROLE_DRIFT_RATE = 0.008;
-const CALIBRATION_DRIFT_RATE = 0.012;
 
 /** Default neuro state — all at baseline. */
 function defaultNeuro(): NeurochemLayer {

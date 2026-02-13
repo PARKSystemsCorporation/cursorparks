@@ -4,7 +4,7 @@
  */
 
 export { EAREEngine } from "./eareEngine";
-export type { EAREOptions, EAREState, LifetimeMetrics, EAREEventType } from "./eareEngine";
+export type { EAREOptions, EAREState, LifetimeMetrics } from "./eareEngine";
 export type {
   PhysicalLayer,
   VisualLayer,
@@ -13,4 +13,5 @@ export type {
   RoleDrift,
   CombatCalibration,
   EAREChatContext,
+  EAREEventType,
 } from "./types";

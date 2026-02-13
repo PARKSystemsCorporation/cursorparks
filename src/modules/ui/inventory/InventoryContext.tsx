@@ -200,7 +200,7 @@ export function useInventory(): InventoryContextValue {
       cancelDrag: () => {},
       startCapsuleThrow: () => {},
       setDeployTarget: () => {},
-      confirmDeploy: (_position?) => null,
+      confirmDeploy: () => null,
       deployAt: () => {},
       deployedRobots: [],
     };
