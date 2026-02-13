@@ -40,17 +40,38 @@ export function markIntroDone() {
   } catch (_) {}
 }
 
-export async function enterWithHandle(handle) {
+export async function enterWithHandle(handle, password) {
   const base = getEnterApiBase();
   const url = base ? `${base.replace(/\/$/, "")}/enter` : "/enter";
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ handle: String(handle).trim() }),
+    body: JSON.stringify({
+      handle: String(handle).trim(),
+      password: password != null ? String(password) : "",
+    }),
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error || `Enter failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function setPasswordForHandle(handle, password) {
+  const base = getEnterApiBase();
+  const url = base ? `${base.replace(/\/$/, "")}/set-password` : "/set-password";
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      handle: String(handle).trim(),
+      password: password != null ? String(password) : "",
+    }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Set password failed.");
   }
   return res.json();
 }

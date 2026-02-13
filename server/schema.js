@@ -1,10 +1,21 @@
 "use strict";
 
+function addPasswordColumnIfMissing(db) {
+  try {
+    const info = db.prepare("PRAGMA table_info(users)").all();
+    const hasPassword = info.some((c) => c.name === "password_hash");
+    if (!hasPassword) {
+      db.exec("ALTER TABLE users ADD COLUMN password_hash TEXT");
+    }
+  } catch (_) {}
+}
+
 function createTables(db) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       handle TEXT UNIQUE NOT NULL,
+      password_hash TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -59,6 +70,7 @@ function createTables(db) {
     CREATE INDEX IF NOT EXISTS idx_inventory_user ON inventory(user_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_user ON transactions(user_id);
   `);
+  addPasswordColumnIfMissing(db);
 }
 
-module.exports = { createTables };
+module.exports = { createTables, addPasswordColumnIfMissing };

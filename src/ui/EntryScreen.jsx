@@ -2,10 +2,10 @@
 
 import React, { useState, useCallback } from "react";
 import {
-  getEnterApiBase,
   createGuestSessionId,
   isFirstTimeUser,
   enterWithHandle,
+  setPasswordForHandle,
 } from "@/src/state/introFlow";
 
 const STYLES = {
@@ -76,8 +76,11 @@ const STYLES = {
 export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
   const [mode, setMode] = useState(null);
   const [handle, setHandle] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [showForgotHelp, setShowForgotHelp] = useState(false);
 
   const handleSubmit = useCallback(
     async (e) => {
@@ -88,9 +91,25 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
         setError("Handle required.");
         return;
       }
+      if (!password) {
+        setError("Password required.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters.");
+        return;
+      }
+      if ((mode === "create" || mode === "setpassword") && password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
       setBusy(true);
       try {
-        await enterWithHandle(trimmed);
+        if (mode === "setpassword") {
+          await setPasswordForHandle(trimmed, password);
+        } else {
+          await enterWithHandle(trimmed, password);
+        }
         const firstTime = isFirstTimeUser();
         onEnter({ type: "handle", handle: trimmed });
         if (firstTime && onFirstTimeIntro) onFirstTimeIntro();
@@ -100,7 +119,7 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
         setBusy(false);
       }
     },
-    [handle, onEnter, onFirstTimeIntro]
+    [handle, password, confirmPassword, mode, onEnter, onFirstTimeIntro]
   );
 
   const handleGuest = useCallback(() => {
@@ -110,10 +129,16 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
     if (firstTime && onFirstTimeIntro) onFirstTimeIntro();
   }, [onEnter, onFirstTimeIntro]);
 
-  if (mode === "signin" || mode === "create") {
+  if (mode === "signin" || mode === "create" || mode === "setpassword") {
+    const isSetPassword = mode === "setpassword";
     return (
       <div style={STYLES.screen}>
         <div style={STYLES.title}>PARKS BAZAAR</div>
+        {isSetPassword && (
+          <div style={{ ...STYLES.error, color: "#8b7355", marginBottom: "0.5rem" }}>
+            Set a password for your existing account (min 6 characters).
+          </div>
+        )}
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
@@ -128,6 +153,28 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
             disabled={busy}
             maxLength={64}
           />
+          <input
+            type="password"
+            placeholder={isSetPassword ? "New password" : "Password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={STYLES.input}
+            disabled={busy}
+            minLength={6}
+            autoComplete={mode === "create" ? "new-password" : "current-password"}
+          />
+          {(mode === "create" || mode === "setpassword") && (
+            <input
+              type="password"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              style={STYLES.input}
+              disabled={busy}
+              minLength={6}
+              autoComplete="new-password"
+            />
+          )}
           {error && <div style={STYLES.error}>{error}</div>}
           <div style={{ ...STYLES.buttonGroup, marginTop: "0.5rem" }}>
             <button
@@ -141,7 +188,7 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
                 e.target.style.color = STYLES.button.color;
               }}
             >
-              {busy ? "..." : mode === "create" ? "Create & Enter" : "Sign In"}
+              {busy ? "..." : isSetPassword ? "Set password & Enter" : mode === "create" ? "Create & Enter" : "Sign In"}
             </button>
             <button
               type="button"
@@ -149,7 +196,10 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
               onClick={() => {
                 setMode(null);
                 setHandle("");
+                setPassword("");
+                setConfirmPassword("");
                 setError(null);
+                setShowForgotHelp(false);
               }}
               onMouseEnter={(e) => Object.assign(e.target.style, STYLES.buttonHover)}
               onMouseLeave={(e) => {
@@ -161,6 +211,20 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
               Back
             </button>
           </div>
+          {!isSetPassword && (
+            <button
+              type="button"
+              style={{ ...STYLES.button, background: "transparent", border: "none", fontSize: "10px", marginTop: "0.5rem" }}
+              onClick={() => setShowForgotHelp(!showForgotHelp)}
+            >
+              Forgot password?
+            </button>
+          )}
+          {showForgotHelp && (
+            <div style={{ ...STYLES.error, color: "#8b7355", marginTop: "0.25rem", fontSize: "10px" }}>
+              Legacy account? Use Set password on the main screen. Otherwise contact support to reset your password.
+            </div>
+          )}
         </form>
       </div>
     );
@@ -193,6 +257,18 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
           }}
         >
           Create Handle
+        </button>
+        <button
+          style={STYLES.button}
+          onClick={() => setMode("setpassword")}
+          onMouseEnter={(e) => Object.assign(e.target.style, STYLES.buttonHover)}
+          onMouseLeave={(e) => {
+            e.target.style.borderColor = STYLES.button.border;
+            e.target.style.background = STYLES.button.background;
+            e.target.style.color = STYLES.button.color;
+          }}
+        >
+          Set password (legacy account)
         </button>
         <button
           style={STYLES.button}

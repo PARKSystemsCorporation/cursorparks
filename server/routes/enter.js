@@ -1,9 +1,11 @@
 "use strict";
 
+const bcrypt = require("bcryptjs");
 const { getDb } = require("../db");
 
-const stmtGetUser = (db) => db.prepare("SELECT id, handle, created_at, last_seen FROM users WHERE handle = ?");
-const stmtInsertUser = (db) => db.prepare("INSERT INTO users (handle) VALUES (?)");
+const stmtGetUser = (db) => db.prepare("SELECT id, handle, password_hash, created_at, last_seen FROM users WHERE handle = ?");
+const stmtInsertUser = (db) => db.prepare("INSERT INTO users (handle, password_hash) VALUES (?, ?)");
+const stmtSetPassword = (db) => db.prepare("UPDATE users SET password_hash = ? WHERE id = ?");
 const stmtInsertWallet = (db) => db.prepare("INSERT INTO wallet (user_id, balance) VALUES (?, 0)");
 const stmtUpdateLastSeen = (db) => db.prepare("UPDATE users SET last_seen = CURRENT_TIMESTAMP WHERE id = ?");
 const stmtGetWallet = (db) => db.prepare("SELECT balance FROM wallet WHERE user_id = ?");
@@ -25,13 +27,18 @@ function createStarterInventory(db, userId) {
 
 function enter(req, res) {
   const handle = (req.body && req.body.handle) ? String(req.body.handle).trim() : "";
+  const password = req.body && req.body.password != null ? String(req.body.password) : "";
   if (!handle) {
-    return res.status(400).json({ error: "handle required" });
+    return res.status(400).json({ error: "Handle required." });
+  }
+  if (!password) {
+    return res.status(400).json({ error: "Password required." });
   }
 
   const db = getDb();
   const getUser = stmtGetUser(db);
   const insertUser = stmtInsertUser(db);
+  const setPassword = stmtSetPassword(db);
   const insertWallet = stmtInsertWallet(db);
   const updateLastSeen = stmtUpdateLastSeen(db);
   const getWallet = stmtGetWallet(db);
@@ -42,7 +49,8 @@ function enter(req, res) {
   let user = getUser.get(handle);
   if (!user) {
     try {
-      const run = insertUser.run(handle);
+      const passwordHash = bcrypt.hashSync(password, 10);
+      const run = insertUser.run(handle, passwordHash);
       const id = run.lastInsertRowid;
       insertWallet.run(id);
       createStarterBots(db, id);
@@ -53,32 +61,78 @@ function enter(req, res) {
         user = getUser.get(handle);
       } else {
         console.error("[enter] create user error", e);
-        return res.status(500).json({ error: "failed to create user" });
+        return res.status(500).json({ error: "Failed to create account." });
       }
     }
   } else {
+    if (user.password_hash == null || user.password_hash === "") {
+      const passwordHash = bcrypt.hashSync(password, 10);
+      setPassword.run(passwordHash, user.id);
+    } else {
+      const ok = bcrypt.compareSync(password, user.password_hash);
+      if (!ok) {
+        return res.status(401).json({ error: "Wrong password." });
+      }
+    }
     updateLastSeen.run(user.id);
     user = getUser.get(handle);
   }
 
+  res.json(buildPayload(db, user, getWallet, getBots, getInventory, getWorldState));
+}
+
+function buildPayload(db, user, getWallet, getBots, getInventory, getWorldState) {
   const wallet = getWallet.get(user.id);
   const bots = getBots.all(user.id);
   const inventory = getInventory.all(user.id);
   const worldRow = getWorldState.get(user.id);
-
   const world_state = worldRow
     ? { position_json: worldRow.position_json, flags_json: worldRow.flags_json, last_save: worldRow.last_save }
     : null;
-
-  const payload = {
+  return {
     user: { id: user.id, handle: user.handle, created_at: user.created_at, last_seen: user.last_seen },
     wallet: { balance: wallet ? wallet.balance : 0 },
     bots: bots.map((b) => ({ id: b.id, user_id: b.user_id, bot_type: b.bot_type, xp: b.xp, stats_json: b.stats_json })),
     inventory: inventory.map((i) => ({ id: i.id, user_id: i.user_id, item_type: i.item_type, item_id: i.item_id, state_json: i.state_json })),
     world_state,
   };
-
-  res.json(payload);
 }
 
-module.exports = { enter };
+function setPassword(req, res) {
+  const handle = (req.body && req.body.handle) ? String(req.body.handle).trim() : "";
+  const password = req.body && req.body.password != null ? String(req.body.password) : "";
+  if (!handle) {
+    return res.status(400).json({ error: "Handle required." });
+  }
+  if (!password) {
+    return res.status(400).json({ error: "Password required." });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters." });
+  }
+
+  const db = getDb();
+  const getUser = stmtGetUser(db);
+  const setPasswordStmt = stmtSetPassword(db);
+  const updateLastSeen = stmtUpdateLastSeen(db);
+  const getWallet = stmtGetWallet(db);
+  const getBots = stmtGetBots(db);
+  const getInventory = stmtGetInventory(db);
+  const getWorldState = stmtGetWorldState(db);
+
+  const user = getUser.get(handle);
+  if (!user) {
+    return res.status(404).json({ error: "No account with that handle." });
+  }
+  if (user.password_hash != null && user.password_hash !== "") {
+    return res.status(400).json({ error: "Account already has a password. Use Sign In." });
+  }
+
+  const passwordHash = bcrypt.hashSync(password, 10);
+  setPasswordStmt.run(passwordHash, user.id);
+  updateLastSeen.run(user.id);
+  const updated = getUser.get(handle);
+  res.json(buildPayload(db, updated, getWallet, getBots, getInventory, getWorldState));
+}
+
+module.exports = { enter, setPassword };
