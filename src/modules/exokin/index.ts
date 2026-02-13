@@ -18,3 +18,10 @@ export type {
 
 export { ExokinPanel } from "./ExokinPanel";
 export { ExokinChat } from "./ExokinChat";
+
+export {
+  generateProtoPhrase,
+  morphologyFromIdentity,
+  INTENT_PROTO_HINT,
+} from "./exokinProtoSpeech";
+export type { SpeechMorphology, IdentityLike } from "./exokinProtoSpeech";

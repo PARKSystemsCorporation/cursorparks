@@ -1,6 +1,6 @@
 /**
- * Lightweight deterministic robot chat: intent -> context -> template response.
- * Governed by EARE when present: reads neuro levels, role drift, combat confidence, bonding for tone.
+ * EXOKIN unified speech pipeline: EARE → Intent → Proto-Language → surface output.
+ * Templates are fallback only. One species, one mind system.
  */
 
 import type { MoodState } from "./neurochemEngine";
@@ -8,6 +8,8 @@ import type { NeurochemEngine } from "./neurochemEngine";
 import type { RobotMemory } from "./memorySystem";
 import type { EAREEngine } from "@/src/modules/exokin";
 import type { EAREChatContext } from "@/src/modules/exokin";
+import { generateProtoPhrase } from "@/src/modules/exokin/exokinProtoSpeech";
+import type { SpeechMorphology } from "@/src/modules/exokin/exokinProtoSpeech";
 
 export type Intent =
   | "greet"
@@ -87,11 +89,16 @@ function scoreCandidate(
   return score;
 }
 
+/** Proto primary: use proto when EARE present; else template. Training wheels: small chance to use template for grounding. */
+const PROTO_PRIMARY_WEIGHT = 0.92;
+
 export interface RobotChatEngineOptions {
   neurochem?: NeurochemEngine;
   eare?: EAREEngine;
   memory: RobotMemory;
   relationshipScore?: number;
+  /** Optional morphology/color for speech (angular vs smooth, cold vs warm). */
+  morphology?: SpeechMorphology;
 }
 
 export class RobotChatEngine {
@@ -99,6 +106,7 @@ export class RobotChatEngine {
   private eare: EAREEngine | null;
   private memory: RobotMemory;
   private relationshipScore: number;
+  private morphology: SpeechMorphology | undefined;
   private recentResponses: string[] = [];
   private readonly RECENT_MAX = 10;
 
@@ -107,6 +115,11 @@ export class RobotChatEngine {
     this.eare = opts.eare ?? null;
     this.memory = opts.memory;
     this.relationshipScore = opts.relationshipScore ?? 0.5;
+    this.morphology = opts.morphology;
+  }
+
+  setMorphology(morphology: SpeechMorphology | undefined): void {
+    this.morphology = morphology;
   }
 
   respond(userText: string): string {
@@ -118,14 +131,36 @@ export class RobotChatEngine {
     this.memory.getSTM(5);
     this.memory.retrieveLTM(userText, 3);
     const templates = TEMPLATES[intent];
-    const candidates = templates.map((t) => (t.includes("?") ? t : t));
-    const withContext = candidates.slice(0, 12);
-    const scored = withContext.map((c) => ({
-      text: c,
-      score: scoreCandidate(c, intent, context, this.recentResponses),
-    }));
-    scored.sort((a, b) => b.score - a.score);
-    const chosen = scored[0]?.text ?? "Okay.";
+    const templatesAsFallback = templates?.length ? templates : TEMPLATES.unknown;
+
+    let chosen: string;
+
+    if (this.eare && "neuro" in context) {
+      const useProto = Math.random() < PROTO_PRIMARY_WEIGHT;
+      if (useProto) {
+        const { text, fromProto } = generateProtoPhrase(intent, context as EAREChatContext, {
+          morphology: this.morphology,
+          templatesAsFallback,
+        });
+        chosen = text;
+      } else {
+        const scored = templatesAsFallback.map((c) => ({
+          text: c,
+          score: scoreCandidate(c, intent, context, this.recentResponses),
+        }));
+        scored.sort((a, b) => b.score - a.score);
+        chosen = scored[0]?.text ?? "Okay.";
+      }
+    } else {
+      const candidates = templatesAsFallback.slice(0, 12);
+      const scored = candidates.map((c) => ({
+        text: c,
+        score: scoreCandidate(c, intent, context, this.recentResponses),
+      }));
+      scored.sort((a, b) => b.score - a.score);
+      chosen = scored[0]?.text ?? "Okay.";
+    }
+
     this.recentResponses.push(chosen);
     if (this.recentResponses.length > this.RECENT_MAX) this.recentResponses.shift();
     this.memory.pushSTM("robot", chosen);

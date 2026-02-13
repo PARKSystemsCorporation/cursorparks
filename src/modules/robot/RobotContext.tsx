@@ -7,6 +7,8 @@ import { RobotChatEngine } from "./robotChatEngine";
 import { EAREEngine } from "@/src/modules/exokin";
 import type { CombatCalibration } from "@/src/modules/exokin";
 import type { EAREChatContext, EAREEventType } from "@/src/modules/exokin";
+import type { IdentityLike } from "@/src/modules/exokin";
+import { morphologyFromIdentity } from "@/src/modules/exokin";
 
 type RobotContextValue = {
   sendToRobot: (text: string) => string;
@@ -19,6 +21,8 @@ type RobotContextValue = {
   getCombatCalibration: () => CombatCalibration;
   /** EARE: chat context and emotional/neuro stats for UI (panel, chat tone). */
   getChatContext: () => EAREChatContext;
+  /** Unified speech: set morphology/color so proto-language reflects body and color (angular/smooth, cold/warm). */
+  setSpeechMorphology: (identity: IdentityLike | null) => void;
 };
 
 const RobotContext = createContext<RobotContextValue | null>(null);
@@ -58,9 +62,13 @@ export function RobotProvider({ children }: { children: React.ReactNode }) {
     return eare.getChatContext();
   }, []);
 
+  const setSpeechMorphology = useCallback((identity: IdentityLike | null) => {
+    chatEngine.setMorphology(morphologyFromIdentity(identity) ?? undefined);
+  }, []);
+
   const value = useMemo<RobotContextValue>(
-    () => ({ sendToRobot, lastResponse, getMood, tick, recordEvent, getCombatCalibration, getChatContext }),
-    [sendToRobot, lastResponse, getMood, tick, recordEvent, getCombatCalibration, getChatContext]
+    () => ({ sendToRobot, lastResponse, getMood, tick, recordEvent, getCombatCalibration, getChatContext, setSpeechMorphology }),
+    [sendToRobot, lastResponse, getMood, tick, recordEvent, getCombatCalibration, getChatContext, setSpeechMorphology]
   );
 
   return <RobotContext.Provider value={value}>{children}</RobotContext.Provider>;
@@ -99,6 +107,7 @@ export function useRobot(): RobotContextValue {
           playDrive: 0.5,
         },
       }),
+      setSpeechMorphology: () => {},
     };
   }
   return ctx;

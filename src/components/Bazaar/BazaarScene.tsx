@@ -8,6 +8,7 @@ import { PerformanceProvider } from "@/src/modules/performance";
 import { SceneStateProvider } from "@/src/modules/world/SceneStateContext";
 import { SceneOrchestrator } from "@/src/modules/world/SceneOrchestrator";
 import { RobotProvider } from "@/src/modules/robot/RobotContext";
+import { ExokinSpeechMorphologySync } from "@/src/modules/robot/ExokinSpeechMorphologySync";
 import { GlobalChatStream, ChatInput } from "@/src/modules/chat";
 import { RadialMenu, VendorTalkPanel, BarterTable } from "@/src/modules/vendors";
 import { TrainerProvider } from "@/src/modules/world/TrainerContext";
@@ -47,6 +48,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
       <PerformanceProvider>
         <SceneStateProvider onEnterAlleyTwo={onEnterAlleyTwo ?? null}>
           <RobotProvider>
+            <ExokinSpeechMorphologySync />
             <TrainerProvider>
             <div style={{ width: "100vw", height: "100vh", background: "#e6ccb2" }}>
             <ErrorBoundary>
