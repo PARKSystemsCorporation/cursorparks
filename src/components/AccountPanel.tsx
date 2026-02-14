@@ -137,7 +137,6 @@ export function AccountPanel({
 }: Props) {
   const [regUser, setRegUser] = useState("");
   const [regPass, setRegPass] = useState("");
-  const [regAcceptTerms18, setRegAcceptTerms18] = useState(false);
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
 
@@ -196,18 +195,9 @@ export function AccountPanel({
               value={regPass}
               onChange={(e) => setRegPass(e.target.value)}
             />
-            <label className="mt-2 flex items-start gap-2 text-[10px] text-white/70">
-              <input
-                type="checkbox"
-                checked={regAcceptTerms18}
-                onChange={(e) => setRegAcceptTerms18(e.target.checked)}
-                className="mt-0.5"
-              />
-              <span>I am 18+ and I accept the Terms & Conditions.</span>
-            </label>
             <button
               className="mt-2.5 w-full rounded bg-neon-cyan py-2 text-[11px] font-semibold text-black transition-all duration-200 hover:bg-neon-cyan/90 hover:shadow-glow-cyan hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-              onClick={() => onRegister(regUser, regPass, regAcceptTerms18)}
+              onClick={() => onRegister(regUser, regPass, true)}
               disabled={authBusy === "register"}
             >
               {authBusy === "register" ? "Creating..." : "Register"}
@@ -276,11 +266,10 @@ export function AccountPanel({
               LVL {rank.level} &middot; {rank.name}
             </span>
             <span
-              className={`rounded border px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.2em] ${
-                statsStale
-                  ? "border-neon-red/30 bg-neon-red/10 text-neon-red"
-                  : "border-neon-green/30 bg-neon-green/10 text-neon-green"
-              }`}
+              className={`rounded border px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.2em] ${statsStale
+                ? "border-neon-red/30 bg-neon-red/10 text-neon-red"
+                : "border-neon-green/30 bg-neon-green/10 text-neon-green"
+                }`}
               title={`Last sync ${lastSyncExact}`}
             >
               {statsStale ? "Stats stale" : "Stats live"}
@@ -399,33 +388,30 @@ export function AccountPanel({
             return (
               <div
                 key={r.name}
-                className={`flex items-center gap-3 rounded px-3 py-1.5 ${
-                  current
-                    ? "border border-neon-cyan/15 bg-neon-cyan/[0.04]"
-                    : "bg-transparent"
-                }`}
+                className={`flex items-center gap-3 rounded px-3 py-1.5 ${current
+                  ? "border border-neon-cyan/15 bg-neon-cyan/[0.04]"
+                  : "bg-transparent"
+                  }`}
               >
                 {/* Node marker */}
                 <span
-                  className={`w-3 text-center font-mono text-[10px] ${
-                    current
-                      ? "text-neon-cyan"
-                      : achieved
-                        ? "text-neon-green/80"
-                        : "text-white/40"
-                  }`}
+                  className={`w-3 text-center font-mono text-[10px] ${current
+                    ? "text-neon-cyan"
+                    : achieved
+                      ? "text-neon-green/80"
+                      : "text-white/40"
+                    }`}
                 >
                   {achieved ? "■" : current ? "◆" : "○"}
                 </span>
                 {/* Rank name */}
                 <span
-                  className={`w-14 text-[10px] font-mono ${
-                    current
-                      ? "font-semibold text-neon-cyan"
-                      : achieved
-                        ? "text-white/70"
-                        : "text-white/50"
-                  }`}
+                  className={`w-14 text-[10px] font-mono ${current
+                    ? "font-semibold text-neon-cyan"
+                    : achieved
+                      ? "text-white/70"
+                      : "text-white/50"
+                    }`}
                 >
                   {r.name.length > 8 ? r.name.slice(0, 8) + "." : r.name}
                 </span>
@@ -435,13 +421,12 @@ export function AccountPanel({
                 </span>
                 {/* Perk or mystery */}
                 <span
-                  className={`flex-1 text-[9px] ${
-                    current
-                      ? "text-neon-cyan/70"
-                      : achieved
-                        ? "text-white/60"
-                        : "text-white/40"
-                  }`}
+                  className={`flex-1 text-[9px] ${current
+                    ? "text-neon-cyan/70"
+                    : achieved
+                      ? "text-white/60"
+                      : "text-white/40"
+                    }`}
                 >
                   {perkRevealed ? RANK_PERKS[i] : locked ? "??? Unlock to reveal" : "???"}
                 </span>
@@ -451,7 +436,7 @@ export function AccountPanel({
         </div>
         {/* Progress to next */}
         {rank.nextMin !== null && (
-            <div className="mt-2 px-3">
+          <div className="mt-2 px-3">
             <div className="flex items-center justify-between font-mono text-[9px]">
               <span className="text-white/70">{rank.name}</span>
               <span className="text-white/70">
@@ -509,47 +494,43 @@ export function AccountPanel({
                           {/* Connector line */}
                           {ni > 0 && (
                             <div
-                              className={`ml-[11px] h-2.5 border-l ${
-                                isLocked ? "border-white/20" : "border-white/30"
-                              }`}
+                              className={`ml-[11px] h-2.5 border-l ${isLocked ? "border-white/20" : "border-white/30"
+                                }`}
                             />
                           )}
                           <div
-                            className={`rounded px-2.5 py-2 ${
-                              isMaxed
-                                ? `${c.border} ${c.bg}`
-                                : isOwned
-                                  ? "border border-white/10 bg-white/[0.025]"
-                                  : isAvailable
-                                    ? "border border-dashed border-white/15 bg-white/[0.02]"
-                                    : "border border-white/[0.04] bg-white/[0.008]"
-                            }`}
+                            className={`rounded px-2.5 py-2 ${isMaxed
+                              ? `${c.border} ${c.bg}`
+                              : isOwned
+                                ? "border border-white/10 bg-white/[0.025]"
+                                : isAvailable
+                                  ? "border border-dashed border-white/15 bg-white/[0.02]"
+                                  : "border border-white/[0.04] bg-white/[0.008]"
+                              }`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 {/* Node dot */}
                                 <span
-                                  className={`inline-block h-1.5 w-1.5 rounded-full ${
-                                    isMaxed
-                                      ? c.dot
-                                      : isOwned
-                                        ? "bg-white/30"
-                                        : isAvailable
-                                          ? "bg-white/15"
-                                          : "bg-white/5"
-                                  }`}
+                                  className={`inline-block h-1.5 w-1.5 rounded-full ${isMaxed
+                                    ? c.dot
+                                    : isOwned
+                                      ? "bg-white/30"
+                                      : isAvailable
+                                        ? "bg-white/15"
+                                        : "bg-white/5"
+                                    }`}
                                 />
                                 {/* Name — always visible (Elder Scrolls style) */}
                                 <span
-                                  className={`text-[10px] ${
-                                    isMaxed
-                                      ? `font-semibold ${c.text}`
-                                      : isOwned
-                                        ? "text-white/80"
-                                        : isAvailable
-                                          ? "text-white/70"
-                                          : "text-white/50"
-                                  }`}
+                                  className={`text-[10px] ${isMaxed
+                                    ? `font-semibold ${c.text}`
+                                    : isOwned
+                                      ? "text-white/80"
+                                      : isAvailable
+                                        ? "text-white/70"
+                                        : "text-white/50"
+                                    }`}
                                 >
                                   {def?.title ?? key}
                                 </span>
@@ -588,11 +569,10 @@ export function AccountPanel({
                             {/* Purchase button */}
                             {!isMaxed && (isOwned || isAvailable) && (
                               <button
-                                className={`mt-1.5 rounded px-2 py-1 text-[9px] font-semibold transition-all duration-200 ${
-                                  isAvailable
-                                    ? `${c.bg} ${c.text} border ${c.border} hover:bg-white/[0.06] hover:scale-105 active:scale-95`
-                                    : "border border-white/5 bg-white/[0.03] text-white/70 hover:bg-white/[0.05] hover:scale-105 active:scale-95"
-                                }`}
+                                className={`mt-1.5 rounded px-2 py-1 text-[9px] font-semibold transition-all duration-200 ${isAvailable
+                                  ? `${c.bg} ${c.text} border ${c.border} hover:bg-white/[0.06] hover:scale-105 active:scale-95`
+                                  : "border border-white/5 bg-white/[0.03] text-white/70 hover:bg-white/[0.05] hover:scale-105 active:scale-95"
+                                  }`}
                                 onClick={() => onPurchaseUpgrade(key)}
                               >
                                 ${upgCost} &middot;{" "}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useLoader } from "@react-three/fiber";
+import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
 
@@ -22,11 +23,11 @@ const COURT_LINE_MAT = new THREE.MeshStandardMaterial({ color: "#ffffff", roughn
 /** 
  * A single prison cell unit with a barred window/door.
  */
-function PrisonCell({ position, rotation = [0, 0, 0] }: { position: [number, number, number], rotation?: [number, number, number] }) {
+function PrisonCell({ position, rotation = [0, 0, 0], material }: { position: [number, number, number], rotation?: [number, number, number], material: THREE.Material }) {
     return (
         <group position={position} rotation={rotation}>
             {/* Main concrete block */}
-            <mesh receiveShadow castShadow material={CONCRETE_MAT}>
+            <mesh receiveShadow castShadow material={material}>
                 <boxGeometry args={[CELL_BLOCK_WIDTH, CELL_BLOCK_HEIGHT, CELL_BLOCK_DEPTH]} />
             </mesh>
             {/* Dark interior "door/window" recess */}
@@ -40,7 +41,7 @@ function PrisonCell({ position, rotation = [0, 0, 0] }: { position: [number, num
                 <meshStandardMaterial color="#333" roughness={0.7} metalness={0.6} wireframe />
             </mesh>
             {/* Balcony/Walkway in front */}
-            <mesh position={[0, -1.3, CELL_BLOCK_DEPTH / 2 + 0.8]} receiveShadow castShadow material={DIRTY_WALL_MAT}>
+            <mesh position={[0, -1.3, CELL_BLOCK_DEPTH / 2 + 0.8]} receiveShadow castShadow material={material}>
                 <boxGeometry args={[CELL_BLOCK_WIDTH, 0.2, 1.6]} />
             </mesh>
             {/* Railing */}
@@ -54,15 +55,15 @@ function PrisonCell({ position, rotation = [0, 0, 0] }: { position: [number, num
 /**
  * A stack of cells forming a wall.
  */
-function CellBlockRow({ count, startPos, gap, rotation }: { count: number, startPos: [number, number, number], gap: number, rotation?: [number, number, number] }) {
+function CellBlockRow({ count, startPos, gap, rotation, material }: { count: number, startPos: [number, number, number], gap: number, rotation?: [number, number, number], material: THREE.Material }) {
     const cells = useMemo(() => {
         return new Array(count).fill(0).map((_, i) => {
             const xOffset = i * (CELL_BLOCK_WIDTH + gap);
             return (
                 <group key={i} position={[xOffset, 0, 0]}>
-                    <PrisonCell position={[0, 0, 0]} />
-                    <PrisonCell position={[0, CELL_BLOCK_HEIGHT, 0]} />
-                    <PrisonCell position={[0, CELL_BLOCK_HEIGHT * 2, 0]} />
+                    <PrisonCell position={[0, 0, 0]} material={material} />
+                    <PrisonCell position={[0, CELL_BLOCK_HEIGHT, 0]} material={material} />
+                    <PrisonCell position={[0, CELL_BLOCK_HEIGHT * 2, 0]} material={material} />
                 </group>
             );
         });
@@ -108,9 +109,24 @@ function LaundryLine({ position, length }: { position: [number, number, number],
 export function DesertJailColiseum() {
     const center: [number, number, number] = [-31, -3.06, -7];
 
-    // StadiumExit connects at appx [-1.8, 1.6, -7.2] (based on bazaar coords). 
-    // We adjust our center to align somewhat or provide a walkway.
-    // The previous component had center at [-31, -3.06, -7].
+    const [pebbles, brownRock, concrete] = useTexture([
+        "/textures/jail/pebbles.jpg",
+        "/textures/jail/brown_rock.jpg",
+        "/textures/jail/concrete.jpg",
+    ]);
+
+    pebbles.wrapS = pebbles.wrapT = THREE.RepeatWrapping;
+    pebbles.repeat.set(16, 16);
+
+    brownRock.wrapS = brownRock.wrapT = THREE.RepeatWrapping;
+    brownRock.repeat.set(4, 6);
+
+    concrete.wrapS = concrete.wrapT = THREE.RepeatWrapping;
+    concrete.repeat.set(2, 2);
+
+    const concreteMat = useMemo(() => new THREE.MeshStandardMaterial({ map: concrete, roughness: 0.9 }), [concrete]);
+    const courtMat = useMemo(() => new THREE.MeshStandardMaterial({ map: brownRock, roughness: 0.9 }), [brownRock]);
+    const pebblesMat = useMemo(() => new THREE.MeshStandardMaterial({ map: pebbles, roughness: 1 }), [pebbles]);
 
     const [isNight, setIsNight] = useState(false);
     const prevNightRef = useRef(false);
@@ -141,9 +157,14 @@ export function DesertJailColiseum() {
 
             {/* --- ARCHITECTURE --- */}
 
-            {/* Main Court Floor (Concrete/Pavement) */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} receiveShadow material={COURT_MAT}>
+            {/* Main Court Floor (Brown Rock) */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} receiveShadow material={courtMat}>
                 <planeGeometry args={[COURT_WIDTH, COURT_LENGTH]} />
+            </mesh>
+
+            {/* Alleyway/Tunnel Floor (Pebbles) - Surrounding area */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} receiveShadow material={pebblesMat}>
+                <planeGeometry args={[50, 50]} />
             </mesh>
 
             {/* Court Markings (Faded White Lines) */}
@@ -159,23 +180,23 @@ export function DesertJailColiseum() {
             {/* Cell Blocks surrounding the courtyard */}
 
             {/* North Wall (Back) */}
-            <CellBlockRow count={6} startPos={[-10, 1.5, -16]} gap={0} />
+            <CellBlockRow count={6} startPos={[-10, 1.5, -16]} gap={0} material={concreteMat} />
 
             {/* South Wall (Front) */}
-            <CellBlockRow count={6} startPos={[-10, 1.5, 16]} gap={0} rotation={[0, Math.PI, 0]} />
+            <CellBlockRow count={6} startPos={[-10, 1.5, 16]} gap={0} rotation={[0, Math.PI, 0]} material={concreteMat} />
 
             {/* East Wall (Right) - Split for Entrance Tunnel */}
-            <CellBlockRow count={3} startPos={[12, 1.5, -14]} gap={0} rotation={[0, -Math.PI / 2, 0]} />
-            <CellBlockRow count={3} startPos={[12, 1.5, 6]} gap={0} rotation={[0, -Math.PI / 2, 0]} />
+            <CellBlockRow count={3} startPos={[12, 1.5, -14]} gap={0} rotation={[0, -Math.PI / 2, 0]} material={concreteMat} />
+            <CellBlockRow count={3} startPos={[12, 1.5, 6]} gap={0} rotation={[0, -Math.PI / 2, 0]} material={concreteMat} />
 
             {/* West Wall (Left) - Entry side */}
             {/* Leave a gap for the entrance from the bazaar/stadium stairs */}
-            <CellBlockRow count={3} startPos={[-12, 1.5, 14]} gap={0} rotation={[0, Math.PI / 2, 0]} />
-            <CellBlockRow count={3} startPos={[-12, 1.5, -6]} gap={0} rotation={[0, Math.PI / 2, 0]} />
+            <CellBlockRow count={3} startPos={[-12, 1.5, 14]} gap={0} rotation={[0, Math.PI / 2, 0]} material={concreteMat} />
+            <CellBlockRow count={3} startPos={[-12, 1.5, -6]} gap={0} rotation={[0, Math.PI / 2, 0]} material={concreteMat} />
 
             {/* Entry Platform / Watchtower Gate */}
             <group position={[-14, 4, 4]}>
-                <mesh castShadow receiveShadow material={CONCRETE_MAT}>
+                <mesh castShadow receiveShadow material={concreteMat}>
                     <boxGeometry args={[4, 8, 4]} />
                 </mesh>
                 <mesh position={[0, 4.5, 0]} material={RUST_MAT}>
