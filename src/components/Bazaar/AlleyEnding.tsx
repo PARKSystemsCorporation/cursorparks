@@ -7,7 +7,8 @@ import * as THREE from "three";
 import { useOptionalBazaarMaterials } from "./BazaarMaterials";
 import NeonImageSign from "./NeonImageSign";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
-import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
+import { useLightingCycle } from "./LightingCycleContext";
+import { getEmissiveScale } from "./lightingMode";
 
 const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
 const MAT_METAL = new THREE.MeshStandardMaterial({ color: "#444", roughness: 0.4, metalness: 0.7 });
@@ -56,12 +57,15 @@ export function AlleyEndingPortal({
     const RAMP_DROP = 1;
     const UNDER_W = 2.8;
 
+    const { emissiveScale, practicalLightIntensity } = useLightingCycle();
+
     useFrame(({ clock }) => {
-        if (!portalRef.current || EMISSIVE_SCALE === 0) return;
+        const scale = getEmissiveScale();
+        if (!portalRef.current || scale === 0) return;
         const t = clock.getElapsedTime();
         const pulse = 0.7 + 0.3 * Math.sin(t * 1.2);
         const mat = portalRef.current.material as THREE.MeshStandardMaterial;
-        if (mat.emissive) mat.emissiveIntensity = pulse * 1.2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE;
+        if (mat.emissive) mat.emissiveIntensity = pulse * 1.2 * BAZAAR_BRIGHTNESS * scale;
     });
 
     return (
@@ -119,7 +123,7 @@ export function AlleyEndingPortal({
                 <meshStandardMaterial
                     color="#4466aa"
                     emissive="#2288ff"
-                    emissiveIntensity={1.2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                    emissiveIntensity={1.2 * BAZAAR_BRIGHTNESS * emissiveScale}
                     side={THREE.DoubleSide}
                 />
             </mesh>
@@ -150,10 +154,10 @@ export function AlleyEndingPortal({
                     <meshStandardMaterial
                         color="#ffaa55"
                         emissive="#ff8800"
-                        emissiveIntensity={1.5 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                        emissiveIntensity={1.5 * BAZAAR_BRIGHTNESS * emissiveScale}
                     />
                 </mesh>
-                {PRACTICAL_LIGHT_INTENSITY > 0 && (
+                {practicalLightIntensity > 0 && (
                     <pointLight position={[0, 0.2, 0]} color="#ffaa55" intensity={1.2} distance={4} decay={2} />
                 )}
             </group>
@@ -195,6 +199,7 @@ export interface RoadClosedBarrierProps {
 
 /** Low barrier with 2–3 "ROAD CLOSED" panels (emissive plates + Text). */
 export function RoadClosedBarrier({ position = [0, 0.25, 4.5] }: RoadClosedBarrierProps) {
+    const { emissiveScale } = useLightingCycle();
     const segments = useMemo(() => [
         { offset: -1.2 },
         { offset: 0 },
@@ -216,7 +221,7 @@ export function RoadClosedBarrier({ position = [0, 0.25, 4.5] }: RoadClosedBarri
                         <meshStandardMaterial
                             color="#331100"
                             emissive="#aa4400"
-                            emissiveIntensity={0.4 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                            emissiveIntensity={0.4 * BAZAAR_BRIGHTNESS * emissiveScale}
                         />
                     </mesh>
                     <Text
@@ -231,7 +236,7 @@ export function RoadClosedBarrier({ position = [0, 0.25, 4.5] }: RoadClosedBarri
                         <meshStandardMaterial
                             color="#ffdd99"
                             emissive="#ffaa44"
-                            emissiveIntensity={0.6 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                            emissiveIntensity={0.6 * BAZAAR_BRIGHTNESS * emissiveScale}
                         />
                     </Text>
                 </group>

@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { getPhase } from "@/src/modules/world/SunMoonCycle";
+import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
 
 const BAR_GEOMETRY = new THREE.BoxGeometry(0.08, 1.05, 0.08);
 const CIRCLE_SEGMENTS = 32;
@@ -74,7 +74,7 @@ export function DesertJailColiseum() {
     const prevNightRef = useRef(false);
 
     useFrame(() => {
-        const night = getPhase() >= 0.5;
+        const night = getIsNight();
         if (night !== prevNightRef.current) {
             prevNightRef.current = night;
             setIsNight(night);

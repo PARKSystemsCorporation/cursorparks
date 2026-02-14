@@ -2,7 +2,7 @@
 
 import React from "react";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
-import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
+import { useLightingCycle } from "./LightingCycleContext";
 
 interface LedBarProps {
     position: [number, number, number];
@@ -13,6 +13,7 @@ interface LedBarProps {
 }
 
 export default function LedBar({ position, rotation = [0, 0, 0], color, length = 2, thickness = 0.05 }: LedBarProps) {
+    const { emissiveScale, practicalLightIntensity } = useLightingCycle();
     return (
         <group position={position} rotation={rotation}>
             <mesh>
@@ -20,10 +21,10 @@ export default function LedBar({ position, rotation = [0, 0, 0], color, length =
                 <meshStandardMaterial
                     color={color}
                     emissive={color}
-                    emissiveIntensity={3 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                    emissiveIntensity={3 * BAZAAR_BRIGHTNESS * emissiveScale}
                 />
             </mesh>
-            {PRACTICAL_LIGHT_INTENSITY > 0 && (
+            {practicalLightIntensity > 0 && (
                 <pointLight color={color} intensity={1} distance={3} decay={2} />
             )}
         </group>

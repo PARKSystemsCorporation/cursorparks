@@ -5,13 +5,13 @@ import * as THREE from "three";
 import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
-import { EMISSIVE_SCALE } from "./lightingMode";
+import { useLightingCycle } from "./LightingCycleContext";
 
 type TextRefWithOpacity = THREE.Object3D & { fillOpacity?: number };
 
 export default function LedSign() {
     const textRef = useRef<TextRefWithOpacity | null>(null);
-
+    const { emissiveScale } = useLightingCycle();
     const frameCount = useRef(0);
 
     useFrame((state) => {
@@ -39,7 +39,7 @@ export default function LedSign() {
                 <meshStandardMaterial
                     color="#39ff14"
                     emissive="#39ff14"
-                    emissiveIntensity={4 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                    emissiveIntensity={4 * BAZAAR_BRIGHTNESS * emissiveScale}
                 />
             </Text>
         </group>

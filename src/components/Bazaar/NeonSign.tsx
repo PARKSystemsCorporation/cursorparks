@@ -5,7 +5,8 @@ import { Text } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
-import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
+import { useLightingCycle } from "./LightingCycleContext";
+import { getEmissiveScale, getPracticalLightIntensity } from "./lightingMode";
 
 interface NeonSignProps {
     text: string;
@@ -19,14 +20,17 @@ interface NeonSignProps {
 export default function NeonSign({ text, color, position, rotation = [0, 0, 0], scale = 1, flicker = false }: NeonSignProps) {
     const textRef = useRef<THREE.Mesh | null>(null);
     const lightRef = useRef<THREE.PointLight>(null);
+    const { emissiveScale, practicalLightIntensity } = useLightingCycle();
 
     useFrame((state) => {
-        if (EMISSIVE_SCALE === 0) return;
+        const scaleVal = getEmissiveScale();
+        const practicalVal = getPracticalLightIntensity();
+        if (scaleVal === 0) return;
         if (flicker && textRef.current && lightRef.current) {
             const intensity = 1 + Math.sin(state.clock.elapsedTime * 20) * 0.1 + (Math.random() > 0.9 ? -0.5 : 0);
             const mat = textRef.current.material as THREE.MeshStandardMaterial;
-            if (mat) mat.emissiveIntensity = Math.max(0.2, intensity * 2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE);
-            lightRef.current.intensity = Math.max(0.5, intensity * 1.5 * PRACTICAL_LIGHT_INTENSITY);
+            if (mat) mat.emissiveIntensity = Math.max(0.2, intensity * 2 * BAZAAR_BRIGHTNESS * scaleVal);
+            lightRef.current.intensity = Math.max(0.5, intensity * 1.5 * practicalVal);
         }
     });
 
@@ -46,10 +50,10 @@ export default function NeonSign({ text, color, position, rotation = [0, 0, 0], 
                 <meshStandardMaterial
                     color={color}
                     emissive={color}
-                    emissiveIntensity={2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                    emissiveIntensity={2 * BAZAAR_BRIGHTNESS * emissiveScale}
                 />
             </Text>
-            {PRACTICAL_LIGHT_INTENSITY > 0 && (
+            {practicalLightIntensity > 0 && (
                 <pointLight
                     ref={lightRef}
                     color={color}

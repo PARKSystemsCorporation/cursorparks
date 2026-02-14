@@ -4,7 +4,7 @@ import { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
-import { EMISSIVE_SCALE } from "./lightingMode";
+import { useLightingCycle } from "./LightingCycleContext";
 
 const MAT_DARK = new THREE.MeshStandardMaterial({ color: "#222" });
 
@@ -17,6 +17,7 @@ interface StringLightsProps {
 export default function StringLights({ positions, color = "#ffaa55", bulbRadius = 0.04 }: StringLightsProps) {
     const cableRef = useRef<THREE.Group>(null);
     const frameCount = useRef(0);
+    const { emissiveScale } = useLightingCycle();
 
     const curve = useMemo(() => {
         if (positions.length < 2) return null;
@@ -64,7 +65,7 @@ export default function StringLights({ positions, color = "#ffaa55", bulbRadius 
                         <meshStandardMaterial
                             color={color}
                             emissive={color}
-                            emissiveIntensity={2.5 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                            emissiveIntensity={2.5 * BAZAAR_BRIGHTNESS * emissiveScale}
                         />
                     </mesh>
                 </group>

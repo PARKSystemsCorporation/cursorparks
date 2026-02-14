@@ -3,7 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useBazaarMaterials } from "./BazaarMaterials";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
-import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
+import { useLightingCycle } from "./LightingCycleContext";
+import { getEmissiveScale } from "./lightingMode";
 import LedBar from "./LedBar";
 import NeonSign from "./NeonSign";
 
@@ -19,13 +20,14 @@ const pseudoRandom = (seed: number) => ((seed * 0.61803) % 1);
 
 function POVLight() {
     const ref = useRef<THREE.Group>(null);
+    const { practicalLightIntensity } = useLightingCycle();
     useFrame(({ camera }) => {
         if (!ref.current) return;
         ref.current.position.copy(camera.position);
         ref.current.position.y += 0.2;
         ref.current.position.z += 0.1;
     });
-    if (PRACTICAL_LIGHT_INTENSITY === 0) return null;
+    if (practicalLightIntensity === 0) return null;
     return (
         <group ref={ref}>
             <pointLight distance={10} decay={2} intensity={1} color="#ddeeff" />
@@ -59,6 +61,7 @@ function WallBlock({
 }
 
 function WindowGrid() {
+    const { emissiveScale } = useLightingCycle();
     const windows = useMemo(() => {
         const out: ReactNode[] = [];
         const leftY = [3, 6, 9, 12];
@@ -74,8 +77,8 @@ function WindowGrid() {
                         <meshStandardMaterial
                             color="#ffaa66"
                             emissive="#ffe4cc"
-                            emissiveIntensity={(1.2 + pseudoRandom(seed)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE + 0.4}
-                            toneMapped={EMISSIVE_SCALE === 0}
+                            emissiveIntensity={(1.2 + pseudoRandom(seed)) * BAZAAR_BRIGHTNESS * emissiveScale + 0.4}
+                            toneMapped={emissiveScale === 0}
                         />
                     </mesh>
                 );
@@ -88,15 +91,15 @@ function WindowGrid() {
                         <meshStandardMaterial
                             color="#66aaff"
                             emissive="#aaddff"
-                            emissiveIntensity={(1.2 + pseudoRandom(seed)) * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE + 0.5}
-                            toneMapped={EMISSIVE_SCALE === 0}
+                            emissiveIntensity={(1.2 + pseudoRandom(seed)) * BAZAAR_BRIGHTNESS * emissiveScale + 0.5}
+                            toneMapped={emissiveScale === 0}
                         />
                     </mesh>
                 );
             }
         }
         return out;
-    }, []);
+    }, [emissiveScale]);
 
     return <group>{windows}</group>;
 }
@@ -319,8 +322,9 @@ function ConstructedWalls() {
 
 function SmithStall() {
     const { woodCrate, metalPanel } = useBazaarMaterials();
+    const { emissiveScale, practicalLightIntensity } = useLightingCycle();
     const dimGreen = "#338855";
-    const greenIntensity = 0.55 * BAZAAR_BRIGHTNESS * (EMISSIVE_SCALE > 0 ? EMISSIVE_SCALE : 0.6);
+    const greenIntensity = 0.55 * BAZAAR_BRIGHTNESS * (emissiveScale > 0 ? emissiveScale : 0.6);
 
     return (
         <group position={[-WALL_X - 0.5, 0.8, -1]}>
@@ -341,7 +345,7 @@ function SmithStall() {
                 <boxGeometry args={[0.02, 0.02, 1.5]} />
                 <meshStandardMaterial color={dimGreen} emissive={dimGreen} emissiveIntensity={greenIntensity} />
             </mesh>
-            {PRACTICAL_LIGHT_INTENSITY > 0 && (
+            {practicalLightIntensity > 0 && (
                 <pointLight color={dimGreen} intensity={0.9} distance={2.5} decay={2} position={[-0.3, 0.5, 0]} />
             )}
         </group>
@@ -350,8 +354,9 @@ function SmithStall() {
 
 function FixerStall() {
     const { metalPanel } = useBazaarMaterials();
+    const { emissiveScale, practicalLightIntensity } = useLightingCycle();
     const dimPurple = "#6644aa";
-    const purpleIntensity = 0.5 * BAZAAR_BRIGHTNESS * (EMISSIVE_SCALE > 0 ? EMISSIVE_SCALE : 0.6);
+    const purpleIntensity = 0.5 * BAZAAR_BRIGHTNESS * (emissiveScale > 0 ? emissiveScale : 0.6);
 
     return (
         <group position={[-WALL_X - 0.5, 0.75, -5]}>
@@ -372,7 +377,7 @@ function FixerStall() {
                 <boxGeometry args={[0.02, 0.02, 1.3]} />
                 <meshStandardMaterial color={dimPurple} emissive={dimPurple} emissiveIntensity={purpleIntensity} />
             </mesh>
-            {PRACTICAL_LIGHT_INTENSITY > 0 && (
+            {practicalLightIntensity > 0 && (
                 <pointLight color={dimPurple} intensity={0.8} distance={2} decay={2} position={[-0.3, 0.4, 0]} />
             )}
         </group>
@@ -381,6 +386,7 @@ function FixerStall() {
 
 function MerchantStall() {
     const { woodCrate, metalPanel } = useBazaarMaterials();
+    const { emissiveScale } = useLightingCycle();
 
     return (
         <group position={[WALL_X + 0.3, 0, -10]}>
@@ -389,7 +395,7 @@ function MerchantStall() {
             </mesh>
             <mesh position={[0, 1.1, 0.61]}>
                 <planeGeometry args={[2.5, 0.05]} />
-                <meshStandardMaterial color="#ff8800" emissive="#ff8800" emissiveIntensity={EMISSIVE_SCALE} />
+                <meshStandardMaterial color="#ff8800" emissive="#ff8800" emissiveIntensity={emissiveScale} />
             </mesh>
             <mesh position={[0, 1.6, -0.3]} material={metalPanel}>
                 <boxGeometry args={[2.4, 0.08, 0.6]} />
@@ -407,6 +413,7 @@ function MerchantStall() {
 function HangingBulb({ position, color = "#ffaa55" }: { position: [number, number, number]; color?: string }) {
     const group = useRef<THREE.Group>(null);
     const frameCount = useRef(0);
+    const { emissiveScale } = useLightingCycle();
     useFrame(({ clock }) => {
         if (!group.current) return;
         frameCount.current++;
@@ -425,7 +432,7 @@ function HangingBulb({ position, color = "#ffaa55" }: { position: [number, numbe
             </mesh>
             <mesh position={[0, 0, 0]}>
                 <sphereGeometry args={[0.05, 16, 16]} />
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE} />
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={3 * BAZAAR_BRIGHTNESS * emissiveScale} />
             </mesh>
         </group>
     );
@@ -438,13 +445,15 @@ export type AlleyTwoReturnPortalProps = {
 
 export function AlleyTwoReturnPortal({ onReturn }: AlleyTwoReturnPortalProps) {
     const portalRef = useRef<THREE.Mesh>(null);
+    const { emissiveScale } = useLightingCycle();
 
     useFrame(({ clock }) => {
-        if (!portalRef.current || EMISSIVE_SCALE === 0) return;
+        const scale = getEmissiveScale();
+        if (!portalRef.current || scale === 0) return;
         const t = clock.getElapsedTime();
         const pulse = 0.7 + 0.3 * Math.sin(t * 1.2);
         const mat = portalRef.current.material as THREE.MeshStandardMaterial;
-        if (mat.emissive) mat.emissiveIntensity = pulse * 1.2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE;
+        if (mat.emissive) mat.emissiveIntensity = pulse * 1.2 * BAZAAR_BRIGHTNESS * scale;
     });
 
     return (
@@ -470,7 +479,7 @@ export function AlleyTwoReturnPortal({ onReturn }: AlleyTwoReturnPortalProps) {
                 <meshStandardMaterial
                     color="#4466aa"
                     emissive="#2288ff"
-                    emissiveIntensity={1.2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                    emissiveIntensity={1.2 * BAZAAR_BRIGHTNESS * emissiveScale}
                     side={THREE.DoubleSide}
                 />
             </mesh>

@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Text, Billboard } from "@react-three/drei";
-import { PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
+import { useLightingCycle } from "./LightingCycleContext";
 import VendorProfileCard from "./VendorProfileCard";
 import { CyberneticHead, CyberneticTorso, CyberneticArm, CyberneticLeg } from "./CyberneticParts";
 import { BrokerAvatar } from "./BrokerAvatar";
@@ -203,6 +203,7 @@ export function RealisticVendorBody({
     const idleRef = useRef(0);
     const [ariaResponse, setAriaResponse] = React.useState<string | null>(null);
     const [cognitiveSpeech, setCognitiveSpeech] = React.useState<string | null>(null);
+    const { practicalLightIntensity } = useLightingCycle();
 
     React.useEffect(() => {
         let unsubscribe: (() => void) | null = null;
@@ -403,7 +404,7 @@ export function RealisticVendorBody({
                             <ringGeometry args={[0.5, 0.55, 32]} />
                             <meshBasicMaterial color={color} side={THREE.DoubleSide} transparent opacity={0.5} />
                         </mesh>
-                        {PRACTICAL_LIGHT_INTENSITY > 0 && (
+                        {practicalLightIntensity > 0 && (
                             <pointLight distance={3} intensity={2} color={color} position={[0, 1, 0]} decay={2} />
                         )}
                     </group>

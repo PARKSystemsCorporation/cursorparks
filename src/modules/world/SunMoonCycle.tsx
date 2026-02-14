@@ -56,6 +56,11 @@ export function getDayNightStrength(): { dayStrength: number; nightStrength: num
   return { dayStrength, nightStrength };
 }
 
+/** True when game clock is in night half (phase >= 0.5, i.e. from 18:00 to 06:00). Use for coliseum spotlights and other night-only visuals. */
+export function isNight(): boolean {
+  return getPhase() >= 0.5;
+}
+
 /** Elevation and azimuth for one arc: rise → peak → set. t in [0,1]. */
 function arcPosition(t: number): { elevation: number; azimuth: number } {
   const elevation = (Math.sin(Math.PI * t) * 95 - 5) * (Math.PI / 180);

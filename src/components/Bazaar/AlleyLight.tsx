@@ -3,7 +3,7 @@
 import React, { useRef } from "react";
 import * as THREE from "three";
 import { BAZAAR_BRIGHTNESS } from "./brightness";
-import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
+import { useLightingCycle } from "./LightingCycleContext";
 
 interface AlleyLightProps {
     position: [number, number, number];
@@ -14,6 +14,7 @@ interface AlleyLightProps {
 
 export default function AlleyLight({ position, color = "#ffaa00", intensity = 5, rotation = [-Math.PI / 4, 0, 0] }: AlleyLightProps) {
     const lightRef = useRef<THREE.SpotLight>(null);
+    const { emissiveScale, practicalLightIntensity } = useLightingCycle();
     // useHelper(lightRef, THREE.SpotLightHelper, 'white'); // Debug helper
 
     return (
@@ -30,11 +31,11 @@ export default function AlleyLight({ position, color = "#ffaa00", intensity = 5,
                 <meshStandardMaterial
                     color={color}
                     emissive={color}
-                    emissiveIntensity={2 * BAZAAR_BRIGHTNESS * EMISSIVE_SCALE}
+                    emissiveIntensity={2 * BAZAAR_BRIGHTNESS * emissiveScale}
                 />
             </mesh>
 
-            {PRACTICAL_LIGHT_INTENSITY > 0 && (
+            {practicalLightIntensity > 0 && (
             <spotLight
                 ref={lightRef}
                 color={color}
