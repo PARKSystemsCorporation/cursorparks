@@ -13,7 +13,7 @@ export function FirstPersonController() {
   const { camera, gl } = useThree();
   const { active: cameraOverrideActive } = useCameraOverride();
   const [locked, setLocked] = useState(false);
-  const rotation = useRef({ yaw: 0, pitch: 0 });
+  const rotation = useRef({ yaw: Math.PI, pitch: 0 });
   const keys = useRef({ w: false, a: false, s: false, d: false });
   const moveVec = useRef(new THREE.Vector3());
   const forward = useRef(new THREE.Vector3());
