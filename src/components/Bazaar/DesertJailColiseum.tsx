@@ -164,8 +164,9 @@ export function DesertJailColiseum() {
             {/* South Wall (Front) */}
             <CellBlockRow count={6} startPos={[-10, 1.5, 16]} gap={0} rotation={[0, Math.PI, 0]} />
 
-            {/* East Wall (Right) */}
-            <CellBlockRow count={8} startPos={[12, 1.5, -14]} gap={0} rotation={[0, -Math.PI / 2, 0]} />
+            {/* East Wall (Right) - Split for Entrance Tunnel */}
+            <CellBlockRow count={3} startPos={[12, 1.5, -14]} gap={0} rotation={[0, -Math.PI / 2, 0]} />
+            <CellBlockRow count={3} startPos={[12, 1.5, 6]} gap={0} rotation={[0, -Math.PI / 2, 0]} />
 
             {/* West Wall (Left) - Entry side */}
             {/* Leave a gap for the entrance from the bazaar/stadium stairs */}
