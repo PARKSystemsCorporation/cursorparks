@@ -46,7 +46,6 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
-  const [checkingExokin, setCheckingExokin] = React.useState(true);
   const [showBondPanel, setShowBondPanel] = React.useState(false);
 
   useEffect(() => {
@@ -82,8 +81,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
           setShowBondPanel(true);
         }
       })
-      .catch((err) => console.error("Exokin check failed", err))
-      .finally(() => setCheckingExokin(false));
+      .catch((err) => console.error("Exokin check failed", err));
   }, []);
 
   const handleBondComplete = React.useCallback((data: FirstBondData) => {

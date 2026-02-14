@@ -6,7 +6,7 @@ import { BAZAAR_BRIGHTNESS } from "./brightness";
 import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 import LedBar from "./LedBar";
 import NeonSign from "./NeonSign";
-import { AlleyEndingPortal, RoadClosedBarrier } from "./AlleyEnding";
+import { RoadClosedBarrier } from "./AlleyEnding";
 
 // Alley Two: narrower back alley (x ± 3), extends z 0 → -22
 const ALLEY_TWO_WIDTH = 6;

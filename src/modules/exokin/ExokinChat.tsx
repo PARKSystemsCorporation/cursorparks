@@ -72,12 +72,12 @@ export function ExokinChat() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ creatureId: activeCreatureId, speaker: "user", content: text }),
-    }).catch(() => {});
+    }).catch(() => { });
     fetch("/api/exokin/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ creatureId: activeCreatureId, speaker: "exokin", content: response }),
-    }).catch(() => {});
+    }).catch(() => { });
   }, [input, activeCreatureId, robot]);
 
   if (!activeCreatureId) return null;
@@ -118,6 +118,7 @@ export function ExokinChat() {
           padding: 8,
           display: "flex",
           flexDirection: "column",
+          justifyContent: "flex-end",
           gap: 6,
         }}
       >

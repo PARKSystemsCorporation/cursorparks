@@ -7,7 +7,7 @@ import { useInventory } from "@/src/modules/ui/inventory/InventoryContext";
 import type { DeployedRobot } from "@/src/modules/ui/inventory/InventoryContext";
 
 /** Front-left of player in local space: left ~1m, forward ~1.5m. */
-const FRONT_LEFT_OFFSET = new THREE.Vector3(-1, 0, -1.5);
+
 
 export function CreatureSpawnListener() {
   const { camera } = useThree();
