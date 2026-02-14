@@ -8,6 +8,7 @@ const companionWeights = require("./companionWeights");
 const { buildCreature } = require("./buildCreature");
 const { getOrCreateIdentity, setIdentity } = require("./identityGenerator");
 const { dispatchSpawnAfterDeploy } = require("./deployWallet");
+const { generateMorphParams } = require("./morphParams");
 
 const TYPES = {
   warform: "warform",
@@ -72,10 +73,13 @@ function triggerCreatureSpawn(type, options) {
     if (identityFromApi && identityFromApi === identity) {
       setIdentity(creatureId, identity);
     }
-    const creature = { type, identity, creatureId };
+    const deployNonce = typeof performance !== "undefined" ? performance.now() : Date.now();
+    const morphParams = generateMorphParams(creatureId, deployNonce);
+    const identityWithMorph = { ...identity, morphParams };
+    const creature = { type, identity: identityWithMorph, creatureId };
     if (renderCreature) renderCreature(creature);
     if (position && typeof window !== "undefined" && window.dispatchEvent) {
-      dispatchSpawnAfterDeploy({ type, identity, position, creatureId });
+      dispatchSpawnAfterDeploy({ type, identity: identityWithMorph, position, creatureId });
     }
     return creature;
   }

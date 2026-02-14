@@ -7,6 +7,12 @@ const anatomyParts = require("./anatomyParts");
 const genderProfiles = require("./genderProfiles");
 
 const identityStore = new Map();
+const RECENT_COMBO_MAX = 8;
+const recentCombos = [];
+
+function comboKey(head_type, body_type, tail_type) {
+  return `${head_type}:${body_type}:${tail_type}`;
+}
 
 function getIdentity(creatureId) {
   return identityStore.get(creatureId) || null;
@@ -31,6 +37,7 @@ function pickOne(arr, rng) {
 
 /**
  * Generate identity for first deploy. role = warrior | companion from type.
+ * Avoids repeating the same head/body/tail combo within a rolling session window.
  * @param {string} type - "warform" | "companion"
  * @param {number} [seed]
  * @param {{ gender?: string }} [override] - optional gender override (male|female)
@@ -52,12 +59,36 @@ function generateIdentity(type, seed, override) {
   const bodyOptions = anatomyParts.bodyOptions(gender, role);
   const tailOptions = anatomyParts.tailOptions(gender, role);
 
+  let head_type = pickOne(headOptions, rng);
+  let body_type = pickOne(bodyOptions, rng);
+  let tail_type = pickOne(tailOptions, rng);
+  let key = comboKey(head_type, body_type, tail_type);
+  let tries = 0;
+  const maxTries = 12;
+  while (recentCombos.includes(key) && tries < maxTries) {
+    tail_type = pickOne(tailOptions, rng);
+    key = comboKey(head_type, body_type, tail_type);
+    if (recentCombos.includes(key)) {
+      body_type = pickOne(bodyOptions, rng);
+      key = comboKey(head_type, body_type, tail_type);
+    }
+    if (recentCombos.includes(key)) {
+      head_type = pickOne(headOptions, rng);
+      key = comboKey(head_type, body_type, tail_type);
+    }
+    tries++;
+  }
+  if (recentCombos.length >= RECENT_COMBO_MAX) {
+    recentCombos.shift();
+  }
+  recentCombos.push(key);
+
   const identity = {
     gender,
     role,
-    head_type: pickOne(headOptions, rng),
-    body_type: pickOne(bodyOptions, rng),
-    tail_type: pickOne(tailOptions, rng),
+    head_type,
+    body_type,
+    tail_type,
     color_profile: genderProfiles.getProfile(gender),
   };
   return identity;

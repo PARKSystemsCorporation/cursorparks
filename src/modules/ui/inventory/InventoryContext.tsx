@@ -36,6 +36,13 @@ const initialPockets: InventoryState = {
   bondDragScreenPos: null,
 };
 
+export type MorphParams = {
+  intensity?: string;
+  head?: { scaleX: number; scaleY: number; scaleZ: number; tiltX: number; tiltZ: number; offsetX: number; offsetZ: number };
+  body?: { scaleX: number; scaleY: number; scaleZ: number; tiltX: number; tiltZ: number; offsetX: number; offsetZ: number };
+  tail?: { scaleX: number; scaleY: number; scaleZ: number; tiltX: number; tiltZ: number; offsetX: number; offsetZ: number };
+};
+
 export type DeployedRobot = {
   id: string;
   x: number;
@@ -50,6 +57,7 @@ export type DeployedRobot = {
     body_type: string;
     tail_type: string;
     color_profile: Record<string, unknown>;
+    morphParams?: MorphParams;
   };
 };
 
