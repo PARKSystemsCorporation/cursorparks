@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import React, { useEffect } from "react";
+import React from "react";
 import * as THREE from "three";
 import { ChatProvider } from "./ChatContext";
 import { PerformanceProvider } from "@/src/modules/performance";
@@ -12,12 +12,11 @@ import { ExokinSpeechMorphologySync } from "@/src/modules/robot/ExokinSpeechMorp
 import { WorldChatPanel, ChatInput } from "@/src/modules/chat";
 import { RadialMenu, VendorTalkPanel, BarterTable } from "@/src/modules/vendors";
 import { TrainerProvider } from "@/src/modules/world/TrainerContext";
+import { TrainerOverlay } from "@/src/modules/world/TrainerOverlay";
 import { ArenaUI } from "@/src/modules/arena";
 import { ExokinChat, ExokinDevice } from "@/src/modules/exokin";
 import { DebugOverlay } from "@/src/modules/ui/DebugOverlay";
 import { CoordTracker } from "@/src/modules/ui/CoordTracker";
-import { generateVisualIdentity } from "@/src/modules/exokin/identityGenerator";
-import FirstBondPanel, { FirstBondData } from "@/src/ui/FirstBondPanel";
 import "./BazaarLanding.css";
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -45,69 +44,6 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
-  const [showBondPanel, setShowBondPanel] = React.useState(false);
-
-  useEffect(() => {
-    if (showBondPanel) {
-      document.body.classList.add("parks-ui-open");
-    } else {
-      document.body.classList.remove("parks-ui-open");
-    }
-  }, [showBondPanel]);
-
-  React.useEffect(() => {
-    // Check if Exokin exists
-    fetch("/api/exokin/get")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.found && data.exokin) {
-          // Exokin exists -> Spawn immediately
-          // slight delay to ensure scene is ready?
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent("parks-spawn-creature", {
-              detail: {
-                type: data.exokin.type,
-                identity: generateVisualIdentity(
-                  data.exokin.morphologySeed,
-                  data.exokin.type,
-                  data.exokin.gender
-                ),
-                creatureId: data.exokin.id
-              }
-            }));
-          }, 1000);
-        } else {
-          setShowBondPanel(true);
-        }
-      })
-      .catch((err) => console.error("Exokin check failed", err));
-  }, []);
-
-  const handleBondComplete = React.useCallback((data: FirstBondData) => {
-    setShowBondPanel(false);
-    // 1. Spawn Creature (Mesh)
-    window.dispatchEvent(new CustomEvent("parks-spawn-creature", {
-      detail: {
-        type: data.type,
-        identity: generateVisualIdentity(
-          data.morphologySeed,
-          data.type,
-          data.gender
-        ),
-        // created now
-      }
-    }));
-
-    // 2. Trigger Camera Moment (Logic: CameraFirstBond listens to this)
-    // We pass 0,0,0 as placeholder, component calculates relative pos.
-    // Or we can calculate here? No, component does relative logic.
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("parks-first-bond-spawn", {
-        detail: { x: 0, y: 0, z: 0 }
-      }));
-    }, 100);
-  }, []);
-
   return (
     <ChatProvider>
       <PerformanceProvider>
@@ -155,10 +91,10 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                 <BarterTable />
                 <ArenaUI />
                 <RadialMenu />
+                <TrainerOverlay />
                 <ChatInput />
 
                 <CoordTracker />
-                {showBondPanel && <FirstBondPanel onComplete={handleBondComplete} />}
               </div>
             </TrainerProvider>
           </RobotProvider>

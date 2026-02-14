@@ -9,6 +9,7 @@ const LINES = [
   "Bazaar doesn't remember faces.",
   "You'll need a bond.",
 ];
+const ONBOARDING_SPAWN_POS = { x: 1.0, y: 0, z: -10.8 };
 
 /** Minimal intro: trainer text only. No panels, no UI clutter. Click to advance. */
 export default function IntroTrainer({ visible, onComplete }) {
@@ -61,7 +62,7 @@ export default function IntroTrainer({ visible, onComplete }) {
       window.dispatchEvent(new CustomEvent("parks-onboarding-focus-start"));
       window.dispatchEvent(
         new CustomEvent("parks-spawn-creature", {
-          detail: { type, creatureId, identity },
+          detail: { type, creatureId, identity, position: ONBOARDING_SPAWN_POS },
         })
       );
       window.dispatchEvent(

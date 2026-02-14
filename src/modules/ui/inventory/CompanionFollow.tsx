@@ -25,11 +25,11 @@ export function CompanionFollow({
     if (!groupRef.current) return;
     const target = new THREE.Vector3(
       camera.position.x - Math.sin(camera.rotation.y) * FOLLOW_DISTANCE,
-      camera.position.y,
+      0,
       camera.position.z - Math.cos(camera.rotation.y) * FOLLOW_DISTANCE
     );
     groupRef.current.position.lerp(target, delta * FOLLOW_SPEED);
-    groupRef.current.position.y += Math.sin(state.clock.elapsedTime * BOB_FREQ) * BOB_AMPLITUDE;
+    groupRef.current.position.y = Math.sin(state.clock.elapsedTime * BOB_FREQ) * BOB_AMPLITUDE;
   });
 
   return (

@@ -20,13 +20,26 @@ export type CreatureIdentity = {
   };
 };
 
+function clampHexBrightness(color: string, fallback: string, minLuma: number): string {
+  if (!/^#([0-9a-f]{6})$/i.test(color)) return fallback;
+  const r = parseInt(color.slice(1, 3), 16) / 255;
+  const g = parseInt(color.slice(3, 5), 16) / 255;
+  const b = parseInt(color.slice(5, 7), 16) / 255;
+  const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luma < minLuma ? fallback : color;
+}
+
 function matFromProfile(profile: CreatureIdentity["color_profile"]) {
   const p = profile || {};
+  const safePrimary =
+    typeof p.primary === "string" ? clampHexBrightness(p.primary, "#4a4238", 0.18) : "#4a4238";
+  const safeEmissive =
+    typeof p.emissive === "string" ? clampHexBrightness(p.emissive, "#221d18", 0.06) : "#221d18";
   return {
-    color: p.primary ?? "#3d3630",
+    color: safePrimary,
     metalness: p.metalness ?? 0.5,
     roughness: p.roughness ?? 0.6,
-    emissive: p.emissive ?? "#1a1816",
+    emissive: safeEmissive,
     emissiveIntensity: p.emissiveIntensity ?? 0.05,
   };
 }

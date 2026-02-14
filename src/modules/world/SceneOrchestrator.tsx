@@ -24,8 +24,6 @@ import { WalletCardDeployment } from "@/src/modules/ui/inventory/WalletCardDeplo
 import { DeployedRobotsRenderer } from "@/src/modules/ui/inventory/DeployedRobotsRenderer";
 import { CreatureSpawnListener } from "./CreatureSpawnListener";
 import { SunMoonCycle } from "./SunMoonCycle";
-import { CameraFirstBond } from "./CameraFirstBond";
-import { FirstBondSpotlight } from "./FirstBondSpotlight";
 import { StadiumExit } from "@/src/components/Bazaar/StadiumExit";
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
@@ -68,7 +66,7 @@ function AlleyProps() {
  * SceneOrchestrator: 3D scene content (alley, FPS controller, NPCs, lights, effects).
  * Use inside Canvas. Expects PerformanceProvider and SceneStateProvider above.
  */
-export function SceneOrchestrator({ showBondPanel }: { showBondPanel?: boolean }) {
+export function SceneOrchestrator() {
   const { setRadialMenu, onEnterAlleyTwo } = useSceneState();
 
   return (
@@ -80,8 +78,6 @@ export function SceneOrchestrator({ showBondPanel }: { showBondPanel?: boolean }
         <PerformanceTicker />
         <FirstPersonController />
         <CameraProfileMoment />
-        <CameraFirstBond />
-        <FirstBondSpotlight active={!!showBondPanel} />
 
         <AlleyGeometry />
         <StadiumExit />

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useInventory } from "@/src/modules/ui/inventory/InventoryContext";
 import type { DeployedRobot } from "@/src/modules/ui/inventory/InventoryContext";
+import { clampPosition } from "@/src/modules/world/firstPersonBounds";
 
 /** Front-left of player in local space: left ~1m, forward ~1.5m. */
 
@@ -22,9 +23,10 @@ export function CreatureSpawnListener() {
       let y: number;
       let z: number;
       if (d?.position && typeof d.position.x === "number" && typeof d.position.z === "number") {
-        x = d.position.x;
-        z = d.position.z;
-        y = typeof d.position.y === "number" ? d.position.y : 0;
+        const clamped = clampPosition(d.position.x, d.position.z);
+        x = clamped.x;
+        z = clamped.z;
+        y = 0;
       } else {
         // Player Relative Logic: PlayerPos + (Forward * 1.2) + (Left * 0.8)
         // We need player rotation. Camera quaternion is good proxy for yaw if FPC is active.
@@ -43,9 +45,10 @@ export function CreatureSpawnListener() {
         const spawnPos = camera.position.clone().add(offset);
         // Ground it
         spawnPos.y = 0;
+        const clamped = clampPosition(spawnPos.x, spawnPos.z);
 
-        x = spawnPos.x;
-        z = spawnPos.z;
+        x = clamped.x;
+        z = clamped.z;
         y = 0;
       }
       deployAt(type, x, y, z, { identity: d?.identity, creatureId: d?.creatureId });

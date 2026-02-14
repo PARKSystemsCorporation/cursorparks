@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useRef } from "react";
 import { useTrainer } from "./TrainerContext";
 import { useInventory } from "@/src/modules/ui/inventory/InventoryContext";
 import { generateIdentity, setIdentity } from "@/src/systems/creature/identityGenerator";
 import BondSelection from "@/src/ui/BondSelection";
 
+const ONBOARDING_SPAWN_POS = { x: 1.0, y: 0, z: -10.8 };
+
 export function TrainerOverlay() {
   const { step, completeAndGiveCapsule } = useTrainer();
   const { setBondCapsule } = useInventory();
+  const submittingRef = useRef(false);
 
   const handleBondComplete = useCallback(
     async ({
@@ -18,8 +21,10 @@ export function TrainerOverlay() {
       gender: string;
       type: string;
     }) => {
+      if (submittingRef.current) return;
       if (!type || !gender) return;
       if (gender !== "male" && gender !== "female") return;
+      submittingRef.current = true;
       const creatureId = `exo-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const seedStr = `${type}-${gender}-${Date.now()}-${Math.random()}`;
       let morphology_seed = 0;
@@ -56,7 +61,7 @@ export function TrainerOverlay() {
       window.dispatchEvent(new CustomEvent("parks-onboarding-focus-start"));
       window.dispatchEvent(
         new CustomEvent("parks-spawn-creature", {
-          detail: { type, creatureId, identity },
+          detail: { type, creatureId, identity, position: ONBOARDING_SPAWN_POS },
         })
       );
       window.dispatchEvent(
@@ -66,6 +71,7 @@ export function TrainerOverlay() {
       );
 
       completeAndGiveCapsule();
+      submittingRef.current = false;
     },
     [setBondCapsule, completeAndGiveCapsule]
   );

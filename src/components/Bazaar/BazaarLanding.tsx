@@ -3,9 +3,7 @@
 import React, { Suspense, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import EntryScreen from "@/src/ui/EntryScreen";
-import IntroTrainer from "@/src/ui/IntroTrainer";
 import { DeploySequenceUI } from "@/src/ui/DeploySequence";
-import { isFirstTimeUser, markIntroDone } from "@/src/state/introFlow";
 import { InventoryProvider } from "@/src/modules/ui/inventory/InventoryContext";
 import { PocketInventory } from "@/src/modules/ui/inventory/PocketInventory";
 
@@ -43,20 +41,10 @@ class ErrorBoundary extends React.Component<
 
 export default function BazaarLanding() {
   const [entered, setEntered] = useState(false);
-  const [showIntro, setShowIntro] = useState(false);
   const [alley, setAlley] = useState<Alley>("one");
 
   const onEntryEnter = useCallback(() => {
     setEntered(true);
-  }, []);
-
-  const onFirstTimeIntro = useCallback(() => {
-    if (isFirstTimeUser()) setShowIntro(true);
-  }, []);
-
-  const onIntroComplete = useCallback(() => {
-    markIntroDone();
-    setShowIntro(false);
   }, []);
 
   return (
@@ -70,7 +58,7 @@ export default function BazaarLanding() {
       }}
     >
       {!entered && (
-        <EntryScreen onEnter={onEntryEnter} onFirstTimeIntro={onFirstTimeIntro} />
+        <EntryScreen onEnter={onEntryEnter} />
       )}
 
       <InventoryProvider>
@@ -102,9 +90,6 @@ export default function BazaarLanding() {
 
         {entered && <PocketInventory />}
 
-        {entered && showIntro && (
-          <IntroTrainer visible onComplete={onIntroComplete} />
-        )}
         <DeploySequenceUI />
       </InventoryProvider>
     </div>

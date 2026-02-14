@@ -127,9 +127,12 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
       setBusy(true);
       try {
         await enterWithHandle(trimmed, password);
-        const firstTime = isFirstTimeUser();
         onEnter({ type: "handle", handle: trimmed });
-        if (firstTime && onFirstTimeIntro) onFirstTimeIntro();
+        // Copy onboarding flow for newly created accounts even if guest intro was already done.
+        if (onFirstTimeIntro) {
+          if (mode === "create") onFirstTimeIntro(true);
+          else if (isFirstTimeUser()) onFirstTimeIntro();
+        }
       } catch (err) {
         setError(err.message || "Enter failed.");
       } finally {

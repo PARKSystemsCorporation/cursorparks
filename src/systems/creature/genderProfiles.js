@@ -16,14 +16,14 @@ const FEMALE = {
 };
 
 const MALE = {
-  primary: "#1a1816",
-  secondary: "#2a2824",
-  accent: "#3d3a36",
-  metal: "#2e2c28",
+  primary: "#3d3630",
+  secondary: "#4a4238",
+  accent: "#6b5d4d",
+  metal: "#5c5044",
   metalness: 0.6,
-  roughness: 0.85,
-  emissive: "#0c0a08",
-  emissiveIntensity: 0,
+  roughness: 0.7,
+  emissive: "#1a1612",
+  emissiveIntensity: 0.04,
 };
 
 function getProfile(gender) {
