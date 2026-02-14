@@ -1,5 +1,17 @@
-// Single switch for Bazaar scene lighting: day = high-sun daylight, night = dusk/cyberpunk.
-export const BAZAAR_LIGHTING_MODE = "night" as "day" | "night";
+import { getDayNightStrength } from "@/src/modules/world/SunMoonCycle";
 
-export const PRACTICAL_LIGHT_INTENSITY = BAZAAR_LIGHTING_MODE === "day" ? 0 : 1;
-export const EMISSIVE_SCALE = BAZAAR_LIGHTING_MODE === "day" ? 0 : 1;
+/**
+ * Runtime emissive scale 0–1 from day/night cycle. Strongest at midnight (peak night), weakest at noon.
+ */
+export function getEmissiveScale(): number {
+  const { nightStrength } = getDayNightStrength();
+  return nightStrength;
+}
+
+/**
+ * Runtime practical light intensity 0–1. Same as emissive: full at night, off at noon.
+ */
+export function getPracticalLightIntensity(): number {
+  const { nightStrength } = getDayNightStrength();
+  return nightStrength;
+}

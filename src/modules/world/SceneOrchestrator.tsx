@@ -27,6 +27,7 @@ import { SunMoonCycle } from "./SunMoonCycle";
 import { StadiumExit } from "@/src/components/Bazaar/StadiumExit";
 import { DesertJailColiseum } from "@/src/components/Bazaar/DesertJailColiseum";
 import { ExokinCreationLedStrip } from "./ExokinCreationLedStrip";
+import { LightingCycleProvider } from "@/src/components/Bazaar/LightingCycleContext";
 
 const COLISEUM_CENTER: [number, number, number] = [-31, -3.06, -7];
 const COLISEUM_MAX_DISTANCE = 22;
@@ -226,6 +227,7 @@ export function SceneOrchestrator() {
       <color attach="background" args={["#f5ecd8"]} />
       <fogExp2 attach="fog" args={["#fff5e8", 0.002]} />
 
+      <LightingCycleProvider>
       <CameraOverrideProvider>
         <PerformanceTicker />
         <FirstPersonController />
@@ -255,6 +257,7 @@ export function SceneOrchestrator() {
         <WalletCardDeployment />
         <DeployedRobotsRenderer />
       </CameraOverrideProvider>
+      </LightingCycleProvider>
 
       <SunMoonCycle />
       <pointLight position={[0, 4, -10]} intensity={1.35} color="#ff1730" distance={20} decay={2} />

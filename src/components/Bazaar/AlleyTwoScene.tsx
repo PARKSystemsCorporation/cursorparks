@@ -15,6 +15,7 @@ import StreamerChatOverlay from "./StreamerChatOverlay";
 import "./BazaarLanding.css";
 import { EffectComposer, ToneMapping, SMAA } from "@react-three/postprocessing";
 import { BazaarMaterialsProvider } from "./BazaarMaterials";
+import { LightingCycleProvider } from "./LightingCycleContext";
 
 // Alley Two: slightly duskier, narrower feel
 const SKY_BLUE = "#6b8ca8";
@@ -179,6 +180,7 @@ export default function AlleyTwoScene({ onReturnToAlleyOne }: AlleyTwoSceneProps
                     camera={CONFIG.camera}
                 >
                     <BazaarMaterialsProvider>
+                        <LightingCycleProvider>
                         <Suspense fallback={null}>
                             <AlleyTwoSceneContent
                                 targetVendor={targetVendor}
@@ -186,6 +188,7 @@ export default function AlleyTwoScene({ onReturnToAlleyOne }: AlleyTwoSceneProps
                                 onReturnToAlleyOne={onReturnToAlleyOne}
                             />
                         </Suspense>
+                        </LightingCycleProvider>
                     </BazaarMaterialsProvider>
                 </Canvas>
 

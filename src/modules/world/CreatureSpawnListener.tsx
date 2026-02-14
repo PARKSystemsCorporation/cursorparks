@@ -19,6 +19,10 @@ export function CreatureSpawnListener() {
       const d = e.detail;
       const type = d?.type;
       if (!type || (type !== "warform" && type !== "companion")) return;
+      const facingForward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      facingForward.y = 0;
+      facingForward.normalize();
+      const yaw = Math.atan2(facingForward.x, facingForward.z);
       let x: number;
       let y: number;
       let z: number;
@@ -60,7 +64,7 @@ export function CreatureSpawnListener() {
       // We will emit 'parks-spawn-occurred' as generic.
 
       window.dispatchEvent(
-        new CustomEvent("parks-spawn-occurred", { detail: { x, y, z } })
+        new CustomEvent("parks-spawn-occurred", { detail: { x, y, z, yaw } })
       );
     };
     window.addEventListener("parks-spawn-creature", handler as EventListener);

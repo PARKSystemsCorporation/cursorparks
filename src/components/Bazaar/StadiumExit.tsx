@@ -45,16 +45,33 @@ export function StadiumExit() {
     const lightMat = useMemo(
         () =>
             new THREE.MeshStandardMaterial({
-                color: "#fff2de",
-                emissive: "#fff2de",
-                emissiveIntensity: 1.6,
-                toneMapped: false,
+                color: "#e8dcc8",
+                emissive: "#e8dcc8",
+                emissiveIntensity: 0.5,
+                toneMapped: true,
+            }),
+        []
+    );
+
+    const occluderMat = useMemo(
+        () =>
+            new THREE.MeshStandardMaterial({
+                color: "#1a1815",
+                roughness: 0.95,
+                metalness: 0,
+                emissive: "#000000",
+                emissiveIntensity: 0,
             }),
         []
     );
 
     return (
         <group position={[-2, 0, -7]}>
+            {/* Dark occluder just inside entrance to prevent white blowout when viewed from alley */}
+            <mesh position={[-0.25, HALL_HEIGHT / 2, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow material={occluderMat}>
+                <planeGeometry args={[HALL_WIDTH, HALL_HEIGHT]} />
+            </mesh>
+
             {/* Upper hallway floor */}
             <mesh position={[-HALL_LENGTH / 2, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
                 <planeGeometry args={[HALL_LENGTH, HALL_WIDTH]} />

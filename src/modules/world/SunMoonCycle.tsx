@@ -4,7 +4,12 @@ import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
-const CYCLE_SECONDS = 6 * 3600; // 6 hours
+/** Real seconds for one full in-game day (6h wall clock). */
+export const REAL_SECONDS_PER_GAME_DAY = 6 * 3600;
+/** Game-world seconds in a 24h day (for clock display). */
+export const GAME_SECONDS_PER_DAY = 24 * 3600;
+/** 4x: one real 6h span = one game 24h day. */
+export const CLOCK_ACCELERATION = 4;
 
 const RADIUS = 80;
 const SUN_COLOR = new THREE.Color("#fffef8");
@@ -25,7 +30,30 @@ const FOG_NIGHT = new THREE.Color("#0c0e18");
 
 /** Phase 0–1 over 6h from page load. Sun peak at 0.25, moon peak at 0.75. Exported for night-gating in scene components. */
 export function getPhase(): number {
-  return ((typeof performance !== "undefined" ? performance.now() : Date.now()) / 1000 % CYCLE_SECONDS) / CYCLE_SECONDS;
+  const elapsed =
+    (typeof performance !== "undefined" ? performance.now() : Date.now()) / 1000;
+  return (elapsed % REAL_SECONDS_PER_GAME_DAY) / REAL_SECONDS_PER_GAME_DAY;
+}
+
+/** Game-world seconds since midnight (0–86400). Peak night (phase 0.75) = 0. */
+export function getGameSecondsOfDay(): number {
+  const phase = getPhase();
+  return ((phase + 0.25) % 1) * GAME_SECONDS_PER_DAY;
+}
+
+/** Game-world hour (0–24). Midnight = peak night. */
+export function getGameHour(): number {
+  return (getGameSecondsOfDay() / 3600) % 24;
+}
+
+/** Day strength 0–1 (peak at noon). Night strength 0–1 (peak at midnight). Smooth transitions. */
+export function getDayNightStrength(): { dayStrength: number; nightStrength: number } {
+  const phase = getPhase();
+  const isSun = phase < 0.5;
+  const t = isSun ? phase * 2 : (phase - 0.5) * 2;
+  const dayStrength = isSun ? Math.sin(Math.PI * t) : 0;
+  const nightStrength = isSun ? 0 : Math.sin(Math.PI * t);
+  return { dayStrength, nightStrength };
 }
 
 /** Elevation and azimuth for one arc: rise → peak → set. t in [0,1]. */
