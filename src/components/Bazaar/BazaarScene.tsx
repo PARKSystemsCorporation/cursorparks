@@ -16,6 +16,7 @@ import { TrainerOverlay } from "@/src/modules/world/TrainerOverlay";
 import { ArenaUI } from "@/src/modules/arena";
 import { ExokinChat, ExokinDevice } from "@/src/modules/exokin";
 import { DebugOverlay } from "@/src/modules/ui/DebugOverlay";
+import { CoordTracker } from "@/src/modules/ui/CoordTracker";
 import "./BazaarLanding.css";
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -56,7 +57,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                 shadows
                 dpr={[1, 1.5]}
                 gl={{ antialias: false, toneMapping: THREE.CineonToneMapping, toneMappingExposure: 1.5 }}
-                camera={{ fov: 60, position: [0, 1.65, 0] }}
+                camera={{ fov: 60, position: [0, 1.65, -2] }}
               >
                 <SceneOrchestrator />
               </Canvas>
@@ -93,9 +94,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
             <TrainerOverlay />
             <ChatInput />
 
-            <div style={{ position: "absolute", bottom: "20px", left: "20px", color: "#3d2b1f", opacity: 0.7, fontFamily: "monospace", fontSize: "12px", fontWeight: "bold" }}>
-              [PARKS PUBLIC BAZAAR]
-            </div>
+            <CoordTracker />
           </div>
             </TrainerProvider>
             </RobotProvider>

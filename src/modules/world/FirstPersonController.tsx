@@ -98,6 +98,13 @@ export function FirstPersonController() {
     const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
     const qPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), rotation.current.pitch);
     camera.quaternion.copy(qYaw.multiply(qPitch));
+
+    // Emit position for CoordTracker
+    window.dispatchEvent(
+      new CustomEvent("parks-camera-pos", {
+        detail: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+      })
+    );
   });
 
   if (!locked) {
