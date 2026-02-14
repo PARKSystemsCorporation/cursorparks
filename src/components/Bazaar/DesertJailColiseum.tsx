@@ -5,6 +5,32 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { getPhase } from "@/src/modules/world/SunMoonCycle";
 
+/** Single pillar spotlight that aims at a target ref (set in useFrame for R3F typing). */
+function PillarSpotlight({
+    position,
+    targetRef,
+}: {
+    position: [number, number, number];
+    targetRef: React.RefObject<THREE.Object3D | null>;
+}) {
+    const lightRef = useRef<THREE.SpotLight>(null);
+    useFrame(() => {
+        if (lightRef.current && targetRef.current) lightRef.current.target = targetRef.current;
+    });
+    return (
+        <spotLight
+            ref={lightRef}
+            position={position}
+            intensity={2}
+            distance={18}
+            angle={Math.PI / 6}
+            penumbra={0.35}
+            decay={2}
+            color="#ffbe72"
+        />
+    );
+}
+
 /**
  * Open-air, prison-inspired desert coliseum connected to StadiumExit stairs.
  * Built as a walkable bowl with ring walls, bars, and warm desert dressing.
@@ -67,6 +93,18 @@ export function DesertJailColiseum() {
             <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
                 <circleGeometry args={[arenaRadius, 48]} />
                 <meshStandardMaterial color="#7f5f3b" roughness={1} metalness={0} />
+            </mesh>
+            {/* Red highlighted arena circle: stand here to fight AI exokin */}
+            <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[arenaRadius - 0.5, arenaRadius, 64]} />
+                <meshStandardMaterial
+                    color="#8b0000"
+                    emissive="#c0392b"
+                    emissiveIntensity={0.8}
+                    roughness={0.9}
+                    metalness={0}
+                    side={THREE.DoubleSide}
+                />
             </mesh>
 
             {/* Bowl ring / steps */}
@@ -158,16 +196,10 @@ export function DesertJailColiseum() {
             {/* Pillar spotlights: one per segment, inward/down onto arena floor, night only */}
             {isNight &&
                 prisonSegments.map((seg) => (
-                    <spotLight
+                    <PillarSpotlight
                         key={`pillar-spot-${seg.key}`}
                         position={[seg.x, 4.2, seg.z]}
-                        target={arenaFloorTargetRef}
-                        intensity={2}
-                        distance={18}
-                        angle={Math.PI / 6}
-                        penumbra={0.35}
-                        decay={2}
-                        color="#ffbe72"
+                        targetRef={arenaFloorTargetRef}
                     />
                 ))}
         </group>
