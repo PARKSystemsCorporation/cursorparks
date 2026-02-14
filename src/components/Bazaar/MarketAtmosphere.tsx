@@ -6,12 +6,11 @@ import { Sky } from "@react-three/drei";
 
 // Cycles between day and twilight over ~90 seconds for immersive feel
 const CYCLE_DURATION = 90;
-const TWILIGHT_START = 0.6;
 const UPDATE_INTERVAL = 0.15;
 
 export default function MarketAtmosphere() {
     const phaseRef = useRef(0);
-    const [phase, setPhase] = useState(0);
+    const [, setPhase] = useState(0);
 
     const accumRef = useRef(0);
     useFrame((_, delta) => {

@@ -4,7 +4,7 @@
  */
 
 import type { NpcDb } from "./brain";
-import { getShortForNpc } from "./memory";
+
 
 const SOCIAL_MULTIPLIER = 1.3;
 const PHRASE_OVERLAP_WINDOW = 20; // how many recent short-memory phrases to consider from others

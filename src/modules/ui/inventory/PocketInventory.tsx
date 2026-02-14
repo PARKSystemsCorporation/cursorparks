@@ -91,7 +91,7 @@ function emptySlots(count: number): (InventoryItem | null)[] {
 }
 
 export function PocketInventory() {
-  const handleThrowCapsule = useCallback((_pocket: PocketId, _slotIndex: number) => {}, []);
+  const handleThrowCapsule = useCallback(() => { }, []);
 
   return (
     <div

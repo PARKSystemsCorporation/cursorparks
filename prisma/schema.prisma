@@ -252,3 +252,19 @@ model Exokin {
   createdAt          DateTime @default(now())
   userId             String?
 }
+
+model ExokinLanguageMemory {
+  id              String   @id @default(cuid())
+  exokinId        String
+  word            String
+  root            String
+  meaning         String   // The intent (e.g. "movement")
+  category        String   // action, object, null
+  emotionalWeight Float    @default(0)
+  timesUsed       Int      @default(0)
+  lastUsed        DateTime @default(now())
+  relationshipContext Float @default(0) // 0-1 scale of bond when learned
+
+  @@unique([exokinId, meaning, root]) // Map intent+root to a specific word for this exokin
+  @@index([exokinId])
+}

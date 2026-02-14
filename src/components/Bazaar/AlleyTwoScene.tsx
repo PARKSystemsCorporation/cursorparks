@@ -165,26 +165,7 @@ export default function AlleyTwoScene({ onReturnToAlleyOne }: AlleyTwoSceneProps
         };
     }, []);
 
-    const handleShout = useCallback(
-        (text: string) => {
-            if (text.startsWith("/")) {
-                const cmd = text.slice(1).toLowerCase();
-                if (cmd.startsWith("smith")) setTargetVendor("smith");
-                else if (cmd.startsWith("fixer")) setTargetVendor("fixer");
-                else if (cmd.startsWith("merchant")) setTargetVendor("merchant");
-                else if (cmd.startsWith("coder")) setTargetVendor("coder");
-                else if (cmd === "reset" || cmd === "back") setTargetVendor(null);
-            }
 
-            if (socketRef.current && socketRef.current.connected) {
-                socketRef.current.emit("alley2:shout", { content: text });
-            } else {
-                const msg = { id: Date.now().toString(), content: text, timestamp: Date.now() };
-                setMessages((prev) => [msg, ...prev].slice(0, 50));
-            }
-        },
-        []
-    );
 
     const onShoutTarget = useCallback((t: string) => {
         if (t === "/back" || t === "back") setTargetVendor(null);

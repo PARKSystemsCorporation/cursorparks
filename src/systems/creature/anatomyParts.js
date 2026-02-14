@@ -10,15 +10,15 @@ const TAIL_TYPES = ["cable_tail", "blade_tail", "stabilizer_tail"];
 const GENDERS = ["male", "female"];
 const ROLES = ["warrior", "companion"];
 
-function headOptions(_gender, _role) {
+function headOptions() {
   return HEAD_TYPES;
 }
 
-function bodyOptions(_gender, _role) {
+function bodyOptions() {
   return BODY_TYPES;
 }
 
-function tailOptions(_gender, _role) {
+function tailOptions() {
   return TAIL_TYPES;
 }
 

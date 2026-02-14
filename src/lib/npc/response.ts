@@ -4,7 +4,7 @@
  */
 
 import type { NpcDb } from "./brain";
-import { getCorrelationClusters, mergeAriaWordsIntoClusters } from "./correlation";
+import { getCorrelationClusters } from "./correlation";
 import { getTopProtoWords } from "./protoLanguage";
 import { computeToneBias, selectToneFromBias, getToneModifier } from "./tone";
 import { computeSocialOverlap } from "./social";

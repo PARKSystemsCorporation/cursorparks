@@ -19,7 +19,7 @@ type ExokinNamingScreenProps = {
   onSubmit: (data: { name: string; gender: "male" | "female" }) => void;
 };
 
-export function ExokinNamingScreen({ type, creatureId, position, initialGender, onSubmit }: ExokinNamingScreenProps) {
+export function ExokinNamingScreen({ type, initialGender, onSubmit }: ExokinNamingScreenProps) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<"male" | "female">(initialGender === "female" ? "female" : "male");
   const [submitting, setSubmitting] = useState(false);

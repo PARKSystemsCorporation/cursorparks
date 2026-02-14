@@ -42,8 +42,7 @@ export function computeToneBias(params: {
  * Low bias -> cautious/transactional; high bias -> familiar/territorial; mid -> curious.
  */
 export function selectToneFromBias(
-  bias: number,
-  personalityToneSeed?: string
+  bias: number
 ): ToneCategory {
   if (bias < 0.2) return "cautious";
   if (bias < 0.35) return "transactional";

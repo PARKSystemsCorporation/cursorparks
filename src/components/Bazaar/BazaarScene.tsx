@@ -16,7 +16,6 @@ import { ArenaUI } from "@/src/modules/arena";
 import { ExokinChat, ExokinDevice } from "@/src/modules/exokin";
 import { DebugOverlay } from "@/src/modules/ui/DebugOverlay";
 import { CoordTracker } from "@/src/modules/ui/CoordTracker";
-import { produce } from "immer"; // Unused but common
 import { generateVisualIdentity } from "@/src/modules/exokin/identityGenerator";
 import FirstBondPanel, { FirstBondData } from "@/src/ui/FirstBondPanel";
 import "./BazaarLanding.css";

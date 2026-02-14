@@ -39,7 +39,7 @@ export function CameraProfileMoment() {
     };
     const handler = (e: CustomEvent<{ x: number; y: number; z: number }>) => {
       if (!state.current.onboardingPending) return;
-      const { x, y, z } = e.detail || {};
+      const { x, z } = e.detail || {};
       state.current.phase = "toFocus";
       state.current.startPos.copy(camera.position);
       state.current.startQuat.copy(camera.quaternion);

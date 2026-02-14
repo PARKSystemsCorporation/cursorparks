@@ -85,7 +85,7 @@ export function EtherText() {
       ...prev,
       { id: last.id, text: last.text, color: last.color, x: pos.x, y: 1.65, z: pos.z, birth, isUser: false },
     ]);
-  }, [messages]);
+  }, [messages, camera.position, camera.quaternion, instances.length, snapshot.etherCap, snapshot.spawnProbability]);
 
   useFrame((_state, delta) => {
     const now = performance.now() / 1000;

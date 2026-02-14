@@ -4,7 +4,7 @@
  * One cognitive pipeline: no NPC vs companion split.
  */
 
-import type { EAREChatContext, NeurochemLayer } from "./types";
+import type { EAREChatContext } from "./types";
 
 /** Morphology/color influence on speech (optional, from identity). */
 export interface SpeechMorphology {
@@ -56,7 +56,6 @@ function getSpeechParams(ctx: EAREChatContext, morphology?: SpeechMorphology) {
   const curiosity = n.curiosity;
   const alertness = n.alertness;
   const dominance = ctx.dominance;
-  const valence = ctx.valence;
 
   const structuralBias = morphology?.structuralBias ?? "neutral";
   const colorWarmth = morphology?.colorWarmth ?? 0.5;
@@ -120,6 +119,18 @@ function buildProtoWord(
   return pick(params.rootsNeutral, next());
 }
 
+import type { ExokinSentence, SemanticIntent } from "./linguist";
+import { ExokinLinguist, ToneType } from "./linguist";
+
+const linguists = new Map<string, ExokinLinguist>();
+
+function getLinguist(id: string): ExokinLinguist {
+  if (!linguists.has(id)) {
+    linguists.set(id, new ExokinLinguist(id));
+  }
+  return linguists.get(id)!;
+}
+
 /** Generate a phrase: 1–4 proto words, optionally question, surface-formatted. */
 export function generateProtoPhrase(
   intent: string,
@@ -128,8 +139,45 @@ export function generateProtoPhrase(
     morphology?: SpeechMorphology;
     seed?: number;
     templatesAsFallback?: string[];
+    exokinId?: string;
   }
-): { text: string; fromProto: boolean } {
+): { text: string; fromProto: boolean; translation?: string } {
+  // NEW SYSTEM: If ID is provided, use the Linguist
+  if (options?.exokinId) {
+    const linguist = getLinguist(options.exokinId);
+
+    // Map context to semantic intent
+    const tone: ToneType =
+      context.neuro.aggression > 0.6 ? "aggressive"
+        : context.neuro.bonding > 0.6 ? "calm"
+          : context.neuro.curiosity > 0.6 ? "curious"
+            : context.neuro.alertness > 0.6 ? "urgent"
+              : "neutral";
+
+    let semanticIntent: SemanticIntent = {
+      action: intent === "unknown" ? "observe" : intent,
+      tone: tone,
+    };
+
+    // Simple mapping of intent string to action/object
+    if (intent === "greet") semanticIntent = { action: "bond", subject: "self", object: "other", tone };
+    else if (intent === "praise") semanticIntent = { action: "bond", tone: "calm" };
+    else if (intent === "insult") semanticIntent = { action: "reject", tone: "aggressive" };
+    else if (intent.startsWith("command_")) semanticIntent = { action: intent.replace("command_", ""), subject: "self", object: "other", tone: "urgent" };
+
+    const sentence = linguist.construct(semanticIntent);
+
+    // 30% chance to append translation based on bonding
+    // logic handled by UI usually, but we return it here
+
+    return {
+      text: sentence.proto,
+      fromProto: true,
+      translation: sentence.english
+    };
+  }
+
+  // OLD RANDOM LOGIC (Fallback)
   const seedRef = { s: options?.seed ?? (Date.now() % 233280) };
   const params = getSpeechParams(context, options?.morphology);
 

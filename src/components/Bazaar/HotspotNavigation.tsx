@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useMemo } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { easing } from "maath";
@@ -15,7 +15,6 @@ type NavigationNode = {
 
 // --- Config ---
 // Sensitivity for look controls
-const MOUSE_SENSITIVITY = 0.002;
 const TOUCH_SENSITIVITY = 0.005;
 const KEY_SENSITIVITY = 0.03;
 
@@ -111,7 +110,7 @@ function HotspotMarker({
 export function HotspotNavigation() {
     const { camera } = useThree();
     const [currentNodeId, setCurrentNodeId] = useState<string>("start");
-    const [isTransitioning, setTransitioning] = useState(false);
+    const [isTransitioning] = useState(false);
 
     // Camera State
     const rotation = useRef({ yaw: 0, pitch: 0 }); // Euler angles

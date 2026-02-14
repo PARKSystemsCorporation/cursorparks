@@ -6,7 +6,7 @@
 import type { NpcDb } from "./brain";
 import type { ShortMemoryRow, MidMemoryRow, LongMemoryRow } from "./types";
 
-const SHORT_DECAY_RATE = 0.15;
+
 const SHORT_MAX_AGE_MS = 120_000; // 2 min
 const MID_DECAY_RATE = 0.05;
 const MID_MAX_AGE_MS = 600_000; // 10 min

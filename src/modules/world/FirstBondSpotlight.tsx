@@ -2,7 +2,7 @@
 "use client";
 
 import { useThree, useFrame } from "@react-three/fiber";
-import { useRef, useLayoutEffect, useState } from "react";
+import { useRef, useState } from "react";
 import * as THREE from "three";
 
 export function FirstBondSpotlight({ active }: { active: boolean }) {

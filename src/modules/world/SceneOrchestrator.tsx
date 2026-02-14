@@ -6,7 +6,6 @@ import { CameraProfileMoment } from "./CameraProfileMoment";
 import { EffectComposer, ToneMapping, Bloom } from "@react-three/postprocessing";
 import { AlleyGeometry } from "@/src/components/Bazaar/AlleyGeometry";
 import { AlleyEndingPortal } from "@/src/components/Bazaar/AlleyEnding";
-import { PrisonHallwayAndYard } from "@/src/components/Bazaar/PrisonHallwayAndYard";
 import { AlleySurfaceBreakupLayer } from "@/src/components/Bazaar/AlleySurfaceBreakupLayer";
 import { ContactShadowSystem } from "@/src/components/Bazaar/ContactShadowSystem";
 import { EnvironmentalMicroMotion } from "@/src/components/Bazaar/EnvironmentalMicroMotion";

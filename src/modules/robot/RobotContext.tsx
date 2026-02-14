@@ -11,7 +11,7 @@ import type { IdentityLike } from "@/src/modules/exokin";
 import { morphologyFromIdentity } from "@/src/modules/exokin";
 
 type RobotContextValue = {
-  sendToRobot: (text: string) => string;
+  sendToRobot: (text: string, creatureId?: string) => string;
   lastResponse: string | null;
   getMood: () => MoodState;
   tick: (dt: number) => void;
@@ -35,36 +35,36 @@ export function RobotProvider({ children }: { children: React.ReactNode }) {
   const chatEngine = useRef(new RobotChatEngine({ eare, memory })).current;
   const [lastResponse, setLastResponse] = useState<string | null>(null);
 
-  const sendToRobot = useCallback((text: string): string => {
-    const response = chatEngine.respond(text);
+  const sendToRobot = useCallback((text: string, creatureId?: string): string => {
+    const response = chatEngine.respond(text, creatureId);
     setLastResponse(response);
     return response;
-  }, []);
+  }, [chatEngine]);
 
   const tick = useCallback((dt: number) => {
     chatEngine.tick(dt);
-  }, []);
+  }, [chatEngine]);
 
   const getMood = useCallback((): MoodState => {
     const ctx = eare.getChatContext();
     return { valence: ctx.valence, arousal: ctx.arousal, dominance: ctx.dominance };
-  }, []);
+  }, [eare]);
 
   const recordEvent = useCallback((type: EAREEventType, intensity?: number) => {
     eare.recordEvent(type, intensity ?? 1);
-  }, []);
+  }, [eare]);
 
   const getCombatCalibration = useCallback((): CombatCalibration => {
     return eare.getCombatCalibration();
-  }, []);
+  }, [eare]);
 
   const getChatContext = useCallback((): EAREChatContext => {
     return eare.getChatContext();
-  }, []);
+  }, [eare]);
 
   const setSpeechMorphology = useCallback((identity: IdentityLike | null) => {
     chatEngine.setMorphology(morphologyFromIdentity(identity) ?? undefined);
-  }, []);
+  }, [chatEngine]);
 
   const value = useMemo<RobotContextValue>(
     () => ({ sendToRobot, lastResponse, getMood, tick, recordEvent, getCombatCalibration, getChatContext, setSpeechMorphology }),
@@ -81,8 +81,8 @@ export function useRobot(): RobotContextValue {
       sendToRobot: () => "I'm not connected.",
       lastResponse: null,
       getMood: () => defaultMood,
-      tick: () => {},
-      recordEvent: () => {},
+      tick: () => { },
+      recordEvent: () => { },
       getCombatCalibration: () => ({
         strikeBias: 1,
         blockBias: 1,
@@ -107,7 +107,7 @@ export function useRobot(): RobotContextValue {
           playDrive: 0.5,
         },
       }),
-      setSpeechMorphology: () => {},
+      setSpeechMorphology: () => { },
     };
   }
   return ctx;

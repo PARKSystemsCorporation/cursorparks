@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import * as THREE from "three";
 
 /**
  * BrokerBooth — Cyberpunk tech shop room behind the left wall opening.

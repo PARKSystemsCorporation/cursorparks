@@ -122,7 +122,7 @@ export class RobotChatEngine {
     this.morphology = morphology;
   }
 
-  respond(userText: string): string {
+  respond(userText: string, creatureId?: string): string {
     this.memory.pushSTM("user", userText);
     const intent = detectIntent(userText);
     const context = this.eare
@@ -138,11 +138,12 @@ export class RobotChatEngine {
     if (this.eare && "neuro" in context) {
       const useProto = Math.random() < PROTO_PRIMARY_WEIGHT;
       if (useProto) {
-        const { text, fromProto } = generateProtoPhrase(intent, context as EAREChatContext, {
+        const { text, translation } = generateProtoPhrase(intent, context as EAREChatContext, {
           morphology: this.morphology,
           templatesAsFallback,
+          exokinId: creatureId,
         });
-        chosen = text;
+        chosen = text + (translation ? ` (${translation})` : "");
       } else {
         const scored = templatesAsFallback.map((c) => ({
           text: c,

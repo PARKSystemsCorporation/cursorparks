@@ -33,7 +33,7 @@ export function FirstPersonController() {
 
   useEffect(() => {
     const canvas = gl.domElement;
-    const handleClick = (e: Event) => {
+    const handleClick = () => {
       // Only lock if clicking directly on the canvas or safe area, not if clicking UI.
       // But the event listener is on `canvas` (gl.domElement).
       // If UI is *over* canvas, clicks on UI won't bubble to canvas if they stop propagation.

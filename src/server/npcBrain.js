@@ -65,7 +65,7 @@ function decayShort() {
   return r.changes;
 }
 
-function runMinimalTick(io, onlineCount) {
+function runMinimalTick(io) {
   const db = getNpcDb();
   NPC_IDS.forEach((npcId) => {
     if (Math.random() > SPEAK_CHANCE) return;

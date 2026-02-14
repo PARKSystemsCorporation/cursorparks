@@ -12,7 +12,6 @@ import type { DeployedRobot } from "@/src/modules/ui/inventory/InventoryContext"
 export function CreatureSpawnListener() {
   const { camera } = useThree();
   const { deployAt } = useInventory();
-  const offsetWorld = useRef(new THREE.Vector3());
 
   useEffect(() => {
     const handler = (e: CustomEvent<{ type: string; position?: { x: number; y: number; z: number }; identity?: DeployedRobot["identity"]; creatureId?: string }>) => {

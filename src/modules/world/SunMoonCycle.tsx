@@ -5,8 +5,6 @@ import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 const CYCLE_SECONDS = 6 * 3600; // 6 hours
-const SUN_PEAK_AT = 1.5 * 3600;   // 1.5h → sun peak
-const MOON_PEAK_AT = 4.5 * 3600;  // 4.5h → moon peak
 
 const RADIUS = 80;
 const SUN_COLOR = new THREE.Color("#fffaf0");
@@ -83,7 +81,6 @@ export function SunMoonCycle() {
     }
 
     const dayAmount = isSun ? Math.sin(Math.PI * t) : 0;
-    const nightAmount = 1 - dayAmount;
     if (ambientRef.current) {
       ambientRef.current.color.lerpColors(AMBIENT_NIGHT, AMBIENT_DAY, dayAmount * 0.95 + 0.05);
       ambientRef.current.intensity = 1.2 + dayAmount * 1.3;

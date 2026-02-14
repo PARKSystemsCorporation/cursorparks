@@ -52,8 +52,6 @@ const MAT_LIPS = new THREE.MeshStandardMaterial({
 
 export const BrokerAvatar = forwardRef<THREE.Group, object>(function BrokerAvatar(_, ref) {
     // Proportions: total height 1.68, head ~0.21 (1:7). Y-up, feet at 0.
-    const h = 1.68;
-    const headH = 0.21;
     const waistY = 1.0;
     const bustY = 1.15;
     const shoulderY = 1.35;

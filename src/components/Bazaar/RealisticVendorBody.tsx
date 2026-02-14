@@ -242,7 +242,7 @@ export function RealisticVendorBody({
 
     const displayShout = cognitiveSpeech || ariaResponse || lastShout;
 
-    const { skinTone, topColor, bottomColor, accessory, posture, build, roboticArm, goldChains } = config;
+    const { skinTone, topColor, bottomColor, posture, build, roboticArm, goldChains } = config;
 
     const buildScale = { slim: { torso: 0.9, limbs: 0.95 }, medium: { torso: 1, limbs: 1 }, stocky: { torso: 1.1, limbs: 1.05 }, muscular: { torso: 1.15, limbs: 1.1 }, tall: { torso: 1, limbs: 1.15 } }[build];
 
@@ -325,10 +325,10 @@ export function RealisticVendorBody({
 
                     {/* Legs */}
                     <group position={[-0.15 * buildScale.limbs, 0.9, 0]}>
-                        <CyberneticLeg color={bottomColor} />
+                        <CyberneticLeg />
                     </group>
                     <group position={[0.15 * buildScale.limbs, 0.9, 0]}>
-                        <CyberneticLeg color={bottomColor} />
+                        <CyberneticLeg />
                     </group>
 
                     {/* Torso */}

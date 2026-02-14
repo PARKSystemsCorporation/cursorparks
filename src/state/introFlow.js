@@ -14,14 +14,14 @@ export function createGuestSessionId() {
   const id = "guest_" + Date.now() + "_" + Math.random().toString(36).slice(2, 11);
   try {
     if (typeof sessionStorage !== "undefined") sessionStorage.setItem(GUEST_SESSION_KEY, id);
-  } catch (_) {}
+  } catch { }
   return id;
 }
 
 export function getGuestSessionId() {
   try {
     if (typeof sessionStorage !== "undefined") return sessionStorage.getItem(GUEST_SESSION_KEY);
-  } catch (_) {}
+  } catch (_) { }
   return null;
 }
 
@@ -29,7 +29,7 @@ export function isFirstTimeUser() {
   try {
     if (typeof localStorage === "undefined") return true;
     return !localStorage.getItem("parks_bazaar_intro_done");
-  } catch (_) {
+  } catch {
     return true;
   }
 }
@@ -37,7 +37,7 @@ export function isFirstTimeUser() {
 export function markIntroDone() {
   try {
     if (typeof localStorage !== "undefined") localStorage.setItem("parks_bazaar_intro_done", "1");
-  } catch (_) {}
+  } catch (_) { }
 }
 
 export async function enterWithHandle(handle, password) {
@@ -55,7 +55,7 @@ export async function enterWithHandle(handle, password) {
   let data = {};
   try {
     data = text ? JSON.parse(text) : {};
-  } catch (_) {}
+  } catch (_) { }
   if (!res.ok) {
     const msg = data.error || (res.status >= 500 ? "Server error. Try again." : `Enter failed (${res.status}).`);
     throw new Error(msg);
@@ -78,7 +78,7 @@ export async function setPasswordForHandle(handle, password) {
   let data = {};
   try {
     data = text ? JSON.parse(text) : {};
-  } catch (_) {}
+  } catch (_) { }
   if (!res.ok) {
     const msg = data.error || (res.status === 404 ? "No account with that handle." : res.status >= 500 ? "Server error. Try again." : `Set password failed (${res.status}).`);
     throw new Error(msg);

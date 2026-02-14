@@ -60,7 +60,7 @@ export function ExokinChat() {
   const sendMessage = useCallback(() => {
     const text = input.trim();
     if (!text || !activeCreatureId) return;
-    const response = robot.sendToRobot(text);
+    const response = robot.sendToRobot(text, activeCreatureId);
     setMessages((prev) => [
       ...prev,
       { id: `u-${Date.now()}`, speaker: "user", content: text },

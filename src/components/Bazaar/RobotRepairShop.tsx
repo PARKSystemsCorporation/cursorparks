@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import * as THREE from 'three';
 import { Text } from '@react-three/drei';
 

@@ -42,20 +42,7 @@ const MAT_GOLD_ACCENT = new THREE.MeshStandardMaterial({
     roughness: 0.15,
 });
 
-const MAT_IMPLANT_AMBER = new THREE.MeshStandardMaterial({
-    color: "#f97316",
-    emissive: "#f97316",
-    emissiveIntensity: 1.2,
-    toneMapped: false,
-});
 
-const MAT_SMOKY_EYE = new THREE.MeshStandardMaterial({
-    color: "#2a1030",
-    emissive: "#3b0764",
-    emissiveIntensity: 0.1,
-    roughness: 0.9,
-    metalness: 0,
-});
 
 const MAT_NEON_HIGHLIGHT = new THREE.MeshStandardMaterial({
     color: "#00ffff", // Electric Cyan
@@ -239,7 +226,7 @@ export function CyberneticArm({ isRight, robotic, skinTone }: { isRight: boolean
     );
 }
 
-export function CyberneticLeg({ color }: { color: string }) {
+export function CyberneticLeg() {
     // New Anatomical Leg Design
     return (
         <group>
