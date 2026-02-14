@@ -4,7 +4,6 @@
 import { Canvas, useThree } from "@react-three/fiber";
 import { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import * as THREE from "three";
-import { Sky, Environment as DreiEnvironment } from "@react-three/drei";
 import AlleyTwoEnvironment from "./AlleyTwoEnvironment";
 import AlleyTwoVendors from "./AlleyTwoVendors";
 import AlleyTwoCameraRig from "./AlleyTwoCameraRig";
@@ -68,15 +67,6 @@ function AlleyTwoSceneContent({
             <ShadowMapSetup />
             <fog attach="fog" args={[CONFIG.fog.color, CONFIG.fog.near, CONFIG.fog.far]} />
             <color attach="background" args={[SKY_BLUE]} />
-
-            <Sky
-                sunPosition={[CONFIG.lights.sun.position[0], CONFIG.lights.sun.position[1], CONFIG.lights.sun.position[2]]}
-                turbidity={5}
-                rayleigh={0.6}
-                mieCoefficient={0.008}
-            />
-
-            <DreiEnvironment preset="park" background={false} environmentIntensity={1.0} />
 
             <ambientLight intensity={CONFIG.lights.ambient.intensity} color={CONFIG.lights.ambient.color} />
             <directionalLight

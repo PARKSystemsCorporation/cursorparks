@@ -28,25 +28,72 @@ import { DesertJailColiseum } from "@/src/components/Bazaar/DesertJailColiseum";
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
 function AlleyProps() {
+  const neonRed = "#ff1428";
+  const neonRedDeep = "#66000a";
+  const alleyLength = 30;
+  const alleyCenterZ = -15;
+  const halfLength = alleyLength / 2;
+  const floorY = 0.05;
+  const stripWidth = 0.05;
+
   return (
     <group position={[0, 0, 0]}>
-      <mesh position={[1.95, 0.05, -15]} rotation={[0, 0, 0]}>
-        <boxGeometry args={[0.05, 0.05, 30]} />
-        <meshStandardMaterial color="#c0392b" emissive="#c0392b" emissiveIntensity={10} toneMapped={false} />
+      {/* Inner lane edge strips */}
+      <mesh position={[1.95, floorY, alleyCenterZ]} rotation={[0, 0, 0]}>
+        <boxGeometry args={[stripWidth, stripWidth, alleyLength]} />
+        <meshStandardMaterial color={neonRedDeep} emissive={neonRed} emissiveIntensity={14} toneMapped={false} />
       </mesh>
-      <mesh position={[-1.95, 0.05, -15]} rotation={[0, 0, 0]}>
-        <boxGeometry args={[0.05, 0.05, 30]} />
-        <meshStandardMaterial color="#c0392b" emissive="#c0392b" emissiveIntensity={10} toneMapped={false} />
+      <mesh position={[-1.95, floorY, alleyCenterZ]} rotation={[0, 0, 0]}>
+        <boxGeometry args={[stripWidth, stripWidth, alleyLength]} />
+        <meshStandardMaterial color={neonRedDeep} emissive={neonRed} emissiveIntensity={14} toneMapped={false} />
       </mesh>
+
+      {/* Full floor outline (outside perimeter) */}
+      <mesh position={[2.28, floorY, alleyCenterZ]}>
+        <boxGeometry args={[stripWidth, stripWidth, alleyLength + 0.35]} />
+        <meshStandardMaterial color={neonRedDeep} emissive={neonRed} emissiveIntensity={16} toneMapped={false} />
+      </mesh>
+      <mesh position={[-2.28, floorY, alleyCenterZ]}>
+        <boxGeometry args={[stripWidth, stripWidth, alleyLength + 0.35]} />
+        <meshStandardMaterial color={neonRedDeep} emissive={neonRed} emissiveIntensity={16} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, floorY, alleyCenterZ + halfLength]}>
+        <boxGeometry args={[4.6, stripWidth, stripWidth]} />
+        <meshStandardMaterial color={neonRedDeep} emissive={neonRed} emissiveIntensity={16} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, floorY, alleyCenterZ - halfLength]}>
+        <boxGeometry args={[4.6, stripWidth, stripWidth]} />
+        <meshStandardMaterial color={neonRedDeep} emissive={neonRed} emissiveIntensity={16} toneMapped={false} />
+      </mesh>
+
+      {/* Interior cross strips for depth cues */}
       {[0, -10, -20].map((z, i) => (
         <group key={i} position={[0, 0.02, z]}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[3.5, 0.3]} />
-            <meshStandardMaterial color="#ff6b1a" emissive="#ff6b1a" emissiveIntensity={5} toneMapped={false} />
+            <planeGeometry args={[3.5, 0.25]} />
+            <meshStandardMaterial color={neonRedDeep} emissive={neonRed} emissiveIntensity={10} toneMapped={false} />
           </mesh>
-          <pointLight position={[0, 0.5, 0]} intensity={3} distance={8} decay={2} color="#ffaa55" />
+          <pointLight position={[0, 0.42, 0]} intensity={2.9} distance={8} decay={2} color={neonRed} />
         </group>
       ))}
+
+      {/* Corner emitters to complete full-area red outline */}
+      {[
+        [2.28, 0.26, 0.2],
+        [-2.28, 0.26, 0.2],
+        [2.28, 0.26, -30.2],
+        [-2.28, 0.26, -30.2],
+      ].map(([x, y, z], i) => (
+        <pointLight
+          key={`outline-corner-${i}`}
+          position={[x, y, z]}
+          intensity={1.9}
+          distance={6}
+          decay={2}
+          color={neonRed}
+        />
+      ))}
+
       <group position={[-1.9, 2.5, -10]} rotation={[0, Math.PI / 2, 0]}>
         <mesh position={[0, 0, -0.05]}>
           <boxGeometry args={[4, 1, 0.1]} />
@@ -54,9 +101,9 @@ function AlleyProps() {
         </mesh>
         <mesh position={[0, 0, 0.05]}>
           <planeGeometry args={[3.5, 0.8]} />
-          <meshBasicMaterial color="#ff6b1a" toneMapped={false} />
+          <meshBasicMaterial color={neonRed} toneMapped={false} />
         </mesh>
-        <pointLight position={[0, 0, 1]} intensity={5} distance={10} decay={2} color="#ffaa00" />
+        <pointLight position={[0, 0, 1]} intensity={4.6} distance={10} decay={2} color={neonRed} />
       </group>
     </group>
   );
@@ -71,8 +118,8 @@ export function SceneOrchestrator() {
 
   return (
     <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="#ff6b1a" /></mesh>}>
-      <color attach="background" args={["#eacca7"]} />
-      <fogExp2 attach="fog" args={["#fff0dd", 0.005]} />
+      <color attach="background" args={["#f5ecd8"]} />
+      <fogExp2 attach="fog" args={["#fff5e8", 0.002]} />
 
       <CameraOverrideProvider>
         <PerformanceTicker />
@@ -102,8 +149,8 @@ export function SceneOrchestrator() {
       </CameraOverrideProvider>
 
       <SunMoonCycle />
-      <pointLight position={[0, 4, -10]} intensity={1.5} color="#ffaa55" distance={20} decay={2} />
-      <pointLight position={[-30, 6, -7]} intensity={2.2} color="#ffb067" distance={28} decay={2} />
+      <pointLight position={[0, 4, -10]} intensity={1.35} color="#ff1730" distance={20} decay={2} />
+      <pointLight position={[-30, 6, -7]} intensity={2.0} color="#ff1730" distance={28} decay={2} />
 
       <SpatialAudioZones />
 

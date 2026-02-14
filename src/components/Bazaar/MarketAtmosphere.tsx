@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Sky } from "@react-three/drei";
 
 // Cycles between day and twilight over ~90 seconds for immersive feel
 const CYCLE_DURATION = 90;
@@ -57,15 +56,6 @@ export default function MarketAtmosphere() {
 
             {/* Hemisphere fill to lift blacks with warm tones */}
             <hemisphereLight args={[skyColor, groundColor, 0.6]} />
-
-            {/* Sun visual (optional, reusing Sky if desired, but custom color might be needed) */}
-            <Sky
-                sunPosition={sunPosition}
-                turbidity={8}
-                rayleigh={0.3} // Lower rayleigh for less blue, more styling
-                mieCoefficient={0.005}
-                mieDirectionalG={0.7}
-            />
         </>
     );
 }
