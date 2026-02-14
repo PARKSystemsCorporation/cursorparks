@@ -207,6 +207,19 @@ export function createWetFloorTexture() {
 }
 
 /**
+ * Concrete Wall Roughness Map — subtle matte variation for back wall
+ */
+export function createConcreteWallRoughness() {
+    const size = 2048;
+    const canvas = createCanvas(size);
+    const ctx = getContext(canvas);
+    ctx.fillStyle = "#88";
+    ctx.fillRect(0, 0, size, size);
+    fillNoise(ctx, size, 0.12);
+    return createTextureFromCanvas(canvas);
+}
+
+/**
  * Wet Floor Roughness Map — 2048px
  */
 export function createWetFloorRoughness() {

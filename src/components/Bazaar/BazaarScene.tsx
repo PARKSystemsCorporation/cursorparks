@@ -9,12 +9,12 @@ import { SceneStateProvider } from "@/src/modules/world/SceneStateContext";
 import { SceneOrchestrator } from "@/src/modules/world/SceneOrchestrator";
 import { RobotProvider } from "@/src/modules/robot/RobotContext";
 import { ExokinSpeechMorphologySync } from "@/src/modules/robot/ExokinSpeechMorphologySync";
-import { GlobalChatStream, ChatInput } from "@/src/modules/chat";
+import { WorldChatPanel, ChatInput } from "@/src/modules/chat";
 import { RadialMenu, VendorTalkPanel, BarterTable } from "@/src/modules/vendors";
 import { TrainerProvider } from "@/src/modules/world/TrainerContext";
 import { TrainerOverlay } from "@/src/modules/world/TrainerOverlay";
 import { ArenaUI } from "@/src/modules/arena";
-import { ExokinPanel, ExokinChat, ExokinDevice } from "@/src/modules/exokin";
+import { ExokinChat, ExokinDevice } from "@/src/modules/exokin";
 import { DebugOverlay } from "@/src/modules/ui/DebugOverlay";
 import "./BazaarLanding.css";
 
@@ -74,17 +74,18 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                 flexDirection: "column",
                 zIndex: 25,
                 pointerEvents: "none",
+                border: "1px solid #8b6914",
+                borderRadius: 6,
+                overflow: "hidden",
+                boxShadow: "-3px 0 20px rgba(255, 107, 26, 0.14), 0 0 24px rgba(255, 107, 26, 0.08), 0 4px 20px rgba(0, 0, 0, 0.4)",
               }}
             >
               <div style={{ flex: 1, minHeight: 0, pointerEvents: "auto" }}>
                 <ExokinChat />
               </div>
               <ExokinDevice />
-              <div style={{ pointerEvents: "auto" }}>
-                <ExokinPanel />
-              </div>
             </div>
-            <GlobalChatStream />
+            <WorldChatPanel />
             <VendorTalkPanel />
             <BarterTable />
             <ArenaUI />

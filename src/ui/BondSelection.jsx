@@ -1,198 +1,111 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
-import Capsule from "./Capsule";
 
-const STYLES = {
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 97,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "rgba(0, 0, 0, 0.6)",
-  },
-  panel: {
-    maxWidth: 480,
-    width: "90%",
-    padding: "32px 28px",
-    background: "rgba(20, 18, 16, 0.98)",
-    border: "1px solid #4a4238",
-    boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
-    fontFamily: "monospace",
-  },
-  title: {
-    fontSize: "10px",
-    letterSpacing: "0.3em",
-    textTransform: "uppercase",
-    color: "#6b5d4d",
-    marginBottom: "24px",
-    textAlign: "center",
-  },
-  row: {
-    display: "flex",
-    gap: "20px",
-    justifyContent: "center",
-    flexWrap: "wrap",
-  },
-  col: {
-    flex: "1 1 180px",
-    minWidth: 0,
-  },
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    padding: "12px 14px",
-    marginBottom: 20,
-    background: "rgba(26, 20, 16, 0.9)",
-    border: "1px solid #4a4238",
-    borderRadius: 4,
-    color: "#e0d4c4",
-    fontSize: 16,
-    fontFamily: "inherit",
-  },
-  backBtn: {
-    padding: "8px 16px",
-    border: "1px solid #4a4238",
-    background: "transparent",
-    color: "#7a6e5e",
-    fontSize: "10px",
-    letterSpacing: "0.15em",
-    textTransform: "uppercase",
-    cursor: "pointer",
-  },
+const textStyle = {
+  fontFamily: "monospace",
+  fontSize: "clamp(12px, 2.2vw, 14px)",
+  color: "rgba(232, 213, 183, 0.9)",
 };
+const inputStyle = {
+  width: "min(200px, 60vw)",
+  padding: "8px 12px",
+  marginTop: 6,
+  background: "rgba(20, 18, 16, 0.85)",
+  border: "1px solid rgba(139, 105, 20, 0.5)",
+  borderRadius: 2,
+  color: "#e0d4c4",
+  fontSize: 14,
+  fontFamily: "monospace",
+  outline: "none",
+};
+const choiceRow = {
+  display: "flex",
+  gap: 10,
+  marginTop: 8,
+};
+const choice = (active) => ({
+  padding: "4px 10px",
+  border: "1px solid " + (active ? "rgba(255, 107, 26, 0.6)" : "rgba(139, 105, 20, 0.4)"),
+  background: active ? "rgba(255, 107, 26, 0.15)" : "transparent",
+  color: active ? "#e8d5b7" : "rgba(232, 213, 183, 0.7)",
+  fontSize: 11,
+  fontFamily: "monospace",
+  letterSpacing: "0.08em",
+  cursor: "pointer",
+});
 
-/** Flow: Gender → Role (Warrior/Companion) → Name → Confirm. On confirm, onDeploy({ gender, type, name }) is called. */
+/** Minimal bond: one line, name input, type/gender choices, confirm. No floating cards or panels. */
 export default function BondSelection({ onDeploy, onCancel }) {
-  const [gender, setGender] = useState(null);
-  const [selectedType, setSelectedType] = useState(null);
+  const [gender, setGender] = useState("male");
+  const [selectedType, setSelectedType] = useState("companion");
   const [name, setName] = useState("");
-
-  const handleGenderPick = useCallback((g) => setGender(g), []);
-  const handleTypePick = useCallback((type) => setSelectedType(type), []);
 
   const handleConfirm = useCallback(() => {
     const trimmed = name.trim();
-    if (!trimmed || !gender || !selectedType) return;
+    if (!trimmed) return;
     onDeploy && onDeploy({ gender, type: selectedType, name: trimmed });
   }, [name, gender, selectedType, onDeploy]);
 
-  const handleBackFromType = useCallback(() => setGender(null), []);
-  const handleBackFromName = useCallback(() => setSelectedType(null), []);
-
-  // Step 2: Role (Warrior / Companion)
-  if (gender && !selectedType) {
-    return (
-      <div style={STYLES.overlay}>
-        <div style={STYLES.panel}>
-          <div style={STYLES.title}>Select role</div>
-          <div style={STYLES.row}>
-            <div style={STYLES.col}>
-              <Capsule
-                label="WARRIOR"
-                sublabel="Combat frame"
-                type="warform"
-                onDeploy={handleTypePick}
-              />
-            </div>
-            <div style={STYLES.col}>
-              <Capsule
-                label="COMPANION"
-                sublabel="Support unit"
-                type="companion"
-                onDeploy={handleTypePick}
-              />
-            </div>
-          </div>
-          <div style={{ marginTop: "20px", textAlign: "center" }}>
-            <button type="button" style={STYLES.backBtn} onClick={handleBackFromType}>
-              Back
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Step 3: Name + Confirm
-  if (gender && selectedType) {
-    return (
-      <div style={STYLES.overlay}>
-        <div style={STYLES.panel}>
-          <div style={STYLES.title}>Name your EXOKIN</div>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter name..."
-            maxLength={32}
-            autoFocus
-            style={STYLES.input}
-          />
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              style={{ ...STYLES.backBtn, marginTop: 0 }}
-              onClick={handleBackFromName}
-            >
-              Back
-            </button>
-            <button
-              type="button"
-              disabled={!name.trim()}
-              style={{
-                padding: "10px 20px",
-                border: "1px solid #8b6914",
-                background: name.trim() ? "rgba(139, 105, 20, 0.4)" : "rgba(40, 36, 32, 0.9)",
-                color: "#e0d4c4",
-                fontSize: "11px",
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                cursor: name.trim() ? "pointer" : "not-allowed",
-              }}
-              onClick={handleConfirm}
-            >
-              Confirm
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Step 1: Gender
   return (
-    <div style={STYLES.overlay}>
-      <div style={STYLES.panel}>
-        <div style={STYLES.title}>Choose gender</div>
-        <div style={STYLES.row}>
-          <div style={STYLES.col}>
-            <Capsule
-              label="MALE"
-              sublabel="Expression"
-              type="male"
-              onDeploy={() => handleGenderPick("male")}
-            />
-          </div>
-          <div style={STYLES.col}>
-            <Capsule
-              label="FEMALE"
-              sublabel="Expression"
-              type="female"
-              onDeploy={() => handleGenderPick("female")}
-            />
-          </div>
-        </div>
-        {onCancel && (
-          <div style={{ marginTop: "20px", textAlign: "center" }}>
-            <button type="button" style={STYLES.backBtn} onClick={onCancel}>
-              Cancel
-            </button>
-          </div>
-        )}
+    <div
+      style={{
+        position: "fixed",
+        bottom: "clamp(24px, 6vw, 48px)",
+        left: "clamp(24px, 6vw, 48px)",
+        zIndex: 97,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+      }}
+    >
+      <span style={textStyle}>Name your EXOKIN</span>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+        placeholder=""
+        maxLength={32}
+        autoFocus
+        style={inputStyle}
+      />
+      <div style={choiceRow}>
+        {["male", "female"].map((g) => (
+          <button
+            key={g}
+            type="button"
+            style={choice(gender === g)}
+            onClick={() => setGender(g)}
+          >
+            {g === "male" ? "Male" : "Female"}
+          </button>
+        ))}
       </div>
+      <div style={choiceRow}>
+        {["companion", "warform"].map((t) => (
+          <button
+            key={t}
+            type="button"
+            style={choice(selectedType === t)}
+            onClick={() => setSelectedType(t)}
+          >
+            {t === "companion" ? "Companion" : "Warrior"}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        disabled={!name.trim()}
+        onClick={handleConfirm}
+        style={{
+          ...choice(name.trim()),
+          marginTop: 10,
+          opacity: name.trim() ? 1 : 0.5,
+        }}
+      >
+        Confirm
+      </button>
     </div>
   );
 }

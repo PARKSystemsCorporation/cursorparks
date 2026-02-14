@@ -6,7 +6,7 @@
 const warformWeights = require("./warformWeights");
 const companionWeights = require("./companionWeights");
 const { buildCreature } = require("./buildCreature");
-const { getOrCreateIdentity } = require("./identityGenerator");
+const { getOrCreateIdentity, setIdentity } = require("./identityGenerator");
 const { dispatchSpawnAfterDeploy } = require("./deployWallet");
 
 const TYPES = {
@@ -51,11 +51,11 @@ function setRenderCreature(fn) {
 }
 
 /**
- * Trigger creature spawn. If creatureId provided: get or generate identity, then spawn using identity.
+ * Trigger creature spawn. If creatureId provided: use identity from options (e.g. from SQLite), or get/generate from store.
  * Dispatches parks-spawn-creature with { type, identity, position, creatureId } for deploy flow.
  * @param {string} type - "warform" | "companion"
- * @param {object} [options] - { creatureId, position: { x, y, z }, seed, identityOverride: { gender } }
- * @returns {object} creature object with identity (and legacy frame/limbs/etc if no identity)
+ * @param {object} [options] - { creatureId, position: { x, y, z }, identity, seed, identityOverride: { gender } }
+ * @returns {object} creature object with identity
  */
 function triggerCreatureSpawn(type, options) {
   const opts = options && typeof options === "object" ? options : {};
@@ -63,9 +63,15 @@ function triggerCreatureSpawn(type, options) {
   const position = opts.position;
   const seed = opts.seed;
   const identityOverride = opts.identityOverride;
+  const identityFromApi = opts.identity;
 
   if (creatureId && type) {
-    const identity = getOrCreateIdentity(creatureId, type, seed, identityOverride);
+    const identity = identityFromApi && typeof identityFromApi === "object" && identityFromApi.role
+      ? identityFromApi
+      : getOrCreateIdentity(creatureId, type, seed, identityOverride);
+    if (identityFromApi && identityFromApi === identity) {
+      setIdentity(creatureId, identity);
+    }
     const creature = { type, identity, creatureId };
     if (renderCreature) renderCreature(creature);
     if (position && typeof window !== "undefined" && window.dispatchEvent) {

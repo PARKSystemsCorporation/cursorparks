@@ -24,6 +24,7 @@ import { ArenaEntrance } from "./ArenaEntrance";
 import { WalletCardDeployment } from "@/src/modules/ui/inventory/WalletCardDeployment";
 import { DeployedRobotsRenderer } from "@/src/modules/ui/inventory/DeployedRobotsRenderer";
 import { CreatureSpawnListener } from "./CreatureSpawnListener";
+import { SunMoonCycle } from "./SunMoonCycle";
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
 function AlleyProps() {
@@ -100,16 +101,7 @@ export function SceneOrchestrator() {
       <DeployedRobotsRenderer />
       </CameraOverrideProvider>
 
-      <ambientLight intensity={2.5} color="#fff8e6" />
-      <hemisphereLight args={["#e8d5b7", "#504030", 1.5]} />
-      <directionalLight
-        position={[50, 40, -10]}
-        intensity={6}
-        color="#fffaf0"
-        castShadow
-        shadow-bias={-0.0005}
-        shadow-mapSize={[2048, 2048]}
-      />
+      <SunMoonCycle />
       <pointLight position={[0, 4, -10]} intensity={1.5} color="#ffaa55" distance={20} decay={2} />
 
       <SpatialAudioZones />

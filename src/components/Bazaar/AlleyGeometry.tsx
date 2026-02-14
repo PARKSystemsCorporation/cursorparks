@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import * as THREE from 'three';
-import { createConcreteWallNormal, createConcreteWallTexture, createWetFloorRoughness, createWetFloorTexture } from './ProceduralTextures';
+import { createConcreteWallNormal, createConcreteWallTexture, createConcreteWallRoughness, createWetFloorRoughness, createWetFloorTexture } from './ProceduralTextures';
 
 export function AlleyGeometry() {
     // Generate textures once
     const textures = useMemo(() => {
         const wallDiff = createConcreteWallTexture();
         const wallNorm = createConcreteWallNormal();
+        const wallRough = createConcreteWallRoughness();
         const floorDiff = createWetFloorTexture();
         const floorRough = createWetFloorRoughness();
 
@@ -15,17 +16,18 @@ export function AlleyGeometry() {
         floorDiff.colorSpace = THREE.SRGBColorSpace;
 
         // Wrap settings
-        [wallDiff, wallNorm, floorDiff, floorRough].forEach(t => {
+        [wallDiff, wallNorm, wallRough, floorDiff, floorRough].forEach(t => {
             t.wrapS = t.wrapT = THREE.RepeatWrapping;
         });
 
         // Tiling
         wallDiff.repeat.set(2, 1);
         wallNorm.repeat.set(2, 1);
+        wallRough.repeat.set(2, 1);
         floorDiff.repeat.set(4, 8);
         floorRough.repeat.set(4, 8);
 
-        return { wallDiff, wallNorm, floorDiff, floorRough };
+        return { wallDiff, wallNorm, wallRough, floorDiff, floorRough };
     }, []);
 
     const ALLEY_WIDTH = 4;
@@ -168,37 +170,38 @@ export function AlleyGeometry() {
                 })}
             </group>
 
-            {/* Back Wall (Behind POV) */}
-            {/* Back Wall Group (Behind POV) */}
+            {/* Back Wall (Behind POV) — matte physical surface, no emissive bleed */}
             <group position={[0, 0, 2]} rotation={[0, Math.PI, 0]}>
-                {/* The Wall Itself */}
                 <mesh position={[0, WALL_HEIGHT / 2, 0]} receiveShadow>
                     <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 32, 16]} />
                     <meshStandardMaterial
                         map={textures.wallDiff}
                         normalMap={textures.wallNorm}
-                        roughness={0.9}
-                        color="#aaa"
+                        roughnessMap={textures.wallRough}
+                        roughness={0.92}
+                        metalness={0}
+                        color="#5c5c5c"
+                        emissive="#000000"
+                        emissiveIntensity={0}
                     />
                 </mesh>
 
-                {/* "Bus Stop" Yellow LED Strip (3 units wide, near top) */}
+                {/* Yellow LED Strip — reduced intensity to avoid blowout */}
                 <group position={[0, 5.5, 0.15]}>
                     <mesh>
                         <boxGeometry args={[3, 0.15, 0.1]} />
                         <meshStandardMaterial
-                            color="#ffcc00"
-                            emissive="#ffcc00"
-                            emissiveIntensity={8}
-                            toneMapped={false}
+                            color="#e6b800"
+                            emissive="#e6b800"
+                            emissiveIntensity={1.2}
+                            toneMapped={true}
                         />
                     </mesh>
-                    {/* Light Cast */}
                     <pointLight
-                        intensity={2}
-                        distance={10}
+                        intensity={0.8}
+                        distance={6}
                         decay={2}
-                        color="#ffcc00"
+                        color="#fff0c0"
                         position={[0, 0, 0.5]}
                     />
                 </group>

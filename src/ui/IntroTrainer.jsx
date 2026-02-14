@@ -10,65 +10,20 @@ const LINES = [
   "You'll need a bond.",
 ];
 
-const STYLES = {
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    zIndex: 96,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "rgba(0, 0, 0, 0.55)",
-  },
-  panel: {
-    maxWidth: 420,
-    padding: "28px 32px",
-    background: "rgba(22, 20, 18, 0.97)",
-    border: "1px solid #4a4238",
-    boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
-    color: "#d8ccbc",
-    fontFamily: "monospace",
-  },
-  label: {
-    fontSize: "10px",
-    letterSpacing: "0.25em",
-    textTransform: "uppercase",
-    color: "#8b7355",
-    marginBottom: "12px",
-  },
-  line: {
-    fontSize: "15px",
-    lineHeight: 1.55,
-    marginBottom: "16px",
-  },
-  button: {
-    padding: "10px 20px",
-    border: "1px solid #5c5044",
-    background: "rgba(40, 36, 32, 0.9)",
-    color: "#e0d4c4",
-    fontSize: "11px",
-    letterSpacing: "0.18em",
-    textTransform: "uppercase",
-    cursor: "pointer",
-    marginTop: "8px",
-  },
-};
-
+/** Minimal intro: trainer text only. No panels, no UI clutter. Click to advance. */
 export default function IntroTrainer({ visible, onComplete }) {
   const [lineIndex, setLineIndex] = useState(0);
-  const [showBondSelection, setShowBondSelection] = useState(false);
-
+  const [showBond, setShowBond] = useState(false);
   const { setBondCapsule } = useInventory();
 
   const advance = useCallback(() => {
     if (lineIndex < LINES.length - 1) {
       setLineIndex((i) => i + 1);
     } else {
-      setShowBondSelection(true);
+      setShowBond(true);
     }
   }, [lineIndex]);
 
-  /** Birth moment: after name confirm we randomize morphology (seed from name+time), persist, add to bond slot. */
   const handleBondComplete = useCallback(
     async ({ gender, type, name: chosenName }) => {
       if (!type || !gender || !chosenName?.trim()) return;
@@ -103,7 +58,7 @@ export default function IntroTrainer({ visible, onComplete }) {
         variant: type,
         gender,
       });
-      setShowBondSelection(false);
+      setShowBond(false);
       onComplete && onComplete();
     },
     [setBondCapsule, onComplete]
@@ -111,7 +66,7 @@ export default function IntroTrainer({ visible, onComplete }) {
 
   if (!visible) return null;
 
-  if (showBondSelection) {
+  if (showBond) {
     return (
       <BondSelection
         onDeploy={handleBondComplete}
@@ -121,14 +76,35 @@ export default function IntroTrainer({ visible, onComplete }) {
   }
 
   return (
-    <div style={STYLES.overlay}>
-      <div style={STYLES.panel}>
-        <div style={STYLES.label}>Trainer</div>
-        <p style={STYLES.line}>{LINES[lineIndex]}</p>
-        <button type="button" style={STYLES.button} onClick={advance}>
-          {lineIndex < LINES.length - 1 ? "Next" : "Choose bond"}
-        </button>
-      </div>
-    </div>
+    <button
+      type="button"
+      onClick={advance}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 96,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "flex-start",
+        padding: "clamp(20px, 5vw, 40px)",
+        background: "transparent",
+        border: "none",
+        cursor: "pointer",
+        fontFamily: "monospace",
+      }}
+      aria-label="Next"
+    >
+      <span
+        style={{
+          fontSize: "clamp(13px, 2.5vw, 16px)",
+          lineHeight: 1.5,
+          color: "rgba(232, 213, 183, 0.88)",
+          textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+          maxWidth: "min(320px, 85vw)",
+        }}
+      >
+        {LINES[lineIndex]}
+      </span>
+    </button>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { useInventory } from "./InventoryContext";
 import type { InventoryItem, PocketId } from "./types";
 import { POCKET_SLOTS } from "./types";
 
@@ -86,22 +85,13 @@ function Pocket({
   );
 }
 
-/** Quick bar: EXOKIN bond capsule is never shown here (reserved for physical tools). */
-function filterBondFromPocket(items: (InventoryItem | null)[], bondId: string | null): (InventoryItem | null)[] {
-  if (!bondId) return items;
-  return items.map((item) => (item?.id === bondId ? null : item));
+/** Quick bar: empty slots only. No EXOKIN icon, no deployment tools. Future reserved. */
+function emptySlots(count: number): (InventoryItem | null)[] {
+  return Array.from({ length: count }, () => null);
 }
 
 export function PocketInventory() {
-  const { pocketA, pocketB, cargoC, cargoD, bondCapsule, startCapsuleThrow } = useInventory();
-  const bondId = bondCapsule?.id ?? null;
-
-  const handleThrowCapsule = useCallback(
-    (pocket: PocketId, slotIndex: number) => {
-      startCapsuleThrow(pocket, slotIndex);
-    },
-    [startCapsuleThrow]
-  );
+  const handleThrowCapsule = useCallback((_pocket: PocketId, _slotIndex: number) => {}, []);
 
   return (
     <div
@@ -121,28 +111,28 @@ export function PocketInventory() {
         id="pocketA"
         label="Quick"
         slots={POCKET_SLOTS.pocketA}
-        items={filterBondFromPocket(pocketA, bondId)}
+        items={emptySlots(POCKET_SLOTS.pocketA)}
         onThrowCapsule={handleThrowCapsule}
       />
       <Pocket
         id="pocketB"
         label="Wallet"
         slots={POCKET_SLOTS.pocketB}
-        items={filterBondFromPocket(pocketB, bondId)}
+        items={emptySlots(POCKET_SLOTS.pocketB)}
         onThrowCapsule={handleThrowCapsule}
       />
       <Pocket
         id="cargoC"
         label="Cargo C"
         slots={POCKET_SLOTS.cargoC}
-        items={filterBondFromPocket(cargoC, bondId)}
+        items={emptySlots(POCKET_SLOTS.cargoC)}
         onThrowCapsule={handleThrowCapsule}
       />
       <Pocket
         id="cargoD"
         label="Cargo D"
         slots={POCKET_SLOTS.cargoD}
-        items={filterBondFromPocket(cargoD, bondId)}
+        items={emptySlots(POCKET_SLOTS.cargoD)}
         onThrowCapsule={handleThrowCapsule}
       />
     </div>

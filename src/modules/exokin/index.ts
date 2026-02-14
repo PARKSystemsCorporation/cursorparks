@@ -16,7 +16,6 @@ export type {
   EAREEventType,
 } from "./types";
 
-export { ExokinPanel } from "./ExokinPanel";
 export { ExokinChat } from "./ExokinChat";
 export { ExokinDevice, BOND_RELEASE_EVENT } from "./ExokinDevice";
 

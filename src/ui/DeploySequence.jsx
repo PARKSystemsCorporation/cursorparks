@@ -17,16 +17,29 @@ export function deployCapsule(type) {
   window.dispatchEvent(new CustomEvent("parks-deploy-capsule", { detail: { type } }));
 }
 
-/** Coordinates deploy flow: listens for parks-deploy-wallet-card, shows naming only if creature has no name, then triggers spawn. No floating visuals. */
+/** Build identity shape for spawn from API creature row (SQLite). */
+function identityFromCreature(data) {
+  if (!data || typeof data.role !== "string") return null;
+  return {
+    gender: data.gender || "male",
+    role: data.role,
+    head_type: data.head_type || "sensor_dome",
+    body_type: data.body_type || "slug_form",
+    tail_type: data.tail_type || "cable_tail",
+    color_profile: data.color_profile && typeof data.color_profile === "object" ? data.color_profile : {},
+  };
+}
+
+/** Coordinates deploy flow: listens for parks-deploy-wallet-card, loads identity from SQLite when present, then triggers spawn. */
 export function DeploySequenceUI() {
-  const [payload, setPayload] = useState({ type: null, position: null, creatureId: null, gender: null });
+  const [payload, setPayload] = useState({ type: null, position: null, creatureId: null, gender: null, identity: null });
   const [phase, setPhase] = useState("idle"); // "idle" | "naming" | "spawning"
 
   useEffect(() => {
     const onCapsule = (e) => {
       const t = e.detail?.type;
       if (t) {
-        setPayload({ type: t, position: null, creatureId: null, gender: null });
+        setPayload({ type: t, position: null, creatureId: null, gender: null, identity: null });
         setPhase("spawning");
       }
     };
@@ -36,19 +49,22 @@ export function DeploySequenceUI() {
       const creatureId = d.creatureId ?? null;
       const position = d.position ?? null;
       const gender = d.gender === "male" || d.gender === "female" ? d.gender : null;
-      setPayload({ type: d.type, position, creatureId, gender });
+      let identity = null;
 
       if (creatureId && position) {
         try {
           const res = await fetch(`/api/exokin/creature?id=${encodeURIComponent(creatureId)}`);
           const data = res.ok ? await res.json() : null;
+          identity = identityFromCreature(data);
           const needsNaming = !data || !data.name;
           if (needsNaming) {
+            setPayload({ type: d.type, position, creatureId, gender, identity });
             setPhase("naming");
             return;
           }
         } catch (_) {}
       }
+      setPayload({ type: d.type, position, creatureId, gender, identity });
       setPhase("spawning");
     };
     window.addEventListener("parks-deploy-capsule", onCapsule);
@@ -62,15 +78,19 @@ export function DeploySequenceUI() {
   const finish = useCallback(() => {
     if (payload.type) {
       if (payload.creatureId && payload.position) {
-        triggerSpawnWithIdentity(payload.type, { creatureId: payload.creatureId, position: payload.position });
+        triggerSpawnWithIdentity(payload.type, {
+          creatureId: payload.creatureId,
+          position: payload.position,
+          identity: payload.identity || undefined,
+        });
       } else {
         triggerCreatureSpawn(payload.type);
       }
     }
-    setPayload({ type: null, position: null, creatureId: null, gender: null });
+    setPayload({ type: null, position: null, creatureId: null, gender: null, identity: null });
     setPhase("idle");
     deployInProgress = false;
-  }, [payload.type, payload.creatureId, payload.position]);
+  }, [payload.type, payload.creatureId, payload.position, payload.identity]);
 
   useEffect(() => {
     if (phase !== "spawning" || !payload.type) return;

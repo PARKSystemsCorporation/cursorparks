@@ -24,17 +24,45 @@ function raycastGround(camera: THREE.Camera, gl: THREE.WebGLRenderer, clientX: n
   return null;
 }
 
-/** Shows 3D card during deploy. Only active when drag is from EXOKIN device (bond); ground hit on bond release. */
+/** Shows 3D card and ground highlight during deploy. Bond drag: cursor raycast drives target; release on world spawns at hit. */
 export function WalletCardDeployment() {
-  const { dragState, confirmDeploy, cancelDrag } = useInventory();
+  const { dragState, deployTarget, bondDragScreenPos, setDeployTarget, confirmDeploy, cancelDrag } = useInventory();
   const { camera, gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
+    if (dragState?.fromBond && bondDragScreenPos) {
+      const rect = gl.domElement.getBoundingClientRect();
+      const inside =
+        bondDragScreenPos.clientX >= rect.left &&
+        bondDragScreenPos.clientX <= rect.right &&
+        bondDragScreenPos.clientY >= rect.top &&
+        bondDragScreenPos.clientY <= rect.bottom;
+      if (inside) {
+        const hit = raycastGround(camera, gl, bondDragScreenPos.clientX, bondDragScreenPos.clientY);
+        setDeployTarget(hit);
+      } else {
+        setDeployTarget(null);
+      }
+    } else if (!dragState?.fromBond) {
+      setDeployTarget(null);
+    }
+  });
+
+  useFrame(() => {
     if (!groupRef.current || !dragState) return;
-    groupRef.current.position.copy(camera.position);
-    groupRef.current.quaternion.copy(camera.quaternion);
-    groupRef.current.position.add(HAND_OFFSET.clone().applyQuaternion(camera.quaternion));
+    if (dragState.fromBond) {
+      if (deployTarget) {
+        groupRef.current.position.set(deployTarget.x, 0.2, deployTarget.z);
+        groupRef.current.quaternion.identity();
+      } else {
+        groupRef.current.position.set(0, -10, 0);
+      }
+    } else {
+      groupRef.current.position.copy(camera.position);
+      groupRef.current.quaternion.copy(camera.quaternion);
+      groupRef.current.position.add(HAND_OFFSET.clone().applyQuaternion(camera.quaternion));
+    }
   });
 
   useEffect(() => {
@@ -72,16 +100,31 @@ export function WalletCardDeployment() {
   if (!dragState) return null;
 
   return (
-    <group ref={groupRef}>
-      <mesh scale={0.12} castShadow rotation={[0, 0, Math.PI / 2]}>
-        <boxGeometry args={[0.08, 0.5, 0.32]} />
-        <meshStandardMaterial
-          color="#1c1a18"
-          metalness={0.7}
-          roughness={0.4}
-          emissive="#0a0806"
-        />
-      </mesh>
-    </group>
+    <>
+      <group ref={groupRef}>
+        <mesh scale={0.12} castShadow rotation={[0, 0, Math.PI / 2]}>
+          <boxGeometry args={[0.08, 0.5, 0.32]} />
+          <meshStandardMaterial
+            color="#1c1a18"
+            metalness={0.7}
+            roughness={0.4}
+            emissive="#0a0806"
+          />
+        </mesh>
+      </group>
+      {dragState.fromBond && deployTarget && (
+        <group position={[deployTarget.x, 0.01, deployTarget.z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh>
+            <ringGeometry args={[0.35, 0.55, 32]} />
+            <meshBasicMaterial
+              color="#ff6b1a"
+              transparent
+              opacity={0.35}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </group>
+      )}
+    </>
   );
 }

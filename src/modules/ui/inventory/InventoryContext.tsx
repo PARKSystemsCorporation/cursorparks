@@ -17,6 +17,8 @@ type InventoryState = {
   dragState: DragState | null;
   /** World position where user wants to deploy (set by 3D raycast) */
   deployTarget: { x: number; y: number; z: number } | null;
+  /** Screen position of pointer during bond drag (for raycast); set by ExokinDevice. */
+  bondDragScreenPos: { clientX: number; clientY: number } | null;
 };
 
 function makeEmptyPocket(slots: number): PocketState {
@@ -31,6 +33,7 @@ const initialPockets: InventoryState = {
   bondCapsule: null,
   dragState: null,
   deployTarget: null,
+  bondDragScreenPos: null,
 };
 
 export type DeployedRobot = {
@@ -64,6 +67,8 @@ type InventoryContextValue = InventoryState & {
   /** Start deploy from EXOKIN device (bond); only bond uses drag-from-diamond. */
   startBondDeploy: () => void;
   setDeployTarget: (pos: { x: number; y: number; z: number } | null) => void;
+  /** Set screen position during bond drag (for 3D raycast). */
+  setBondDragScreenPos: (pos: { clientX: number; clientY: number } | null) => void;
   /** Confirm deploy: remove from pocket or bond, clear drag, dispatch wallet card deploy. */
   confirmDeploy: (position?: { x: number; y: number; z: number } | null) => InventoryItem | null;
   /** Add a deployed creature at world position (called after wallet card sequence) */
@@ -108,7 +113,11 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cancelDrag = useCallback(() => {
-    setState((s) => ({ ...s, dragState: null, deployTarget: null }));
+    setState((s) => ({ ...s, dragState: null, deployTarget: null, bondDragScreenPos: null }));
+  }, []);
+
+  const setBondDragScreenPos = useCallback((pos: { clientX: number; clientY: number } | null) => {
+    setState((s) => ({ ...s, bondDragScreenPos: pos }));
   }, []);
 
   const setBondCapsule = useCallback((item: InventoryItem | null) => {
@@ -153,7 +162,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       deployed = item;
       target = useTarget;
       if (s.dragState.fromBond) {
-        return { ...s, bondCapsule: null, dragState: null, deployTarget: null };
+        return { ...s, bondCapsule: null, dragState: null, deployTarget: null, bondDragScreenPos: null };
       }
       const arr = [...s[s.dragState.pocket]];
       arr[s.dragState.slotIndex] = null;
@@ -162,6 +171,7 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
         [s.dragState.pocket]: arr,
         dragState: null,
         deployTarget: null,
+        bondDragScreenPos: null,
       };
     });
     if (deployed && target && typeof window !== "undefined") {
@@ -215,11 +225,12 @@ export function InventoryProvider({ children }: { children: React.ReactNode }) {
       startCapsuleThrow,
       startBondDeploy,
       setDeployTarget,
+      setBondDragScreenPos,
       confirmDeploy,
       deployAt,
       deployedRobots,
     }),
-    [state, setPocket, addItem, removeItem, setBondCapsule, startDrag, cancelDrag, startCapsuleThrow, startBondDeploy, setDeployTarget, confirmDeploy, deployAt, deployedRobots]
+    [state, setPocket, addItem, removeItem, setBondCapsule, startDrag, cancelDrag, startCapsuleThrow, startBondDeploy, setDeployTarget, setBondDragScreenPos, confirmDeploy, deployAt, deployedRobots]
   );
 
   return <InventoryContext.Provider value={value}>{children}</InventoryContext.Provider>;
@@ -239,6 +250,7 @@ export function useInventory(): InventoryContextValue {
       startCapsuleThrow: () => {},
       startBondDeploy: () => {},
       setDeployTarget: () => {},
+      setBondDragScreenPos: () => {},
       confirmDeploy: () => null,
       deployAt: () => {},
       deployedRobots: [],
