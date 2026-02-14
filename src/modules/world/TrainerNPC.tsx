@@ -1,30 +1,28 @@
 "use client";
 
-import { useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useRef, useEffect } from "react";
+import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useTrainer } from "./TrainerContext";
 
 const TRAINER_POSITION: [number, number, number] = [-1.5, 0, 2];
-const APPROACH_DISTANCE = 3;
 
 export function TrainerNPC() {
   const groupRef = useRef<THREE.Group>(null);
   const triggeredRef = useRef(false);
   const { triggerApproach } = useTrainer();
-  const { camera } = useThree();
+
+  // Trigger trainer flow immediately on initial landing,
+  // so EXOKIN selection happens in the player's current area.
+  useEffect(() => {
+    if (triggeredRef.current) return;
+    triggeredRef.current = true;
+    triggerApproach();
+  }, [triggerApproach]);
 
   useFrame((state) => {
     if (!groupRef.current) return;
     groupRef.current.position.y = TRAINER_POSITION[1] + Math.sin(state.clock.elapsedTime * 0.8) * 0.02;
-    if (!triggeredRef.current) {
-      const dx = camera.position.x - TRAINER_POSITION[0];
-      const dz = camera.position.z - TRAINER_POSITION[2];
-      if (Math.sqrt(dx * dx + dz * dz) < APPROACH_DISTANCE) {
-        triggeredRef.current = true;
-        triggerApproach();
-      }
-    }
   });
 
   return (

@@ -7,18 +7,6 @@ const textStyle = {
   fontSize: "clamp(12px, 2.2vw, 14px)",
   color: "rgba(232, 213, 183, 0.9)",
 };
-const inputStyle = {
-  width: "min(200px, 60vw)",
-  padding: "8px 12px",
-  marginTop: 6,
-  background: "rgba(20, 18, 16, 0.85)",
-  border: "1px solid rgba(139, 105, 20, 0.5)",
-  borderRadius: 2,
-  color: "#e0d4c4",
-  fontSize: 14,
-  fontFamily: "monospace",
-  outline: "none",
-};
 const choiceRow = {
   display: "flex",
   gap: 10,
@@ -35,17 +23,14 @@ const choice = (active) => ({
   cursor: "pointer",
 });
 
-/** Minimal bond: one line, name input, type/gender choices, confirm. No floating cards or panels. */
+/** First popup: gender + EXOKIN type only. Randomizer/spawn starts on confirm. */
 export default function BondSelection({ onDeploy, onCancel }) {
   const [gender, setGender] = useState("male");
   const [selectedType, setSelectedType] = useState("companion");
-  const [name, setName] = useState("");
 
   const handleConfirm = useCallback(() => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    onDeploy && onDeploy({ gender, type: selectedType, name: trimmed });
-  }, [name, gender, selectedType, onDeploy]);
+    onDeploy && onDeploy({ gender, type: selectedType });
+  }, [gender, selectedType, onDeploy]);
 
   return (
     <div
@@ -59,17 +44,7 @@ export default function BondSelection({ onDeploy, onCancel }) {
         alignItems: "flex-start",
       }}
     >
-      <span style={textStyle}>Name your EXOKIN</span>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
-        placeholder=""
-        maxLength={32}
-        autoFocus
-        style={inputStyle}
-      />
+      <span style={textStyle}>Select gender + EXOKIN type</span>
       <div style={choiceRow}>
         {["male", "female"].map((g) => (
           <button
@@ -96,15 +71,13 @@ export default function BondSelection({ onDeploy, onCancel }) {
       </div>
       <button
         type="button"
-        disabled={!name.trim()}
         onClick={handleConfirm}
         style={{
-          ...choice(name.trim()),
+          ...choice(true),
           marginTop: 10,
-          opacity: name.trim() ? 1 : 0.5,
         }}
       >
-        Confirm
+        Start
       </button>
     </div>
   );

@@ -14,17 +14,14 @@ export function TrainerOverlay() {
     async ({
       gender,
       type,
-      name: chosenName,
     }: {
       gender: string;
       type: string;
-      name: string;
     }) => {
-      if (!type || !gender || !chosenName?.trim()) return;
+      if (!type || !gender) return;
       if (gender !== "male" && gender !== "female") return;
       const creatureId = `exo-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-      const ts = Date.now();
-      const seedStr = `${chosenName.trim()}-${ts}`;
+      const seedStr = `${type}-${gender}-${Date.now()}-${Math.random()}`;
       let morphology_seed = 0;
       for (let i = 0; i < seedStr.length; i++)
         morphology_seed = (morphology_seed << 5) - morphology_seed + seedStr.charCodeAt(i);
@@ -37,7 +34,6 @@ export function TrainerOverlay() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             creatureId,
-            name: chosenName.trim(),
             gender,
             type,
             morphology_seed,
@@ -54,6 +50,21 @@ export function TrainerOverlay() {
         variant: type,
         gender,
       });
+
+      // First-time onboarding sequence:
+      // focus camera -> spawn front-left -> prompt name in chat bar.
+      window.dispatchEvent(new CustomEvent("parks-onboarding-focus-start"));
+      window.dispatchEvent(
+        new CustomEvent("parks-spawn-creature", {
+          detail: { type, creatureId, identity },
+        })
+      );
+      window.dispatchEvent(
+        new CustomEvent("parks-onboarding-name-request", {
+          detail: { creatureId, type, gender },
+        })
+      );
+
       completeAndGiveCapsule();
     },
     [setBondCapsule, completeAndGiveCapsule]

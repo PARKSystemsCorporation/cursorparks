@@ -4,7 +4,6 @@ declare module "@/src/ui/BondSelection" {
   export interface BondSelectionDeployPayload {
     gender: string;
     type: string;
-    name: string;
   }
 
   export interface BondSelectionProps {

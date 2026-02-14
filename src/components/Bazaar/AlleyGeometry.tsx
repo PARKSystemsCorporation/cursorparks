@@ -1,34 +1,35 @@
 import { useMemo } from 'react';
+import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
-import { createConcreteWallNormal, createConcreteWallTexture, createConcreteWallRoughness, createWetFloorRoughness, createWetFloorTexture } from './ProceduralTextures';
+import { createConcreteWallNormal, createConcreteWallRoughness, createWetFloorRoughness } from './ProceduralTextures';
+
+const FLOOR_STONE_URL = '/textures/floor-stone.png';
+const WALL_STONE_URL = '/textures/wall-stone.png';
 
 export function AlleyGeometry() {
-    // Generate textures once
+    const [floorDiffTex, wallDiffTex] = useTexture([FLOOR_STONE_URL, WALL_STONE_URL]);
+
+    // Generate wall normal/roughness + floor roughness; configure loaded diffuse textures
     const textures = useMemo(() => {
-        const wallDiff = createConcreteWallTexture();
         const wallNorm = createConcreteWallNormal();
         const wallRough = createConcreteWallRoughness();
-        const floorDiff = createWetFloorTexture();
         const floorRough = createWetFloorRoughness();
 
-        // Adjust settings for realism
-        wallDiff.colorSpace = THREE.SRGBColorSpace;
-        floorDiff.colorSpace = THREE.SRGBColorSpace;
+        wallDiffTex.colorSpace = THREE.SRGBColorSpace;
+        floorDiffTex.colorSpace = THREE.SRGBColorSpace;
 
-        // Wrap settings
-        [wallDiff, wallNorm, wallRough, floorDiff, floorRough].forEach(t => {
+        [wallDiffTex, wallNorm, wallRough, floorDiffTex, floorRough].forEach(t => {
             t.wrapS = t.wrapT = THREE.RepeatWrapping;
         });
 
-        // Tiling
-        wallDiff.repeat.set(2, 1);
+        wallDiffTex.repeat.set(2, 1);
         wallNorm.repeat.set(2, 1);
         wallRough.repeat.set(2, 1);
-        floorDiff.repeat.set(4, 8);
+        floorDiffTex.repeat.set(4, 8);
         floorRough.repeat.set(4, 8);
 
-        return { wallDiff, wallNorm, wallRough, floorDiff, floorRough };
-    }, []);
+        return { wallDiff: wallDiffTex, wallNorm, wallRough, floorDiff: floorDiffTex, floorRough };
+    }, [floorDiffTex, wallDiffTex]);
 
     const ALLEY_WIDTH = 4;
     const ALLEY_LENGTH = 30; // Visible depth 30m
@@ -42,8 +43,8 @@ export function AlleyGeometry() {
                 <meshStandardMaterial
                     map={textures.floorDiff}
                     roughnessMap={textures.floorRough}
-                    roughness={0.8}
-                    color="#888"
+                    roughness={0.85}
+                    color="#e8e0d8"
                 />
             </mesh>
 
@@ -62,7 +63,7 @@ export function AlleyGeometry() {
                         map={textures.wallDiff}
                         normalMap={textures.wallNorm}
                         roughness={0.9}
-                        color="#aaa"
+                        color="#d4ccc4"
                     />
                 </mesh>
 
@@ -73,7 +74,7 @@ export function AlleyGeometry() {
                         map={textures.wallDiff}
                         normalMap={textures.wallNorm}
                         roughness={0.9}
-                        color="#aaa"
+                        color="#d4ccc4"
                     />
                 </mesh>
 
@@ -84,7 +85,7 @@ export function AlleyGeometry() {
                         map={textures.wallDiff}
                         normalMap={textures.wallNorm}
                         roughness={0.9}
-                        color="#aaa"
+                        color="#d4ccc4"
                     />
                 </mesh>
 
@@ -95,7 +96,7 @@ export function AlleyGeometry() {
                         map={textures.wallDiff}
                         normalMap={textures.wallNorm}
                         roughness={0.9}
-                        color="#aaa"
+                        color="#d4ccc4"
                     />
                 </mesh>
             </group>
@@ -120,7 +121,7 @@ export function AlleyGeometry() {
                         map={textures.wallDiff}
                         normalMap={textures.wallNorm}
                         roughness={0.9}
-                        color="#aaa"
+                        color="#d4ccc4"
                     />
                 </mesh>
 
@@ -131,7 +132,7 @@ export function AlleyGeometry() {
                         map={textures.wallDiff}
                         normalMap={textures.wallNorm}
                         roughness={0.9}
-                        color="#aaa"
+                        color="#d4ccc4"
                     />
                 </mesh>
 
@@ -142,7 +143,7 @@ export function AlleyGeometry() {
                         map={textures.wallDiff}
                         normalMap={textures.wallNorm}
                         roughness={0.9}
-                        color="#aaa"
+                        color="#d4ccc4"
                     />
                 </mesh>
 
@@ -163,7 +164,7 @@ export function AlleyGeometry() {
                                 map={textures.wallDiff}
                                 normalMap={textures.wallNorm}
                                 roughness={0.9}
-                                color="#888"
+                                color="#c4bcb4"
                             />
                         </mesh>
                     );
@@ -180,7 +181,7 @@ export function AlleyGeometry() {
                         roughnessMap={textures.wallRough}
                         roughness={0.92}
                         metalness={0}
-                        color="#5c5c5c"
+                        color="#8a827a"
                         emissive="#000000"
                         emissiveIntensity={0}
                     />
@@ -214,7 +215,7 @@ export function AlleyGeometry() {
                     map={textures.wallDiff}
                     normalMap={textures.wallNorm}
                     roughness={0.9}
-                    color="#777"
+                    color="#a89e96"
                 />
             </mesh>
         </group>
