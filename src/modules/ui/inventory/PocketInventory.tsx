@@ -3,6 +3,7 @@
 import React, { useCallback } from "react";
 import type { InventoryItem, PocketId } from "./types";
 import { POCKET_SLOTS } from "./types";
+import { useInventory } from "./InventoryContext";
 
 const COLORS = {
   bg: "#1a1410",
@@ -85,13 +86,14 @@ function Pocket({
   );
 }
 
-/** Quick bar: empty slots only. No EXOKIN icon, no deployment tools. Future reserved. */
-function emptySlots(count: number): (InventoryItem | null)[] {
-  return Array.from({ length: count }, () => null);
-}
-
 export function PocketInventory() {
-  const handleThrowCapsule = useCallback(() => { }, []);
+  const { pocketA, pocketB, cargoC, cargoD, startCapsuleThrow } = useInventory();
+  const handleThrowCapsule = useCallback(
+    (pocket: PocketId, slotIndex: number) => {
+      startCapsuleThrow(pocket, slotIndex);
+    },
+    [startCapsuleThrow]
+  );
 
   return (
     <div
@@ -111,28 +113,28 @@ export function PocketInventory() {
         id="pocketA"
         label="Quick"
         slots={POCKET_SLOTS.pocketA}
-        items={emptySlots(POCKET_SLOTS.pocketA)}
+        items={pocketA}
         onThrowCapsule={handleThrowCapsule}
       />
       <Pocket
         id="pocketB"
         label="Wallet"
         slots={POCKET_SLOTS.pocketB}
-        items={emptySlots(POCKET_SLOTS.pocketB)}
+        items={pocketB}
         onThrowCapsule={handleThrowCapsule}
       />
       <Pocket
         id="cargoC"
         label="Cargo C"
         slots={POCKET_SLOTS.cargoC}
-        items={emptySlots(POCKET_SLOTS.cargoC)}
+        items={cargoC}
         onThrowCapsule={handleThrowCapsule}
       />
       <Pocket
         id="cargoD"
         label="Cargo D"
         slots={POCKET_SLOTS.cargoD}
-        items={emptySlots(POCKET_SLOTS.cargoD)}
+        items={cargoD}
         onThrowCapsule={handleThrowCapsule}
       />
     </div>

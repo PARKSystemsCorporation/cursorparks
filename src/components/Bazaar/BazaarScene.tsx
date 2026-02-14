@@ -17,6 +17,8 @@ import { ArenaUI } from "@/src/modules/arena";
 import { ExokinChat, ExokinDevice } from "@/src/modules/exokin";
 import { DebugOverlay } from "@/src/modules/ui/DebugOverlay";
 import { CoordTracker } from "@/src/modules/ui/CoordTracker";
+import { ColiseumArenaTrigger } from "@/src/modules/world/ColiseumArenaTrigger";
+import { BackpackMenu } from "@/src/modules/ui/BackpackMenu";
 import "./BazaarLanding.css";
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -90,10 +92,12 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                 <VendorTalkPanel />
                 <BarterTable />
                 <ArenaUI />
+                <ColiseumArenaTrigger />
                 <RadialMenu />
                 <TrainerOverlay />
                 <ChatInput />
 
+                <BackpackMenu />
                 <CoordTracker />
               </div>
             </TrainerProvider>
