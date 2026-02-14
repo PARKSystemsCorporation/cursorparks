@@ -12,7 +12,6 @@ import { ExokinSpeechMorphologySync } from "@/src/modules/robot/ExokinSpeechMorp
 import { WorldChatPanel, ChatInput } from "@/src/modules/chat";
 import { RadialMenu, VendorTalkPanel, BarterTable } from "@/src/modules/vendors";
 import { TrainerProvider } from "@/src/modules/world/TrainerContext";
-import { TrainerOverlay } from "@/src/modules/world/TrainerOverlay";
 import { ArenaUI } from "@/src/modules/arena";
 import { ExokinChat, ExokinDevice } from "@/src/modules/exokin";
 import { DebugOverlay } from "@/src/modules/ui/DebugOverlay";
@@ -91,7 +90,6 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
             <BarterTable />
             <ArenaUI />
             <RadialMenu />
-            <TrainerOverlay />
             <ChatInput />
 
             <CoordTracker />
