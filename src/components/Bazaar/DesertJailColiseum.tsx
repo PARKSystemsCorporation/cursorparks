@@ -315,6 +315,60 @@ export function DesertJailColiseum() {
                 </>
             )}
 
+            {/* --- MOUNTAIN ILLUSION --- */}
+            {/* Layers of mountain silhouettes in the West (-X) direction where sun sets */}
+
+            {/* Layer 1: Darker, Closer */}
+            <mesh position={[-60, 5, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
+                <planeGeometry args={[100, 30]} />
+                {/* 
+                   We use a simple shape here, but ideally this would be a jagged geometry.
+                   For "illusion", we can use a basic displacement or alpha map if we had one.
+                   Without texture, we can use multiple overlapping peaks (Cylinders/Cones).
+                */}
+                <meshStandardMaterial color="#2d1b15" roughness={1} />
+            </mesh>
+
+            {/* Procedural Peaks Group (closer) */}
+            <group position={[-55, -2, 0]}>
+                <mesh position={[0, 0, -20]} scale={[15, 12, 1]}>
+                    <coneGeometry args={[1, 1, 4]} />
+                    <meshStandardMaterial color="#3a221a" roughness={1} />
+                </mesh>
+                <mesh position={[0, 0, 10]} scale={[20, 15, 1]}>
+                    <coneGeometry args={[1, 1, 4]} />
+                    <meshStandardMaterial color="#3a221a" roughness={1} />
+                </mesh>
+                <mesh position={[0, 0, 0]} scale={[25, 10, 1]}>
+                    <coneGeometry args={[1, 1, 4]} />
+                    <meshStandardMaterial color="#3a221a" roughness={1} />
+                </mesh>
+            </group>
+
+            {/* Layer 2: Further, Lighter (Fog will handle color) */}
+            <group position={[-90, -5, 0]}>
+                <mesh position={[0, 0, -30]} scale={[30, 20, 1]}>
+                    <coneGeometry args={[1, 1, 4]} />
+                    <meshStandardMaterial color="#4d2e24" roughness={1} />
+                </mesh>
+                <mesh position={[0, 0, 15]} scale={[40, 25, 1]}>
+                    <coneGeometry args={[1, 1, 4]} />
+                    <meshStandardMaterial color="#4d2e24" roughness={1} />
+                </mesh>
+            </group>
+
+            {/* Layer 3: Distant, Faded */}
+            <group position={[-130, -10, 0]}>
+                <mesh position={[0, 0, -10]} scale={[60, 40, 1]}>
+                    <coneGeometry args={[1, 1, 4]} />
+                    <meshStandardMaterial color="#5e3a2e" roughness={1} />
+                </mesh>
+                <mesh position={[0, 0, 40]} scale={[50, 35, 1]}>
+                    <coneGeometry args={[1, 1, 4]} />
+                    <meshStandardMaterial color="#5e3a2e" roughness={1} />
+                </mesh>
+            </group>
+
         </group>
     );
 }

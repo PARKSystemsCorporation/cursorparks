@@ -12,27 +12,36 @@ export const GAME_SECONDS_PER_DAY = 24 * 3600;
 export const CLOCK_ACCELERATION = 4;
 
 // Adjust mid-afternoon parameters
+// Adjust mid-afternoon parameters
 const RADIUS = 80;
 const SUN_COLOR = new THREE.Color("#ffbd33"); // Richer orange-yellow sun
-const SUN_INTENSITY = 6; // Reduced from 12 to prevent washout
+const SUN_INTENSITY = 6;
 const MOON_COLOR = new THREE.Color("#e8eeff");
 const MOON_INTENSITY = 3.2;
 
-const AMBIENT_DAY = new THREE.Color("#e0f4ff"); // Light blue ambient
+const AMBIENT_DAY = new THREE.Color("#e0f4ff");
 const AMBIENT_NIGHT = new THREE.Color("#1e2238");
-const HEMI_SKY_DAY = new THREE.Color("#60a0ff"); // Deeper blue sky bounce
-const HEMI_GROUND_DAY = new THREE.Color("#807050"); // Dusty ground bounce
+const HEMI_SKY_DAY = new THREE.Color("#60a0ff");
+const HEMI_GROUND_DAY = new THREE.Color("#807050");
 const HEMI_SKY_NIGHT = new THREE.Color("#182038");
 const HEMI_GROUND_NIGHT = new THREE.Color("#0c0e18");
-const BG_DAY = new THREE.Color("#60a0ff"); // Deeper, richer blue sky
+const BG_DAY = new THREE.Color("#60a0ff");
 const BG_NIGHT = new THREE.Color("#0e1018");
-const FOG_DAY = new THREE.Color("#80b0ff"); // Matching slightly lighter fog
+const FOG_DAY = new THREE.Color("#80b0ff");
 const FOG_NIGHT = new THREE.Color("#0c0e18");
+
+// --- SUNSET PALETTE ---
+const SUN_SUNSET = new THREE.Color("#ff4500"); // Deep orange-red
+const SKY_SUNSET = new THREE.Color("#fd5e53"); // Warm hazy orange-red
+const FOG_SUNSET = new THREE.Color("#ff8c69"); // Dense orange haze
+const AMBIENT_SUNSET = new THREE.Color("#8a4b3d"); // Warm low light
+const HEMI_SKY_SUNSET = new THREE.Color("#ff7f50");
+const HEMI_GROUND_SUNSET = new THREE.Color("#4a3b2a");
 
 /** Phase 0–1 over 6h from page load. Sun peak at 0.25, moon peak at 0.75. Exported for night-gating in scene components. */
 export function getPhase(): number {
-  // Lock to mid-afternoon (approx 2:30 PM)
-  return 0.32;
+  // Lock to Sunset (approx 0.46 - just before 0.5 night switch)
+  return 0.46;
 }
 
 /** Game-world seconds since midnight (0–86400). Peak night (phase 0.75) = 0. */
@@ -64,7 +73,11 @@ export function isNight(): boolean {
 /** Elevation and azimuth for one arc: rise → peak → set. t in [0,1]. */
 function arcPosition(t: number): { elevation: number; azimuth: number } {
   const elevation = (Math.sin(Math.PI * t) * 95 - 5) * (Math.PI / 180);
-  const azimuth = (90 - 180 * t) * (Math.PI / 180);
+
+  // ADJUSTED: Sweep from 0 (East) to 180 (West)
+  // This ensures the sun sets at azimuth 180 -> X = -Radius (West)
+  const azimuth = (t * 180) * (Math.PI / 180);
+
   return { elevation, azimuth };
 }
 
@@ -91,21 +104,97 @@ export function SunMoonCycle() {
   const bgColor = useRef(new THREE.Color());
   const fogColor = useRef(new THREE.Color());
 
+  // Reuse color objects for lerping to avoid GC
+  const targetBg = useRef(new THREE.Color());
+  const targetFog = useRef(new THREE.Color());
+  const targetAmbient = useRef(new THREE.Color());
+  const targetHemiSky = useRef(new THREE.Color());
+  const targetHemiGround = useRef(new THREE.Color());
+  const targetSun = useRef(new THREE.Color());
+
   useFrame(() => {
     const phase = getPhase();
     const isSun = phase < 0.5;
     const t = isSun ? phase * 2 : (phase - 0.5) * 2;
     const { elevation, azimuth } = arcPosition(t);
-    // Fix: copy the calculated position INTO the ref
+
     pos.current.set(
       RADIUS * Math.cos(elevation) * Math.cos(azimuth),
       RADIUS * Math.sin(elevation),
       RADIUS * Math.cos(elevation) * Math.sin(azimuth)
     );
 
+    // Calculate Sunset Factor
+    // Peaks when t is near 1.0 (Sunset) or 0.0 (Sunrise). 
+    // We focus on Sunset (t > 0.7).
+    let sunsetFactor = 0;
+    if (isSun) {
+      // Ramps up from 0 at t=0.6 to 1 at t=0.9, then back down
+      if (t > 0.6) {
+        sunsetFactor = Math.max(0, 1 - Math.abs((t - 0.9) * 4));
+        // Simple ease: starts at 0.65, peaks at 0.9, fades by 1.15
+        // Actually let's just ramp it up heavily at the end
+        sunsetFactor = THREE.MathUtils.smoothstep(t, 0.6, 0.95);
+      }
+    }
+
+    const dayAmount = isSun ? Math.sin(Math.PI * t) : 0;
+    const nightAmount = isSun ? 0 : Math.sin(Math.PI * t);
+
+    // --- COLOR INTERPOLATION ---
+
+    // Background (Sky)
+    targetBg.current.lerpColors(BG_NIGHT, BG_DAY, dayAmount * 0.95 + 0.05);
+    if (sunsetFactor > 0) targetBg.current.lerp(SKY_SUNSET, sunsetFactor);
+
+    // Fog
+    targetFog.current.lerpColors(FOG_NIGHT, FOG_DAY, dayAmount * 0.95 + 0.05);
+    if (sunsetFactor > 0) targetFog.current.lerp(FOG_SUNSET, sunsetFactor);
+
+    // Ambient
+    targetAmbient.current.lerpColors(AMBIENT_NIGHT, AMBIENT_DAY, dayAmount * 0.95 + 0.05);
+    if (sunsetFactor > 0) targetAmbient.current.lerp(AMBIENT_SUNSET, sunsetFactor);
+
+    // Hemi
+    targetHemiSky.current.lerpColors(HEMI_SKY_NIGHT, HEMI_SKY_DAY, dayAmount * 0.95 + 0.05);
+    if (sunsetFactor > 0) targetHemiSky.current.lerp(HEMI_SKY_SUNSET, sunsetFactor);
+
+    targetHemiGround.current.lerpColors(HEMI_GROUND_NIGHT, HEMI_GROUND_DAY, dayAmount * 0.95 + 0.05);
+    if (sunsetFactor > 0) targetHemiGround.current.lerp(HEMI_GROUND_SUNSET, sunsetFactor);
+
+    // Sun Color
+    if (isSun) {
+      targetSun.current.copy(SUN_COLOR);
+      if (sunsetFactor > 0) targetSun.current.lerp(SUN_SUNSET, sunsetFactor);
+    } else {
+      targetSun.current.copy(MOON_COLOR);
+    }
+
+
+    // APPLY TO SCENE
+    if (scene.background && scene.background instanceof THREE.Color) {
+      scene.background.copy(targetBg.current);
+    }
+    if (scene.fog && scene.fog instanceof THREE.FogExp2) {
+      scene.fog.color.copy(targetFog.current);
+      // Optional: Increase fog density at sunset for "Haze"
+      // scene.fog.density = ... (requires ref access to fog density if we want to animate it)
+    }
+
+    if (ambientRef.current) {
+      ambientRef.current.color.copy(targetAmbient.current);
+      ambientRef.current.intensity = (1.4 + dayAmount * 1.8 + nightAmount * 0.9) * (1 - sunsetFactor * 0.3); // Dim slightly at sunset
+    }
+
+    if (hemiRef.current) {
+      hemiRef.current.color.copy(targetHemiSky.current);
+      hemiRef.current.groundColor.copy(targetHemiGround.current);
+      hemiRef.current.intensity = 0.5 + dayAmount * 1.6 + nightAmount * 0.7;
+    }
+
     if (dirLightRef.current) {
       dirLightRef.current.position.copy(pos.current);
-      dirLightRef.current.color.copy(isSun ? SUN_COLOR : MOON_COLOR);
+      dirLightRef.current.color.copy(targetSun.current);
       dirLightRef.current.intensity = isSun ? SUN_INTENSITY : MOON_INTENSITY;
     }
 
@@ -115,34 +204,11 @@ export function SunMoonCycle() {
       discRef.current.visible = true;
       const mat = discRef.current.material as THREE.MeshBasicMaterial;
       if (mat) {
-        if (isSun) {
-          mat.color.copy(SUN_COLOR); // Use the defined sun color for the disc
-          mat.toneMapped = false;
-        } else {
-          mat.color.copy(new THREE.Color("#e8ecff"));
-          mat.toneMapped = false;
-        }
+        mat.color.copy(targetSun.current);
+        // Scale sun up at sunset
+        const scale = isSun ? 1 + sunsetFactor * 3 : 1; // 4x size at peak sunset
+        discRef.current.scale.set(scale, scale, 1);
       }
-    }
-
-    const dayAmount = isSun ? Math.sin(Math.PI * t) : 0;
-    const nightAmount = isSun ? 0 : Math.sin(Math.PI * t);
-    if (ambientRef.current) {
-      ambientRef.current.color.lerpColors(AMBIENT_NIGHT, AMBIENT_DAY, dayAmount * 0.95 + 0.05);
-      ambientRef.current.intensity = 1.4 + dayAmount * 1.8 + nightAmount * 0.9;
-    }
-    if (hemiRef.current) {
-      hemiRef.current.color.lerpColors(HEMI_SKY_NIGHT, HEMI_SKY_DAY, dayAmount * 0.95 + 0.05);
-      hemiRef.current.groundColor.lerpColors(HEMI_GROUND_NIGHT, HEMI_GROUND_DAY, dayAmount * 0.95 + 0.05);
-      hemiRef.current.intensity = 0.5 + dayAmount * 1.6 + nightAmount * 0.7;
-    }
-    if (scene.background && scene.background instanceof THREE.Color) {
-      bgColor.current.lerpColors(BG_NIGHT, BG_DAY, dayAmount * 0.95 + 0.05);
-      scene.background.copy(bgColor.current);
-    }
-    if (scene.fog && scene.fog instanceof THREE.FogExp2) {
-      fogColor.current.lerpColors(FOG_NIGHT, FOG_DAY, dayAmount * 0.95 + 0.05);
-      scene.fog.color.copy(fogColor.current);
     }
   });
 
