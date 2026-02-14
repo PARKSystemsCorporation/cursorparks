@@ -11,27 +11,28 @@ export const GAME_SECONDS_PER_DAY = 24 * 3600;
 /** 4x: one real 6h span = one game 24h day. */
 export const CLOCK_ACCELERATION = 4;
 
+// Adjust mid-afternoon parameters
 const RADIUS = 80;
-const SUN_COLOR = new THREE.Color("#ffdd44"); // Warm orange-yellow sun
-const SUN_INTENSITY = 12; // Bright but balanced
+const SUN_COLOR = new THREE.Color("#ffbd33"); // Richer orange-yellow sun
+const SUN_INTENSITY = 6; // Reduced from 12 to prevent washout
 const MOON_COLOR = new THREE.Color("#e8eeff");
 const MOON_INTENSITY = 3.2;
 
 const AMBIENT_DAY = new THREE.Color("#e0f4ff"); // Light blue ambient
 const AMBIENT_NIGHT = new THREE.Color("#1e2238");
-const HEMI_SKY_DAY = new THREE.Color("#add8e6"); // Light blue sky bounce
+const HEMI_SKY_DAY = new THREE.Color("#60a0ff"); // Deeper blue sky bounce
 const HEMI_GROUND_DAY = new THREE.Color("#807050"); // Dusty ground bounce
 const HEMI_SKY_NIGHT = new THREE.Color("#182038");
 const HEMI_GROUND_NIGHT = new THREE.Color("#0c0e18");
-const BG_DAY = new THREE.Color("#c6e2ff"); // Crisp light blue sky
+const BG_DAY = new THREE.Color("#60a0ff"); // Deeper, richer blue sky
 const BG_NIGHT = new THREE.Color("#0e1018");
-const FOG_DAY = new THREE.Color("#d0e8ff"); // Light blue fog
+const FOG_DAY = new THREE.Color("#80b0ff"); // Matching slightly lighter fog
 const FOG_NIGHT = new THREE.Color("#0c0e18");
 
 /** Phase 0–1 over 6h from page load. Sun peak at 0.25, moon peak at 0.75. Exported for night-gating in scene components. */
 export function getPhase(): number {
-  // Lock to noon for permanent Middle Eastern daytime
-  return 0.25;
+  // Lock to mid-afternoon (approx 2:30 PM)
+  return 0.32;
 }
 
 /** Game-world seconds since midnight (0–86400). Peak night (phase 0.75) = 0. */
@@ -110,7 +111,7 @@ export function SunMoonCycle() {
       const mat = discRef.current.material as THREE.MeshBasicMaterial;
       if (mat) {
         if (isSun) {
-          mat.color.copy(new THREE.Color("#fffef0"));
+          mat.color.copy(SUN_COLOR); // Use the defined sun color for the disc
           mat.toneMapped = false;
         } else {
           mat.color.copy(new THREE.Color("#e8ecff"));
@@ -159,7 +160,7 @@ export function SunMoonCycle() {
       <mesh ref={discRef} position={[50, 40, -10]}>
         <circleGeometry args={[5, 24]} />
         <meshBasicMaterial
-          color="#fffef0"
+          color="#ffbd33" // Initial color matches SUN_COLOR
           transparent
           opacity={1}
           side={THREE.DoubleSide}

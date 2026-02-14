@@ -180,37 +180,34 @@ export function SceneOrchestrator() {
 
   return (
     <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="#ff6b1a" /></mesh>}>
-      <color attach="background" args={["#f5ecd8"]} />
-      <fogExp2 attach="fog" args={["#fff5e8", 0.002]} />
-
       <LightingCycleProvider>
-      <CameraOverrideProvider>
-        <PerformanceTicker />
-        <FirstPersonController />
-        <CameraProfileMoment />
+        <CameraOverrideProvider>
+          <PerformanceTicker />
+          <FirstPersonController />
+          <CameraProfileMoment />
 
-        <AlleyGeometry />
-        <StadiumExit />
-        <DesertJailColiseum />
-        <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
-        <AlleySurfaceBreakupLayer />
-        <ContactShadowSystem />
-        <EnvironmentalMicroMotion />
+          <AlleyGeometry />
+          <StadiumExit />
+          <DesertJailColiseum />
+          <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
+          <AlleySurfaceBreakupLayer />
+          <ContactShadowSystem />
+          <EnvironmentalMicroMotion />
 
-        <AlleyProps />
-        <RobotRepairShop />
-        <BazaarVendors onRightClick={(id, x, y) => setRadialMenu({ vendorId: id, x, y })} />
-        <BrokerBooth />
+          <AlleyProps />
+          <RobotRepairShop />
+          <BazaarVendors onRightClick={(id, x, y) => setRadialMenu({ vendorId: id, x, y })} />
+          <BrokerBooth />
 
-        <FloatingMessages />
-        <EtherText />
+          <FloatingMessages />
+          <EtherText />
 
-        <TrainerNPC />
-        <CreatureSpawnListener />
-        <ExokinCreationLedStrip />
-        <WalletCardDeployment />
-        <DeployedRobotsRenderer />
-      </CameraOverrideProvider>
+          <TrainerNPC />
+          <CreatureSpawnListener />
+          <ExokinCreationLedStrip />
+          <WalletCardDeployment />
+          <DeployedRobotsRenderer />
+        </CameraOverrideProvider>
       </LightingCycleProvider>
 
       <SunMoonCycle />
@@ -220,7 +217,7 @@ export function SceneOrchestrator() {
       <SpatialAudioZones />
 
       <EffectComposer>
-        <Bloom luminanceThreshold={0.35} mipmapBlur intensity={1.9} radius={0.55} />
+        <Bloom luminanceThreshold={0.85} mipmapBlur intensity={1.5} radius={0.55} />
         <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
       </EffectComposer>
     </Suspense>
