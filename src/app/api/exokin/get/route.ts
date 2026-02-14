@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
     try {
         // In a real app, we'd get userId from session.
         // For now, we fetch the most recent created exokin as a fallback, 

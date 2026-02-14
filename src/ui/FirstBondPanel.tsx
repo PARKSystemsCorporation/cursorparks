@@ -20,7 +20,7 @@ export type FirstBondData = {
     gender: string;
     type: string;
     morphologySeed: string;
-    neurochemistryBase: any;
+    neurochemistryBase: Record<string, number | string>;
 };
 
 export default function FirstBondPanel({ onComplete }: { onComplete: (data: FirstBondData) => void }) {
@@ -51,7 +51,7 @@ export default function FirstBondPanel({ onComplete }: { onComplete: (data: Firs
 
             const data = await res.json();
             onComplete(data);
-        } catch (err) {
+        } catch (_) {
             setError("System error. Retry.");
             setBusy(false);
         }

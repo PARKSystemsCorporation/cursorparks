@@ -5,7 +5,6 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useCameraOverride } from "./CameraOverrideContext";
-import { useInventory } from "@/src/modules/ui/inventory/InventoryContext";
 
 const DURATION = 1.4;
 
@@ -31,8 +30,6 @@ export function CameraFirstBond() {
         targetPos: new THREE.Vector3(),
         targetQuat: new THREE.Quaternion(),
     });
-
-    const { deployAt } = useInventory(); // To trigger spawn if needed, but likely listeners handle it.
 
     useEffect(() => {
         const handler = (e: CustomEvent<{ x: number; y: number; z: number }>) => {

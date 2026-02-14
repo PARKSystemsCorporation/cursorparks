@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 const prisma = new PrismaClient();
 
 // Helper to generate initial neurochemistry
-function generateNeurochemistry(type: string, gender: string) {
+function generateNeurochemistry(type: string) {
     // Baseline levels based on type
     const isWarrior = type === "warform";
 
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         const morphologySeed = uuidv4();
 
         // Generate neurochemistry
-        const neurochemistryBase = generateNeurochemistry(type, gender);
+        const neurochemistryBase = generateNeurochemistry(type);
 
         // Create Exokin
         const exokin = await prisma.exokin.create({
