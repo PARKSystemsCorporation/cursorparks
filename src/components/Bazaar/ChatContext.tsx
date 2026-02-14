@@ -92,6 +92,31 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const socket = getSocket();
+        const onBazaarInit = (data: { messages?: Array<{ id?: number; content?: string; x?: number; y?: number; z?: number; timestamp?: number }> }) => {
+            const raw = data?.messages;
+            if (!Array.isArray(raw) || raw.length === 0) return;
+            const hydrated: ChatMessage[] = raw.map((row) => ({
+                id: `bazaar-${row.id ?? ++idCounter.current}`,
+                sender: "Bazaar",
+                senderType: "other" as const,
+                text: row.content ?? "",
+                color: "#e8d5b7",
+                timestamp: row.timestamp ?? 0,
+            })).filter((m) => m.text);
+            setMessages((prev) => {
+                const byId = new Map(prev.map((m) => [m.id, m]));
+                hydrated.forEach((m) => byId.set(m.id, m));
+                return [...byId.values()].sort((a, b) => a.timestamp - b.timestamp).slice(-50);
+            });
+        };
+        socket.on("bazaar:init", onBazaarInit);
+        return () => {
+            socket.off("bazaar:init", onBazaarInit);
+        };
+    }, []);
+
+    useEffect(() => {
+        const socket = getSocket();
         const onBazaarShout = (data: { id?: number; content?: string; x?: number; y?: number; z?: number; timestamp?: number }) => {
             if (!data?.content) return;
             const msg: ChatMessage = {
@@ -102,7 +127,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 color: "#e8d5b7",
                 timestamp: data.timestamp ?? Date.now(),
             };
-            setMessages((prev) => [...prev, msg].slice(-50));
+            setMessages((prev) => {
+                if (prev.some((m) => m.id === msg.id)) return prev;
+                return [...prev, msg].slice(-50);
+            });
         };
         socket.on("bazaar:shout", onBazaarShout);
         return () => {

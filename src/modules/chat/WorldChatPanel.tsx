@@ -7,7 +7,7 @@ const BOTTOM_OFFSET = 100;
 
 /** Right-side WORLD CHAT: NPC chatter, ambient comms, bazaar messages, system events. Thinner than EXOKIN chat, semi-transparent, scroll feed only. */
 export function WorldChatPanel() {
-  const { messages } = useChat();
+  const { messages, environmentContext } = useChat();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const worldMessages = useMemo(
@@ -52,6 +52,9 @@ export function WorldChatPanel() {
         }}
       >
         WORLD CHAT
+        <div style={{ fontSize: 9, fontWeight: "normal", color: "rgba(232, 213, 183, 0.8)", marginTop: 2 }}>
+          Live in the Bazaar now: {environmentContext.entityDensity}
+        </div>
       </div>
       <div
         ref={scrollRef}
