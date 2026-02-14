@@ -1315,7 +1315,7 @@ export default function HomeClient() {
         </div>
 
         <MobileSheet>
-          <div className="flex h-[40dvh] flex-col md:h-[35dvh]">
+          <div className="mobile-landscape-sheet flex h-[40dvh] flex-col md:h-[35dvh]">
             <div className="px-4 pt-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1335,6 +1335,35 @@ export default function HomeClient() {
                     Cash Out
                   </button>
                 </div>
+              </div>
+            </div>
+            <div className="mobile-quick-keys px-4 pt-2">
+              <div className="grid grid-cols-4 gap-2">
+                <button
+                  onClick={() => handleTrade("buy")}
+                  className="mobile-quick-key rounded border border-neon-green/40 bg-neon-green/15 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-neon-green"
+                >
+                  B Buy
+                </button>
+                <button
+                  onClick={() => handleTrade("sell")}
+                  className="mobile-quick-key rounded border border-neon-red/40 bg-neon-red/10 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-neon-red"
+                >
+                  S Sell
+                </button>
+                <button
+                  onClick={onRug}
+                  disabled={position.size === 0}
+                  className="mobile-quick-key rounded border border-white/20 bg-white/5 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  R Flat
+                </button>
+                <button
+                  onClick={cycleLotSize}
+                  className="mobile-quick-key rounded border border-white/20 bg-white/5 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80"
+                >
+                  L Lot {qty}
+                </button>
               </div>
             </div>
             <div className="flex-1 overflow-hidden px-4 pb-3">

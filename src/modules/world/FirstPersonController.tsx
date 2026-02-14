@@ -6,14 +6,18 @@ import * as THREE from "three";
 import { EYE_HEIGHT, clampPosition } from "./firstPersonBounds";
 import { useCameraOverride } from "./CameraOverrideContext";
 import { cameraPos } from "@/src/modules/ui/CoordTracker";
+import { useMobileControls } from "./MobileControlsContext";
 
 const MOUSE_SENSITIVITY = 0.002;
+const TOUCH_LOOK_SPEED = 2.4;
 const MOVE_SPEED = 4;
 
 export function FirstPersonController() {
   const { camera, gl } = useThree();
   const { active: cameraOverrideActive } = useCameraOverride();
+  const { axesRef, reset } = useMobileControls();
   const [locked, setLocked] = useState(false);
+  const isTouchControlRef = useRef(false);
   // Assume we might have a global "UI Active" state context later.
   // For now, let's rely on pointerLockElement check and allow external lock prevention.
   // If the user clicks on a UI element (like FirstBondPanel), pointer lock shouldn't engage if event is stopped?
@@ -33,6 +37,13 @@ export function FirstPersonController() {
 
   useEffect(() => {
     const canvas = gl.domElement;
+    const coarsePointer = window.matchMedia("(pointer: coarse)");
+    const syncTouchMode = () => {
+      isTouchControlRef.current = coarsePointer.matches || navigator.maxTouchPoints > 0;
+      if (!isTouchControlRef.current) reset();
+    };
+    syncTouchMode();
+
     const handleClick = () => {
       // Only lock if clicking directly on the canvas or safe area, not if clicking UI.
       // But the event listener is on `canvas` (gl.domElement).
@@ -46,6 +57,7 @@ export function FirstPersonController() {
       // Let's check for a global flag or class "parks-ui-open".
       if (document.body.classList.contains("parks-ui-open")) return;
 
+      if (isTouchControlRef.current) return;
       if (!document.pointerLockElement) requestLock();
     };
     const handlePointerLockChange = () => {
@@ -80,6 +92,9 @@ export function FirstPersonController() {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("mousemove", handleMouseMove);
+    coarsePointer.addEventListener("change", syncTouchMode);
+    window.addEventListener("resize", syncTouchMode);
+    window.addEventListener("orientationchange", syncTouchMode);
 
     return () => {
       canvas.removeEventListener("click", handleClick);
@@ -87,14 +102,26 @@ export function FirstPersonController() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("mousemove", handleMouseMove);
+      coarsePointer.removeEventListener("change", syncTouchMode);
+      window.removeEventListener("resize", syncTouchMode);
+      window.removeEventListener("orientationchange", syncTouchMode);
     };
-  }, [gl.domElement, requestLock]);
+  }, [gl.domElement, requestLock, reset]);
 
   useFrame((_, delta) => {
     if (cameraOverrideActive) return;
     camera.position.y = EYE_HEIGHT;
 
-    if (document.pointerLockElement !== gl.domElement) return;
+    const pointerLocked = document.pointerLockElement === gl.domElement;
+    const mobileAxes = axesRef.current;
+    const mobileActive = isTouchControlRef.current && (mobileAxes.moving || mobileAxes.looking);
+    if (!pointerLocked && !mobileActive) return;
+
+    if (isTouchControlRef.current) {
+      rotation.current.yaw -= mobileAxes.lookX * TOUCH_LOOK_SPEED * delta;
+      rotation.current.pitch += mobileAxes.lookY * TOUCH_LOOK_SPEED * delta;
+      rotation.current.pitch = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, rotation.current.pitch));
+    }
 
     const yaw = rotation.current.yaw;
     forward.current.set(-Math.sin(yaw), 0, -Math.cos(yaw));
@@ -105,6 +132,10 @@ export function FirstPersonController() {
     if (keys.current.s) moveVec.current.sub(forward.current);
     if (keys.current.d) moveVec.current.add(right.current);
     if (keys.current.a) moveVec.current.sub(right.current);
+    if (isTouchControlRef.current) {
+      moveVec.current.addScaledVector(forward.current, mobileAxes.moveY);
+      moveVec.current.addScaledVector(right.current, mobileAxes.moveX);
+    }
 
     if (moveVec.current.lengthSq() > 0) {
       moveVec.current.normalize().multiplyScalar(MOVE_SPEED * delta);

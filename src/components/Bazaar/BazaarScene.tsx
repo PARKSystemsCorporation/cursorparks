@@ -19,6 +19,8 @@ import { DebugOverlay } from "@/src/modules/ui/DebugOverlay";
 import { CoordTracker } from "@/src/modules/ui/CoordTracker";
 import { ColiseumArenaTrigger } from "@/src/modules/world/ColiseumArenaTrigger";
 import { BackpackMenu } from "@/src/modules/ui/BackpackMenu";
+import { MobileControlsProvider } from "@/src/modules/world/MobileControlsContext";
+import { MobileDualStickOverlay } from "./MobileDualStickOverlay";
 import "./BazaarLanding.css";
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
@@ -50,10 +52,11 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
     <ChatProvider>
       <PerformanceProvider>
         <SceneStateProvider onEnterAlleyTwo={onEnterAlleyTwo ?? null}>
-          <RobotProvider>
-            <ExokinSpeechMorphologySync />
-            <TrainerProvider>
-              <div style={{ width: "100vw", height: "100vh", background: "#e6ccb2" }}>
+          <MobileControlsProvider>
+            <RobotProvider>
+              <ExokinSpeechMorphologySync />
+              <TrainerProvider>
+                <div style={{ width: "100vw", height: "100vh", background: "#e6ccb2" }}>
                 <ErrorBoundary>
                   <Canvas
                     shadows
@@ -99,9 +102,11 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
 
                 <BackpackMenu />
                 <CoordTracker />
+                <MobileDualStickOverlay />
               </div>
-            </TrainerProvider>
-          </RobotProvider>
+              </TrainerProvider>
+            </RobotProvider>
+          </MobileControlsProvider>
         </SceneStateProvider>
       </PerformanceProvider>
     </ChatProvider>

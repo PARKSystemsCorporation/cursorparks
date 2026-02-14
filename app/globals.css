@@ -443,6 +443,36 @@ input:focus-visible {
   will-change: transform, opacity, width;
 }
 
+@media (max-width: 1023px) and (orientation: landscape) and (pointer: coarse) {
+  .mobile-landscape-sheet {
+    height: 52dvh !important;
+  }
+
+  .mobile-quick-keys {
+    padding-bottom: 6px;
+  }
+
+  .mobile-quick-key {
+    min-height: 44px;
+    font-size: 10px;
+  }
+
+  .mobile-tabbar-shell {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-tabbar-inner {
+    gap: 6px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .mobile-tabbar-btn {
+    min-height: 40px;
+    font-size: 10px;
+  }
+}
+
 /* ── Optimize animations for performance ── */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -9,6 +9,12 @@ export default function CameraRig({ targetVendor, onExit }: { targetVendor: stri
     const { camera } = useThree();
     const mouse = useRef({ x: 0, y: 0 });
     const touchStartDist = useRef<number>(0);
+    const touchLookPoint = useRef<{ x: number; y: number } | null>(null);
+
+    const isInteractiveTarget = (target: EventTarget | null) => {
+        if (!(target instanceof HTMLElement)) return false;
+        return !!target.closest("button, input, textarea, select, [role='button'], a");
+    };
 
     // Gestures for "Back" / "Escape"
     useEffect(() => {
@@ -22,14 +28,32 @@ export default function CameraRig({ targetVendor, onExit }: { targetVendor: stri
         };
 
         const handleTouchStart = (e: TouchEvent) => {
+            if (isInteractiveTarget(e.target)) return;
+            if (e.touches.length === 1) {
+                touchLookPoint.current = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY,
+                };
+            }
             if (e.touches.length === 2) {
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
                 const dy = e.touches[0].clientY - e.touches[1].clientY;
                 touchStartDist.current = Math.sqrt(dx * dx + dy * dy);
+                touchLookPoint.current = null;
             }
         };
 
         const handleTouchMove = (e: TouchEvent) => {
+            if (isInteractiveTarget(e.target)) return;
+            if (e.touches.length === 1 && touchLookPoint.current) {
+                const touch = e.touches[0];
+                const dx = touch.clientX - touchLookPoint.current.x;
+                const dy = touch.clientY - touchLookPoint.current.y;
+                touchLookPoint.current = { x: touch.clientX, y: touch.clientY };
+                mouse.current.x = THREE.MathUtils.clamp(mouse.current.x + (dx / window.innerWidth) * 2, -1, 1);
+                mouse.current.y = THREE.MathUtils.clamp(mouse.current.y - (dy / window.innerHeight) * 2, -1, 1);
+                e.preventDefault();
+            }
             if (e.touches.length === 2) {
                 const dx = e.touches[0].clientX - e.touches[1].clientX;
                 const dy = e.touches[0].clientY - e.touches[1].clientY;
@@ -43,15 +67,22 @@ export default function CameraRig({ targetVendor, onExit }: { targetVendor: stri
                 }
             }
         };
+        const handleTouchEnd = () => {
+            touchLookPoint.current = null;
+        };
 
         window.addEventListener("wheel", handleWheel);
-        window.addEventListener("touchstart", handleTouchStart);
-        window.addEventListener("touchmove", handleTouchMove);
+        window.addEventListener("touchstart", handleTouchStart, { passive: true });
+        window.addEventListener("touchmove", handleTouchMove, { passive: false });
+        window.addEventListener("touchend", handleTouchEnd);
+        window.addEventListener("touchcancel", handleTouchEnd);
 
         return () => {
             window.removeEventListener("wheel", handleWheel);
             window.removeEventListener("touchstart", handleTouchStart);
             window.removeEventListener("touchmove", handleTouchMove);
+            window.removeEventListener("touchend", handleTouchEnd);
+            window.removeEventListener("touchcancel", handleTouchEnd);
         };
     }, [targetVendor, onExit]);
 
