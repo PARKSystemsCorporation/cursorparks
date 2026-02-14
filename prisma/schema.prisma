@@ -241,3 +241,14 @@ model AriaMessageCounter {
   currentIndex Int      @default(0)
   lastUpdated  DateTime @updatedAt
 }
+
+model Exokin {
+  id                 String   @id @default(cuid())
+  name               String
+  gender             String
+  type               String
+  morphologySeed     String
+  neurochemistryBase String   @default("{}")
+  createdAt          DateTime @default(now())
+  userId             String?
+}

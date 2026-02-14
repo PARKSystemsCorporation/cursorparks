@@ -25,6 +25,7 @@ import { WalletCardDeployment } from "@/src/modules/ui/inventory/WalletCardDeplo
 import { DeployedRobotsRenderer } from "@/src/modules/ui/inventory/DeployedRobotsRenderer";
 import { CreatureSpawnListener } from "./CreatureSpawnListener";
 import { SunMoonCycle } from "./SunMoonCycle";
+import { CameraFirstBond } from "./CameraFirstBond";
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
 function AlleyProps() {
@@ -78,27 +79,28 @@ export function SceneOrchestrator() {
         <PerformanceTicker />
         <FirstPersonController />
         <CameraProfileMoment />
+        <CameraFirstBond />
 
-      <AlleyGeometry />
-      <PrisonHallwayAndYard />
-      <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
-      <AlleySurfaceBreakupLayer />
-      <ContactShadowSystem />
-      <EnvironmentalMicroMotion />
+        <AlleyGeometry />
+        <PrisonHallwayAndYard />
+        <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
+        <AlleySurfaceBreakupLayer />
+        <ContactShadowSystem />
+        <EnvironmentalMicroMotion />
 
-      <AlleyProps />
-      <RobotRepairShop />
-      <BazaarVendors onRightClick={(id, x, y) => setRadialMenu({ vendorId: id, x, y })} />
-      <BrokerBooth />
+        <AlleyProps />
+        <RobotRepairShop />
+        <BazaarVendors onRightClick={(id, x, y) => setRadialMenu({ vendorId: id, x, y })} />
+        <BrokerBooth />
 
-      <FloatingMessages />
-      <EtherText />
+        <FloatingMessages />
+        <EtherText />
 
-      <TrainerNPC />
-      <ArenaEntrance />
-      <CreatureSpawnListener />
-      <WalletCardDeployment />
-      <DeployedRobotsRenderer />
+        <TrainerNPC />
+        <ArenaEntrance />
+        <CreatureSpawnListener />
+        <WalletCardDeployment />
+        <DeployedRobotsRenderer />
       </CameraOverrideProvider>
 
       <SunMoonCycle />

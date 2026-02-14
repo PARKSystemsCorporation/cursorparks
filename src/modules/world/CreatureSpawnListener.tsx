@@ -27,13 +27,36 @@ export function CreatureSpawnListener() {
         z = d.position.z;
         y = typeof d.position.y === "number" ? d.position.y : 0;
       } else {
-        offsetWorld.current.copy(FRONT_LEFT_OFFSET).applyQuaternion(camera.quaternion);
-        const spawnPos = camera.position.clone().add(offsetWorld.current);
+        // Player Relative Logic: PlayerPos + (Forward * 1.2) + (Left * 0.8)
+        // We need player rotation. Camera quaternion is good proxy for yaw if FPC is active.
+
+        // Forward vector (projected on XZ)
+        const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        fwd.y = 0;
+        fwd.normalize();
+
+        // Left vector
+        const left = new THREE.Vector3(-1, 0, 0).applyQuaternion(camera.quaternion);
+        left.y = 0;
+        left.normalize();
+
+        const offset = fwd.clone().multiplyScalar(1.2).add(left.clone().multiplyScalar(0.8));
+        const spawnPos = camera.position.clone().add(offset);
+        // Ground it
+        spawnPos.y = 0;
+
         x = spawnPos.x;
         z = spawnPos.z;
         y = 0;
       }
       deployAt(type, x, y, z, { identity: d?.identity, creatureId: d?.creatureId });
+
+      // If this is a First Bond event (no existing creatureId or explicitly flagged), 
+      // we might want to trigger the specific camera event.
+      // But typically the CALLER triggers the camera event.
+      // The listener just places the mesh.
+      // We will emit 'parks-spawn-occurred' as generic.
+
       window.dispatchEvent(
         new CustomEvent("parks-spawn-occurred", { detail: { x, y, z } })
       );
