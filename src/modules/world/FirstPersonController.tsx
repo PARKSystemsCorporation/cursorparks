@@ -14,6 +14,13 @@ export function FirstPersonController() {
   const { camera, gl } = useThree();
   const { active: cameraOverrideActive } = useCameraOverride();
   const [locked, setLocked] = useState(false);
+  // Assume we might have a global "UI Active" state context later.
+  // For now, let's rely on pointerLockElement check and allow external lock prevention.
+  // If the user clicks on a UI element (like FirstBondPanel), pointer lock shouldn't engage if event is stopped?
+  // But FPC listens to canvas click.
+  // We need a way to say "Don't Lock".
+  // Let's check a data attribute on the body or a global class?
+  // Or simply: check if the click target is the canvas.
   const rotation = useRef({ yaw: Math.PI, pitch: 0 });
   const keys = useRef({ w: false, a: false, s: false, d: false });
   const moveVec = useRef(new THREE.Vector3());
@@ -26,7 +33,19 @@ export function FirstPersonController() {
 
   useEffect(() => {
     const canvas = gl.domElement;
-    const handleClick = () => {
+    const handleClick = (e: Event) => {
+      // Only lock if clicking directly on the canvas or safe area, not if clicking UI.
+      // But the event listener is on `canvas` (gl.domElement).
+      // If UI is *over* canvas, clicks on UI won't bubble to canvas if they stop propagation.
+      // However, if FirstBondPanel is a sibling of Canvas (which it is), clicks on Panel don't hit Canvas.
+      // So this might already be fine IF the panel handles clicks.
+      // User reported "need cursor ability". This implies FPC is locking when it shouldn't, or they can't get cursor back.
+      // If locked, press ESC to unlock.
+      // If Panel is open, we want to PREVENT locking even if they mistarget.
+
+      // Let's check for a global flag or class "parks-ui-open".
+      if (document.body.classList.contains("parks-ui-open")) return;
+
       if (!document.pointerLockElement) requestLock();
     };
     const handlePointerLockChange = () => {

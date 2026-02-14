@@ -40,7 +40,7 @@ export function CreatureSpawnListener() {
         left.y = 0;
         left.normalize();
 
-        const offset = fwd.clone().multiplyScalar(1.2).add(left.clone().multiplyScalar(0.8));
+        const offset = fwd.clone().multiplyScalar(1.2).add(left.clone().multiplyScalar(2.5));
         const spawnPos = camera.position.clone().add(offset);
         // Ground it
         spawnPos.y = 0;

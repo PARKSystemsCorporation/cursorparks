@@ -26,6 +26,7 @@ import { DeployedRobotsRenderer } from "@/src/modules/ui/inventory/DeployedRobot
 import { CreatureSpawnListener } from "./CreatureSpawnListener";
 import { SunMoonCycle } from "./SunMoonCycle";
 import { CameraFirstBond } from "./CameraFirstBond";
+import { FirstBondSpotlight } from "./FirstBondSpotlight";
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
 function AlleyProps() {
@@ -67,7 +68,7 @@ function AlleyProps() {
  * SceneOrchestrator: 3D scene content (alley, FPS controller, NPCs, lights, effects).
  * Use inside Canvas. Expects PerformanceProvider and SceneStateProvider above.
  */
-export function SceneOrchestrator() {
+export function SceneOrchestrator({ showBondPanel }: { showBondPanel?: boolean }) {
   const { setRadialMenu, onEnterAlleyTwo } = useSceneState();
 
   return (
@@ -80,6 +81,7 @@ export function SceneOrchestrator() {
         <FirstPersonController />
         <CameraProfileMoment />
         <CameraFirstBond />
+        <FirstBondSpotlight active={!!showBondPanel} />
 
         <AlleyGeometry />
         <PrisonHallwayAndYard />

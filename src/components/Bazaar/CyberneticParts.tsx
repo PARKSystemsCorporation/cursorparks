@@ -57,6 +57,13 @@ const MAT_SMOKY_EYE = new THREE.MeshStandardMaterial({
     metalness: 0,
 });
 
+const MAT_NEON_HIGHLIGHT = new THREE.MeshStandardMaterial({
+    color: "#00ffff", // Electric Cyan
+    emissive: "#00ffff",
+    emissiveIntensity: 2.0,
+    toneMapped: false,
+});
+
 // --- GEOMETRY HELPERS ---
 
 const BOX_GEO = new THREE.BoxGeometry(1, 1, 1);
@@ -89,6 +96,9 @@ export function CyberneticHead({ skinTone, isBarker }: { skinTone: string; isBar
 
             {/* --- Brow Ridge --- */}
             <mesh position={[0, 0.04, 0.12]} scale={[0.14, 0.025, 0.03]} geometry={BOX_GEO} material={matSkin} />
+
+            {/* Neon Third Eye Highlight */}
+            <mesh position={[0, 0.065, 0.115]} scale={[0.015, 0.015, 0.01]} geometry={SPHERE_GEO} material={MAT_NEON_HIGHLIGHT} />
 
             {/* --- Eyes (subtle glow — cybernetic accent) --- */}
             <group position={[0, 0.02, 0.14]}>
@@ -165,6 +175,9 @@ export function CyberneticTorso({ topColor, buildScale, noChestGlow }: { topColo
             <mesh position={[0, 0.25, 0.08]} scale={[0.38 * scale, 0.25, 0.12]} geometry={BOX_GEO} castShadow>
                 <meshStandardMaterial color={topColor} metalness={0.4} roughness={0.4} />
             </mesh>
+
+            {/* Neon Central Core Highlight */}
+            <mesh position={[0, 0.25, 0.142]} scale={[0.02, 0.18, 0.01]} geometry={BOX_GEO} material={MAT_NEON_HIGHLIGHT} />
             {!noChestGlow && (
                 <mesh position={[0, 0.25, 0.141]} scale={[0.04, 0.12, 0.01]} geometry={BOX_GEO} material={MAT_SENSOR_GLOW} />
             )}
@@ -197,6 +210,8 @@ export function CyberneticArm({ isRight, robotic, skinTone }: { isRight: boolean
             {/* Upper Arm - Anatomical Shape (Cylinder/Capsule approx) */}
             <group position={[0.04 * sideMult, -0.2, 0]} rotation={[0, 0, isRight ? -0.1 : 0.1]}>
                 <mesh scale={[0.11, 0.28, 0.11]} geometry={CYL_GEO} material={upperArmMat} castShadow />
+                {/* Neon Arm Band */}
+                <mesh position={[0, 0, 0]} scale={[0.115, 0.02, 0.115]} geometry={CYL_GEO} material={MAT_NEON_HIGHLIGHT} />
             </group>
 
             {/* Elbow Complex */}
@@ -236,6 +251,8 @@ export function CyberneticLeg({ color }: { color: string }) {
                 <mesh position={[0, -0.15, 0]} scale={[0.14, 0.25, 0.14]} geometry={CYL_GEO} material={MAT_SOFT_GRAPHITE} castShadow />
                 {/* Thigh Armor Plate (Front) */}
                 <mesh position={[0, 0, 0.09]} scale={[0.12, 0.4, 0.04]} geometry={BOX_GEO} material={MAT_PRISTINE_WHITE} castShadow />
+                {/* Neon Thigh Stripe */}
+                <mesh position={[0, 0, 0.111]} scale={[0.02, 0.3, 0.01]} geometry={BOX_GEO} material={MAT_NEON_HIGHLIGHT} />
             </group>
 
             {/* Knee Joint - Mechanical Hinge */}

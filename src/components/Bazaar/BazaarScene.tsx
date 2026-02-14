@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import React from "react";
+import React, { useEffect } from "react";
 import * as THREE from "three";
 import { ChatProvider } from "./ChatContext";
 import { PerformanceProvider } from "@/src/modules/performance";
@@ -46,6 +46,14 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () => void }) {
   const [checkingExokin, setCheckingExokin] = React.useState(true);
   const [showBondPanel, setShowBondPanel] = React.useState(false);
+
+  useEffect(() => {
+    if (showBondPanel) {
+      document.body.classList.add("parks-ui-open");
+    } else {
+      document.body.classList.remove("parks-ui-open");
+    }
+  }, [showBondPanel]);
 
   React.useEffect(() => {
     // Check if Exokin exists
