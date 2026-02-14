@@ -106,7 +106,7 @@ function levelFromWins(wins: number, losses: number): number {
 
 function ExokinStatsTab() {
   const { getEAREState, getChatContext, getCombatCalibration } = useRobot();
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
