@@ -46,7 +46,7 @@ export function TrainerOverlay() {
             color_profile: identity.color_profile,
           }),
         });
-      } catch (_) {}
+      } catch {}
       setBondCapsule({
         id: creatureId,
         type: "capsule",
