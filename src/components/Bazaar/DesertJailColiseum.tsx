@@ -6,6 +6,60 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
 
+const CONCRETE_TEXTURE_PATH = "/textures/prison_concrete_wall.png";
+
+/**
+ * Tunnel/Alleyway with the custom concrete texture.
+ */
+function AlleywayTunnel({ position, rotation }: { position: [number, number, number], rotation?: [number, number, number] }) {
+    const colorMap = useLoader(THREE.TextureLoader, CONCRETE_TEXTURE_PATH);
+
+    // Configure texture for repeating
+    useMemo(() => {
+        colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
+        colorMap.repeat.set(2, 1);
+    }, [colorMap]);
+
+    const tunnelMaterial = useMemo(() => {
+        return new THREE.MeshStandardMaterial({
+            map: colorMap,
+            roughness: 0.8,
+            color: "#aaaaaa" // Tint it slightly to match environment
+        });
+    }, [colorMap]);
+
+    return (
+        <group position={position} rotation={rotation}>
+            {/* Floor */}
+            <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+                <planeGeometry args={[6, 12]} />
+                <meshStandardMaterial color="#5a4d41" roughness={0.9} /> {/* Dirt floor */}
+            </mesh>
+
+            {/* Left Wall */}
+            <mesh castShadow receiveShadow position={[-3, 2.5, 0]} material={tunnelMaterial}>
+                <boxGeometry args={[0.5, 5, 12]} />
+            </mesh>
+
+            {/* Right Wall */}
+            <mesh castShadow receiveShadow position={[3, 2.5, 0]} material={tunnelMaterial}>
+                <boxGeometry args={[0.5, 5, 12]} />
+            </mesh>
+
+            {/* Ceiling Beams */}
+            <mesh position={[0, 4.8, -4]} castShadow material={RUST_MAT}>
+                <boxGeometry args={[6.5, 0.4, 0.4]} />
+            </mesh>
+            <mesh position={[0, 4.8, 0]} castShadow material={RUST_MAT}>
+                <boxGeometry args={[6.5, 0.4, 0.4]} />
+            </mesh>
+            <mesh position={[0, 4.8, 4]} castShadow material={RUST_MAT}>
+                <boxGeometry args={[6.5, 0.4, 0.4]} />
+            </mesh>
+        </group>
+    );
+}
+
 const CELL_BLOCK_WIDTH = 4;
 const CELL_BLOCK_HEIGHT = 3;
 const CELL_BLOCK_DEPTH = 3;
@@ -203,6 +257,12 @@ export function DesertJailColiseum() {
                     <coneGeometry args={[3, 1, 4]} />
                 </mesh>
             </group>
+
+            {/* NEW: Alleyway/Tunnel Entrance */}
+            {/* Positioned to lead OUT from the west side approx z=4 (center of gap between 14 and -6 is... 4) */}
+            {/* Gap Start: 14. Gap End: -6. Midpoint: 4. */}
+            {/* The tunnel should stick out from the wall. Wall x is approx -12. */}
+            <AlleywayTunnel position={[-18, 0, 4]} rotation={[0, 0, 0]} />
 
 
             {/* --- PROPS --- */}
