@@ -5,6 +5,11 @@ const Database = require("better-sqlite3");
 const path = require("path");
 const { execSync } = require("child_process");
 
+if (!process.env.DATABASE_URL) process.env.DATABASE_URL = "file:./dev.db";
+if (!process.env.DATABASE_PATH && process.env.NODE_ENV === "production") {
+  console.warn("DATABASE_PATH not set; Bazaar DB will use default path. Set it for persistent storage.");
+}
+
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -94,7 +99,11 @@ function serveBazaarEnterApi(req, res, parsedUrl) {
       const raw = Buffer.concat(chunks).toString();
       if (raw) body = JSON.parse(raw);
     } catch (_) {}
-    const fakeReq = { body };
+    const fakeReq = {
+      body,
+      get: (name) => req.headers[name] || (name && req.headers[name.toLowerCase()]),
+      protocol: req.socket?.encrypted ? "https" : "http"
+    };
     let statusCode = 200;
     const origWriteHead = res.writeHead.bind(res);
     const origEnd = res.end.bind(res);
@@ -143,6 +152,12 @@ async function bootstrap() {
   await app.prepare();
   isReady = true;
   console.log(`> Ready on http://localhost:${PORT}`);
+  const prismaUrl = process.env.DATABASE_URL || "file:./dev.db";
+  const bazaarPath = process.env.DATABASE_PATH || "(default server/data/bazaar.db)";
+  if (dev || process.env.DATABASE_URL || process.env.DATABASE_PATH) {
+    console.log(`> Prisma DB: ${prismaUrl.replace(/:[^:]*@/, ":****@")}`);
+    console.log(`> Bazaar DB: ${bazaarPath}`);
+  }
 }
 
 const io = new Server(server, {

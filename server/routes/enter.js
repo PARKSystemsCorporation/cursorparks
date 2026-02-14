@@ -2,6 +2,7 @@
 
 const bcrypt = require("bcryptjs");
 const { getDb } = require("../db");
+const { createSessionForBazaarUser, getSessionCookieOptions, buildSetCookieHeader } = require("../accountBridge");
 
 const stmtGetUser = (db) => db.prepare("SELECT id, handle, password_hash, created_at, last_seen FROM users WHERE handle = ?");
 const stmtInsertUser = (db) => db.prepare("INSERT INTO users (handle, password_hash) VALUES (?, ?)");
@@ -25,10 +26,11 @@ function createStarterInventory(db, userId) {
   insert.run(userId, "forge_cube", "starter_warrior", JSON.stringify({ variant: "warrior" }));
 }
 
-function enter(req, res) {
+async function enter(req, res) {
   try {
     const handle = (req.body && req.body.handle) ? String(req.body.handle).trim() : "";
     const password = req.body && req.body.password != null ? String(req.body.password) : "";
+    const acceptTerms18 = !!(req.body && req.body.acceptTerms18);
     if (!handle) {
       return res.status(400).json({ error: "Handle required." });
     }
@@ -49,6 +51,9 @@ function enter(req, res) {
 
     let user = getUser.get(handle);
     if (!user) {
+      if (!acceptTerms18) {
+        return res.status(400).json({ error: "You must be 18+ and accept the Terms & Conditions." });
+      }
       try {
         const passwordHash = bcrypt.hashSync(password, 10);
         const run = insertUser.run(handle, passwordHash);
@@ -79,7 +84,15 @@ function enter(req, res) {
       user = getUser.get(handle);
     }
 
-    return res.json(buildPayload(db, user, getWallet, getBots, getInventory, getWorldState));
+    const payload = buildPayload(db, user, getWallet, getBots, getInventory, getWorldState);
+    try {
+      const session = await createSessionForBazaarUser(user.id, user.handle);
+      const cookieOpts = getSessionCookieOptions(req, session.expiresAt);
+      res.setHeader("Set-Cookie", buildSetCookieHeader(session.token, cookieOpts));
+    } catch (bridgeErr) {
+      console.error("[enter] account bridge error (continuing without Day Trader session):", bridgeErr.message);
+    }
+    return res.json(payload);
   } catch (err) {
     console.error("[enter] error", err);
     return res.status(500).json({ error: "Enter failed. Please try again." });
@@ -103,7 +116,7 @@ function buildPayload(db, user, getWallet, getBots, getInventory, getWorldState)
   };
 }
 
-function setPassword(req, res) {
+async function setPassword(req, res) {
   try {
     const handle = (req.body && req.body.handle) ? String(req.body.handle).trim() : "";
     const password = req.body && req.body.password != null ? String(req.body.password) : "";
@@ -138,7 +151,15 @@ function setPassword(req, res) {
     setPasswordStmt.run(passwordHash, user.id);
     updateLastSeen.run(user.id);
     const updated = getUser.get(handle);
-    return res.json(buildPayload(db, updated, getWallet, getBots, getInventory, getWorldState));
+    const payload = buildPayload(db, updated, getWallet, getBots, getInventory, getWorldState);
+    try {
+      const session = await createSessionForBazaarUser(updated.id, updated.handle);
+      const cookieOpts = getSessionCookieOptions(req, session.expiresAt);
+      res.setHeader("Set-Cookie", buildSetCookieHeader(session.token, cookieOpts));
+    } catch (bridgeErr) {
+      console.error("[set-password] account bridge error (continuing without Day Trader session):", bridgeErr.message);
+    }
+    return res.json(payload);
   } catch (err) {
     console.error("[set-password] error", err);
     return res.status(500).json({ error: "Set password failed. Please try again." });

@@ -38,7 +38,7 @@ type Props = {
   getLevelByKey: (key: string) => number;
   authError: string | null;
   authBusy: "register" | "login" | null;
-  onRegister: (user: string, pass: string) => void;
+  onRegister: (user: string, pass: string, acceptTerms18: boolean) => void;
   onLogin: (user: string, pass: string) => void;
   onLogout: () => void;
   onPurchaseUpgrade: (key: string) => void;
@@ -137,6 +137,7 @@ export function AccountPanel({
 }: Props) {
   const [regUser, setRegUser] = useState("");
   const [regPass, setRegPass] = useState("");
+  const [regAcceptTerms18, setRegAcceptTerms18] = useState(false);
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
 
@@ -195,9 +196,18 @@ export function AccountPanel({
               value={regPass}
               onChange={(e) => setRegPass(e.target.value)}
             />
+            <label className="mt-2 flex items-start gap-2 text-[10px] text-white/70">
+              <input
+                type="checkbox"
+                checked={regAcceptTerms18}
+                onChange={(e) => setRegAcceptTerms18(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>I am 18+ and I accept the Terms & Conditions.</span>
+            </label>
             <button
               className="mt-2.5 w-full rounded bg-neon-cyan py-2 text-[11px] font-semibold text-black transition-all duration-200 hover:bg-neon-cyan/90 hover:shadow-glow-cyan hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
-              onClick={() => onRegister(regUser, regPass)}
+              onClick={() => onRegister(regUser, regPass, regAcceptTerms18)}
               disabled={authBusy === "register"}
             >
               {authBusy === "register" ? "Creating..." : "Register"}

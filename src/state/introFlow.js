@@ -40,7 +40,8 @@ export function markIntroDone() {
   } catch (_) { }
 }
 
-export async function enterWithHandle(handle, password) {
+export async function enterWithHandle(handle, password, options = {}) {
+  const acceptTerms18 = !!options.acceptTerms18;
   const base = getEnterApiBase();
   const url = base ? `${base.replace(/\/$/, "")}/enter` : "/enter";
   const res = await fetch(url, {
@@ -49,6 +50,7 @@ export async function enterWithHandle(handle, password) {
     body: JSON.stringify({
       handle: String(handle).trim(),
       password: password != null ? String(password) : "",
+      acceptTerms18,
     }),
   });
   const text = await res.text();

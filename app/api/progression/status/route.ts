@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { getUserFromSession } from "@/src/server/auth";
 import { prisma } from "@/src/server/db";
-import { ensureUpgradeDefs } from "@/src/server/progression";
+import { ensureUpgradeDefs, ensurePlayerStats } from "@/src/server/progression";
 
 export async function GET() {
   try {
     const user = await getUserFromSession();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     await ensureUpgradeDefs();
+    await ensurePlayerStats(user.id);
     const stats = await prisma.playerStats.findUnique({ where: { userId: user.id } });
     const upgrades = await prisma.userUpgrade.findMany({
       where: { userId: user.id },

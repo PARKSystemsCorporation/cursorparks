@@ -99,6 +99,7 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
   const [handle, setHandle] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [accepted18Terms, setAccepted18Terms] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [showForgotHelp, setShowForgotHelp] = useState(false);
@@ -124,9 +125,13 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
         setError("Passwords do not match.");
         return;
       }
+      if (mode === "create" && !accepted18Terms) {
+        setError("You must confirm you are 18+ and accept the Terms.");
+        return;
+      }
       setBusy(true);
       try {
-        await enterWithHandle(trimmed, password);
+        await enterWithHandle(trimmed, password, { acceptTerms18: mode === "create" ? accepted18Terms : undefined });
         onEnter({ type: "handle", handle: trimmed });
         // Copy onboarding flow for newly created accounts even if guest intro was already done.
         if (onFirstTimeIntro) {
@@ -143,11 +148,15 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
   );
 
   const handleGuest = useCallback(() => {
+    if (!accepted18Terms) {
+      setError("You must confirm you are 18+ and accept the Terms.");
+      return;
+    }
     createGuestSessionId();
     const firstTime = isFirstTimeUser();
     onEnter({ type: "guest" });
     if (firstTime && onFirstTimeIntro) onFirstTimeIntro();
-  }, [onEnter, onFirstTimeIntro]);
+  }, [accepted18Terms, onEnter, onFirstTimeIntro]);
 
   if (mode === "signin" || mode === "create") {
     return (
@@ -225,6 +234,16 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
               Back
             </button>
           </div>
+          <label style={{ marginTop: "0.75rem", maxWidth: 280, display: "flex", gap: "0.5rem", alignItems: "flex-start", fontSize: "11px", color: "#c8b8a8" }}>
+            <input
+              type="checkbox"
+              checked={accepted18Terms}
+              onChange={(e) => setAccepted18Terms(e.target.checked)}
+              disabled={busy}
+              style={{ marginTop: "2px" }}
+            />
+            <span>I am 18+ and I accept the Terms & Conditions.</span>
+          </label>
           <button
             type="button"
             style={{ ...STYLES.button, background: "transparent", border: "none", fontSize: "10px", marginTop: "0.5rem" }}
@@ -287,6 +306,16 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
           Continue as Guest
         </button>
       </div>
+      <label style={{ marginTop: "1rem", maxWidth: 280, display: "flex", gap: "0.5rem", alignItems: "flex-start", fontSize: "11px", color: "#c8b8a8" }}>
+        <input
+          type="checkbox"
+          checked={accepted18Terms}
+          onChange={(e) => setAccepted18Terms(e.target.checked)}
+          style={{ marginTop: "2px" }}
+        />
+        <span>I am 18+ and I accept the Terms & Conditions.</span>
+      </label>
+      {error && <div style={STYLES.error}>{error}</div>}
       <nav style={STYLES.footer} aria-label="Quick links">
         <Link href="/research" style={STYLES.footerLink}>Research</Link>
         <Link href="/mmotrader" style={STYLES.footerLink}>Market</Link>

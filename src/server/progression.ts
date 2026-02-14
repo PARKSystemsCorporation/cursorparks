@@ -169,3 +169,8 @@ export function computeLevel(totalPnl: number) {
   const level = Math.max(1, Math.floor(Math.log10(1 + xp / 1000) * 10) + 1);
   return { level, xp };
 }
+
+export async function ensurePlayerStats(userId: string) {
+  const existing = await prisma.playerStats.findUnique({ where: { userId } });
+  if (!existing) await prisma.playerStats.create({ data: { userId } });
+}

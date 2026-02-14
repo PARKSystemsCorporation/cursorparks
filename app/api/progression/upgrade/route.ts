@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserFromSession } from "@/src/server/auth";
 import { prisma } from "@/src/server/db";
-import { ensureUpgradeDefs, upgradeCost } from "@/src/server/progression";
+import { ensureUpgradeDefs, ensurePlayerStats, upgradeCost } from "@/src/server/progression";
 
 export async function POST(req: Request) {
   try {
@@ -12,6 +12,7 @@ export async function POST(req: Request) {
     await ensureUpgradeDefs();
     const def = await prisma.upgradeDef.findUnique({ where: { key } });
     if (!def) return NextResponse.json({ error: "Upgrade not found" }, { status: 404 });
+    await ensurePlayerStats(user.id);
     const stats = await prisma.playerStats.findUnique({ where: { userId: user.id } });
     if (!stats) return NextResponse.json({ error: "Stats missing" }, { status: 400 });
     const ownedUpgrades = await prisma.userUpgrade.findMany({

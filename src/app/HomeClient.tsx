@@ -549,7 +549,7 @@ export default function HomeClient() {
     setQty(QTY_OPTIONS[nextIndex]);
   }, [qty]);
 
-  async function register(username: string, password: string) {
+  async function register(username: string, password: string, acceptTerms18: boolean) {
     setAuthError(null);
     const name = username.trim();
     if (name.length < 3 || name.length > 12) {
@@ -560,12 +560,16 @@ export default function HomeClient() {
       setAuthError("Password must be at least 6 chars.");
       return;
     }
+    if (!acceptTerms18) {
+      setAuthError("You must be 18+ and accept the Terms & Conditions.");
+      return;
+    }
     try {
       setAuthBusy("register");
       await fetchJson("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: name, password })
+        body: JSON.stringify({ username: name, password, acceptTerms18 })
       });
       await loadAuth();
     } catch (err) {

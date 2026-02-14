@@ -17,9 +17,12 @@ function getSessionCookieOptions(req: NextRequest, expiresAt: Date) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { username, password } = await req.json();
+    const { username, password, acceptTerms18 } = await req.json();
     if (!username || !password) {
       return NextResponse.json({ error: "Username and password required" }, { status: 400 });
+    }
+    if (!acceptTerms18) {
+      return NextResponse.json({ error: "You must be 18+ and accept the Terms & Conditions." }, { status: 400 });
     }
     const name = String(username).trim().toUpperCase();
     if (name.length < 3 || name.length > 12) {

@@ -4,20 +4,21 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id         String         @id @default(cuid())
-  username   String         @unique
-  passHash   String
-  createdAt  DateTime       @default(now())
-  stats      PlayerStats?
-  sessions   Session[]
-  upgrades   UserUpgrade[]
-  firmMember FirmMember?
-  runs       LeaderboardRun[]
-  firmChat   FirmChat[]
+  id           String         @id @default(cuid())
+  username     String         @unique
+  passHash     String
+  bazaarUserId Int?           @unique // links to Bazaar users.id for unified auth
+  createdAt    DateTime       @default(now())
+  stats        PlayerStats?
+  sessions     Session[]
+  upgrades     UserUpgrade[]
+  firmMember   FirmMember?
+  runs         LeaderboardRun[]
+  firmChat     FirmChat[]
 }
 
 model Session {
