@@ -21,6 +21,7 @@ export function TrainerOverlay() {
       name: string;
     }) => {
       if (!type || !gender || !chosenName?.trim()) return;
+      if (gender !== "male" && gender !== "female") return;
       const creatureId = `exo-${type}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const ts = Date.now();
       const seedStr = `${chosenName.trim()}-${ts}`;
