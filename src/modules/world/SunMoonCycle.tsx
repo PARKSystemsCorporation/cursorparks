@@ -12,20 +12,20 @@ export const GAME_SECONDS_PER_DAY = 24 * 3600;
 export const CLOCK_ACCELERATION = 4;
 
 const RADIUS = 80;
-const SUN_COLOR = new THREE.Color("#fff5cc"); // Warm golden sun
-const SUN_INTENSITY = 14; // Intense desert sun
+const SUN_COLOR = new THREE.Color("#ffffff"); // Crisp white sun
+const SUN_INTENSITY = 12; // Bright but balanced
 const MOON_COLOR = new THREE.Color("#e8eeff");
 const MOON_INTENSITY = 3.2;
 
-const AMBIENT_DAY = new THREE.Color("#fff8e0"); // Warmer ambient
+const AMBIENT_DAY = new THREE.Color("#e0f4ff"); // Light blue ambient
 const AMBIENT_NIGHT = new THREE.Color("#1e2238");
-const HEMI_SKY_DAY = new THREE.Color("#ffedc0"); // Yellowish sky bounce
-const HEMI_GROUND_DAY = new THREE.Color("#806040"); // Sandy ground bounce
+const HEMI_SKY_DAY = new THREE.Color("#add8e6"); // Light blue sky bounce
+const HEMI_GROUND_DAY = new THREE.Color("#807050"); // Dusty ground bounce
 const HEMI_SKY_NIGHT = new THREE.Color("#182038");
 const HEMI_GROUND_NIGHT = new THREE.Color("#0c0e18");
-const BG_DAY = new THREE.Color("#ffeec8"); // Dusty sky
+const BG_DAY = new THREE.Color("#c6e2ff"); // Crisp light blue sky
 const BG_NIGHT = new THREE.Color("#0e1018");
-const FOG_DAY = new THREE.Color("#fff2d0"); // Dusty fog
+const FOG_DAY = new THREE.Color("#d0e8ff"); // Light blue fog
 const FOG_NIGHT = new THREE.Color("#0c0e18");
 
 /** Phase 0–1 over 6h from page load. Sun peak at 0.25, moon peak at 0.75. Exported for night-gating in scene components. */
