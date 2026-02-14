@@ -7,33 +7,45 @@ import * as THREE from "three";
 import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
 
 const CONCRETE_TEXTURE_PATH = "/textures/prison_concrete_wall.png";
+const CONCRETE_FLOOR_TEXTURE_PATH = "/textures/prison_floor_dirty.png";
 
 /**
  * Tunnel/Alleyway with the custom concrete texture.
  */
 function AlleywayTunnel({ position, rotation }: { position: [number, number, number], rotation?: [number, number, number] }) {
-    const colorMap = useLoader(THREE.TextureLoader, CONCRETE_TEXTURE_PATH);
+    const wallMap = useLoader(THREE.TextureLoader, CONCRETE_TEXTURE_PATH);
+    const floorMap = useLoader(THREE.TextureLoader, CONCRETE_FLOOR_TEXTURE_PATH);
 
     // Configure texture for repeating
     useMemo(() => {
-        colorMap.wrapS = colorMap.wrapT = THREE.RepeatWrapping;
-        colorMap.repeat.set(2, 1);
-    }, [colorMap]);
+        wallMap.wrapS = wallMap.wrapT = THREE.RepeatWrapping;
+        wallMap.repeat.set(2, 1);
+
+        floorMap.wrapS = floorMap.wrapT = THREE.RepeatWrapping;
+        floorMap.repeat.set(1, 2);
+    }, [wallMap, floorMap]);
 
     const tunnelMaterial = useMemo(() => {
         return new THREE.MeshStandardMaterial({
-            map: colorMap,
+            map: wallMap,
             roughness: 0.8,
-            color: "#aaaaaa" // Tint it slightly to match environment
+            color: "#aaaaaa"
         });
-    }, [colorMap]);
+    }, [wallMap]);
+
+    const floorMaterial = useMemo(() => {
+        return new THREE.MeshStandardMaterial({
+            map: floorMap,
+            roughness: 0.9,
+            color: "#bbbbbb"
+        });
+    }, [floorMap]);
 
     return (
         <group position={position} rotation={rotation}>
             {/* Floor */}
-            <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+            <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} material={floorMaterial}>
                 <planeGeometry args={[6, 12]} />
-                <meshStandardMaterial color="#5a4d41" roughness={0.9} /> {/* Dirt floor */}
             </mesh>
 
             {/* Left Wall */}
