@@ -176,9 +176,9 @@ export function DesertJailColiseum() {
     const center: [number, number, number] = [-31, -3.06, -7];
 
     const [pebbles, brownRock, concrete] = useTexture([
-        "/textures/jail/pebbles.jpg",
-        "/textures/jail/brown_rock.jpg",
-        "/textures/jail/concrete.jpg",
+        "/textures/prison_floor_dirty.png",
+        "/textures/floor-stone.png",
+        "/textures/prison_concrete_wall.png",
     ]);
 
     pebbles.wrapS = pebbles.wrapT = THREE.RepeatWrapping;
