@@ -2,8 +2,9 @@ import React from 'react';
 import * as THREE from 'three';
 import { Text } from '@react-three/drei';
 
+const LEG_BOX = new THREE.BoxGeometry(0.1, 0.8, 0.1);
+
 function ShopInterior() {
-    // Props: Shelves, workbench, boxes
     return (
         <group>
             {/* Workbench */}
@@ -11,21 +12,17 @@ function ShopInterior() {
                 <boxGeometry args={[1, 0.1, 2.5]} />
                 <meshStandardMaterial color="#333" roughness={0.7} />
             </mesh>
-            {/* Legs */}
-            <mesh position={[1.2, 0.4, -1]} castShadow>
-                <boxGeometry args={[0.1, 0.8, 0.1]} />
+            {/* Legs — shared geometry */}
+            <mesh position={[1.2, 0.4, -1]} castShadow geometry={LEG_BOX}>
                 <meshStandardMaterial color="#222" />
             </mesh>
-            <mesh position={[1.8, 0.4, -1]} castShadow>
-                <boxGeometry args={[0.1, 0.8, 0.1]} />
+            <mesh position={[1.8, 0.4, -1]} castShadow geometry={LEG_BOX}>
                 <meshStandardMaterial color="#222" />
             </mesh>
-            <mesh position={[1.2, 0.4, 1]} castShadow>
-                <boxGeometry args={[0.1, 0.8, 0.1]} />
+            <mesh position={[1.2, 0.4, 1]} castShadow geometry={LEG_BOX}>
                 <meshStandardMaterial color="#222" />
             </mesh>
-            <mesh position={[1.8, 0.4, 1]} castShadow>
-                <boxGeometry args={[0.1, 0.8, 0.1]} />
+            <mesh position={[1.8, 0.4, 1]} castShadow geometry={LEG_BOX}>
                 <meshStandardMaterial color="#222" />
             </mesh>
 
@@ -158,14 +155,13 @@ export function RobotRepairShop() {
                 position={[1, 2, 0]}
                 rotation={[0, -Math.PI / 2, 0]}
             />
-            {/* Point light for volumetric volumetric-ish shadow casting */}
+            {/* Point light for interior fill (no shadow to avoid 6x shadow maps per frame) */}
             <pointLight
                 position={[3, 3, 0]}
                 color={interiorColor}
                 intensity={80}
                 distance={10}
                 decay={2}
-                castShadow
             />
             {/* Cyan Accent */}
             <pointLight

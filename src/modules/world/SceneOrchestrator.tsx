@@ -1,6 +1,7 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useState, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import { CameraOverrideProvider } from "./CameraOverrideContext";
 import { CameraProfileMoment } from "./CameraProfileMoment";
 import { EffectComposer, ToneMapping, Bloom } from "@react-three/postprocessing";
@@ -25,17 +26,64 @@ import { CreatureSpawnListener } from "./CreatureSpawnListener";
 import { SunMoonCycle } from "./SunMoonCycle";
 import { StadiumExit } from "@/src/components/Bazaar/StadiumExit";
 import { DesertJailColiseum } from "@/src/components/Bazaar/DesertJailColiseum";
+import { ExokinCreationLedStrip } from "./ExokinCreationLedStrip";
+
+const COLISEUM_CENTER: [number, number, number] = [-31, -3.06, -7];
+const COLISEUM_MAX_DISTANCE = 22;
+const COLISEUM_HYSTERESIS = 4;
+
+/** Renders children only when camera is within maxDistance of point; hysteresis avoids popping. */
+function DistanceGate({
+  point,
+  maxDistance,
+  hysteresis,
+  children,
+}: {
+  point: [number, number, number];
+  maxDistance: number;
+  hysteresis: number;
+  children: React.ReactNode;
+}) {
+  const { camera } = useThree();
+  const [visible, setVisible] = useState(false);
+  const visibleRef = useRef(false);
+
+  useFrame(() => {
+    const dx = camera.position.x - point[0];
+    const dy = camera.position.y - point[1];
+    const dz = camera.position.z - point[2];
+    const distSq = dx * dx + dy * dy + dz * dz;
+    const dist = Math.sqrt(distSq);
+    if (!visibleRef.current) {
+      if (dist < maxDistance) {
+        visibleRef.current = true;
+        setVisible(true);
+      }
+    } else {
+      if (dist > maxDistance + hysteresis) {
+        visibleRef.current = false;
+        setVisible(false);
+      }
+    }
+  });
+
+  if (!visible) return null;
+  return <>{children}</>;
+}
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
 function AlleyProps() {
   const neonRed = "#ff1f33";
   const neonRedDeep = "#7a0010";
+  const laserCore = "#ffd7dc";
   const alleyLength = 30;
   const alleyCenterZ = -15;
   const halfLength = alleyLength / 2;
   const floorY = 0.03;
   const stripWidth = 0.03;
   const stripGlowWidth = 0.13;
+  const coreWidth = 0.009;
+  const coreHeight = 0.012;
 
   return (
     <group position={[0, 0, 0]}>
@@ -44,6 +92,10 @@ function AlleyProps() {
         <boxGeometry args={[stripWidth, stripWidth, alleyLength]} />
         <meshBasicMaterial color={neonRed} toneMapped={false} />
       </mesh>
+      <mesh position={[1.95, floorY + 0.012, alleyCenterZ]} rotation={[0, 0, 0]}>
+        <boxGeometry args={[coreWidth, coreHeight, alleyLength]} />
+        <meshBasicMaterial color={laserCore} toneMapped={false} />
+      </mesh>
       <mesh position={[1.95, floorY - 0.004, alleyCenterZ]} rotation={[0, 0, 0]}>
         <boxGeometry args={[stripGlowWidth, 0.008, alleyLength]} />
         <meshBasicMaterial color={neonRedDeep} transparent opacity={0.78} toneMapped={false} />
@@ -51,6 +103,10 @@ function AlleyProps() {
       <mesh position={[-1.95, floorY, alleyCenterZ]} rotation={[0, 0, 0]}>
         <boxGeometry args={[stripWidth, stripWidth, alleyLength]} />
         <meshBasicMaterial color={neonRed} toneMapped={false} />
+      </mesh>
+      <mesh position={[-1.95, floorY + 0.012, alleyCenterZ]} rotation={[0, 0, 0]}>
+        <boxGeometry args={[coreWidth, coreHeight, alleyLength]} />
+        <meshBasicMaterial color={laserCore} toneMapped={false} />
       </mesh>
       <mesh position={[-1.95, floorY - 0.004, alleyCenterZ]} rotation={[0, 0, 0]}>
         <boxGeometry args={[stripGlowWidth, 0.008, alleyLength]} />
@@ -62,6 +118,10 @@ function AlleyProps() {
         <boxGeometry args={[stripWidth, stripWidth, alleyLength + 0.35]} />
         <meshBasicMaterial color={neonRed} toneMapped={false} />
       </mesh>
+      <mesh position={[2.28, floorY + 0.012, alleyCenterZ]}>
+        <boxGeometry args={[coreWidth, coreHeight, alleyLength + 0.35]} />
+        <meshBasicMaterial color={laserCore} toneMapped={false} />
+      </mesh>
       <mesh position={[2.28, floorY - 0.004, alleyCenterZ]}>
         <boxGeometry args={[stripGlowWidth, 0.008, alleyLength + 0.35]} />
         <meshBasicMaterial color={neonRedDeep} transparent opacity={0.82} toneMapped={false} />
@@ -69,6 +129,10 @@ function AlleyProps() {
       <mesh position={[-2.28, floorY, alleyCenterZ]}>
         <boxGeometry args={[stripWidth, stripWidth, alleyLength + 0.35]} />
         <meshBasicMaterial color={neonRed} toneMapped={false} />
+      </mesh>
+      <mesh position={[-2.28, floorY + 0.012, alleyCenterZ]}>
+        <boxGeometry args={[coreWidth, coreHeight, alleyLength + 0.35]} />
+        <meshBasicMaterial color={laserCore} toneMapped={false} />
       </mesh>
       <mesh position={[-2.28, floorY - 0.004, alleyCenterZ]}>
         <boxGeometry args={[stripGlowWidth, 0.008, alleyLength + 0.35]} />
@@ -78,6 +142,10 @@ function AlleyProps() {
         <boxGeometry args={[4.6, stripWidth, stripWidth]} />
         <meshBasicMaterial color={neonRed} toneMapped={false} />
       </mesh>
+      <mesh position={[0, floorY + 0.012, alleyCenterZ + halfLength]}>
+        <boxGeometry args={[4.6, coreHeight, coreWidth]} />
+        <meshBasicMaterial color={laserCore} toneMapped={false} />
+      </mesh>
       <mesh position={[0, floorY - 0.004, alleyCenterZ + halfLength]}>
         <boxGeometry args={[4.6, 0.008, stripGlowWidth]} />
         <meshBasicMaterial color={neonRedDeep} transparent opacity={0.82} toneMapped={false} />
@@ -85,6 +153,10 @@ function AlleyProps() {
       <mesh position={[0, floorY, alleyCenterZ - halfLength]}>
         <boxGeometry args={[4.6, stripWidth, stripWidth]} />
         <meshBasicMaterial color={neonRed} toneMapped={false} />
+      </mesh>
+      <mesh position={[0, floorY + 0.012, alleyCenterZ - halfLength]}>
+        <boxGeometry args={[4.6, coreHeight, coreWidth]} />
+        <meshBasicMaterial color={laserCore} toneMapped={false} />
       </mesh>
       <mesh position={[0, floorY - 0.004, alleyCenterZ - halfLength]}>
         <boxGeometry args={[4.6, 0.008, stripGlowWidth]} />
@@ -97,6 +169,10 @@ function AlleyProps() {
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[3.5, 0.25]} />
             <meshBasicMaterial color={neonRed} toneMapped={false} />
+          </mesh>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
+            <planeGeometry args={[3.5, 0.06]} />
+            <meshBasicMaterial color={laserCore} toneMapped={false} />
           </mesh>
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.004, 0]}>
             <planeGeometry args={[3.75, 0.45]} />
@@ -156,8 +232,10 @@ export function SceneOrchestrator() {
         <CameraProfileMoment />
 
         <AlleyGeometry />
-        <StadiumExit />
-        <DesertJailColiseum />
+        <DistanceGate point={COLISEUM_CENTER} maxDistance={COLISEUM_MAX_DISTANCE} hysteresis={COLISEUM_HYSTERESIS}>
+          <StadiumExit />
+          <DesertJailColiseum />
+        </DistanceGate>
         <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
         <AlleySurfaceBreakupLayer />
         <ContactShadowSystem />
@@ -173,6 +251,7 @@ export function SceneOrchestrator() {
 
         <TrainerNPC />
         <CreatureSpawnListener />
+        <ExokinCreationLedStrip />
         <WalletCardDeployment />
         <DeployedRobotsRenderer />
       </CameraOverrideProvider>

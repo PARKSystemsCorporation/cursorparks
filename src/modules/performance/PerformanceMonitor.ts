@@ -63,6 +63,16 @@ class PerformanceMonitorClass {
     return this._activeEtherCount;
   }
 
+  /** Median frame time in ms (for before/after optimization comparison). */
+  getFrameTimeMs(): number {
+    if (this.frameTimes.length === 0) return 1000 / 60;
+    const sorted = [...this.frameTimes].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    const medianFps =
+      sorted.length % 2 !== 0 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+    return 1000 / medianFps;
+  }
+
   getSnapshot(): PerformanceSnapshot {
     const fps =
       this.frameTimes.length === 0

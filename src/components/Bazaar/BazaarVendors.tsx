@@ -46,15 +46,15 @@ type BazaarVendorWithShout = (typeof BAZAAR_VENDORS)[number] & {
 
 function BazaarVendorWrapper(props: BazaarVendorWithShout) {
     const [lastShout, setLastShout] = useState<string | null>(null);
+    const lastTickRef = React.useRef(-1);
 
     useFrame((state) => {
-        if (state.clock.elapsedTime * 1000 % props.shoutInterval < 50) {
-            if (Math.random() > 0.7) {
-                const newShout = props.shouts[Math.floor(Math.random() * props.shouts.length)];
-                if (newShout !== lastShout) {
-                    setLastShout(newShout);
-                }
-            }
+        const tick = Math.floor((state.clock.elapsedTime * 1000) / props.shoutInterval);
+        if (tick <= lastTickRef.current) return;
+        lastTickRef.current = tick;
+        if (Math.random() > 0.7) {
+            const newShout = props.shouts[Math.floor(Math.random() * props.shouts.length)];
+            if (newShout !== lastShout) setLastShout(newShout);
         }
     });
 

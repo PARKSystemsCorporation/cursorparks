@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
+import { ALLEY_LENGTH, ALLEY_WIDTH } from '@/src/modules/world/firstPersonBounds';
 import { createConcreteWallNormal, createConcreteWallRoughness, createWetFloorRoughness } from './ProceduralTextures';
 
 const FLOOR_STONE_URL = '/textures/floor-stone.png';
 const WALL_STONE_URL = '/textures/wall-stone.png';
+const WALL_HEIGHT = 7;
 
 export function AlleyGeometry() {
     const [floorDiffTex, wallDiffTex] = useTexture([FLOOR_STONE_URL, WALL_STONE_URL]);
@@ -31,15 +33,56 @@ export function AlleyGeometry() {
         return { wallDiff: wallDiffTex, wallNorm, wallRough, floorDiff: floorDiffTex, floorRough };
     }, [floorDiffTex, wallDiffTex]);
 
-    const ALLEY_WIDTH = 4;
-    const ALLEY_LENGTH = 30; // Visible depth 30m
-    const WALL_HEIGHT = 7;
+    const wallMatMain = useMemo(
+        () =>
+            new THREE.MeshStandardMaterial({
+                map: textures.wallDiff,
+                normalMap: textures.wallNorm,
+                roughness: 0.9,
+                color: '#d4ccc4',
+            }),
+        [textures]
+    );
+    const wallMatPillar = useMemo(
+        () =>
+            new THREE.MeshStandardMaterial({
+                map: textures.wallDiff,
+                normalMap: textures.wallNorm,
+                roughness: 0.9,
+                color: '#c4bcb4',
+            }),
+        [textures]
+    );
+    const wallMatBack = useMemo(
+        () =>
+            new THREE.MeshStandardMaterial({
+                map: textures.wallDiff,
+                normalMap: textures.wallNorm,
+                roughnessMap: textures.wallRough,
+                roughness: 0.92,
+                metalness: 0,
+                color: '#8a827a',
+                emissive: '#000000',
+                emissiveIntensity: 0,
+            }),
+        [textures]
+    );
+    const wallMatFrontFar = useMemo(
+        () =>
+            new THREE.MeshStandardMaterial({
+                map: textures.wallDiff,
+                normalMap: textures.wallNorm,
+                roughness: 0.9,
+                color: '#a89e96',
+            }),
+        [textures]
+    );
 
     return (
         <group>
-            {/* Ground */}
+            {/* Ground — minimal segments for flat plane */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -ALLEY_LENGTH / 2]} receiveShadow>
-                <planeGeometry args={[ALLEY_WIDTH, ALLEY_LENGTH, 32, 128]} />
+                <planeGeometry args={[ALLEY_WIDTH, ALLEY_LENGTH, 1, 1]} />
                 <meshStandardMaterial
                     map={textures.floorDiff}
                     roughnessMap={textures.floorRough}
@@ -57,47 +100,23 @@ export function AlleyGeometry() {
                 */}
 
                 {/* Base Front Segment (local +14.5 to +15) → length 0.5, center +14.75 */}
-                <mesh position={[0, 1.25, 14.75]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                <mesh position={[0, 1.25, 14.75]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow material={wallMatMain}>
                     <planeGeometry args={[0.5, 2.5]} />
-                    <meshStandardMaterial
-                        map={textures.wallDiff}
-                        normalMap={textures.wallNorm}
-                        roughness={0.9}
-                        color="#d4ccc4"
-                    />
                 </mesh>
 
                 {/* Base segment (local -15 to +7) → length 22, center -4 */}
-                <mesh position={[0, 1.25, -4]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                <mesh position={[0, 1.25, -4]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow material={wallMatMain}>
                     <planeGeometry args={[22, 2.5]} />
-                    <meshStandardMaterial
-                        map={textures.wallDiff}
-                        normalMap={textures.wallNorm}
-                        roughness={0.9}
-                        color="#d4ccc4"
-                    />
                 </mesh>
 
                 {/* Base segment (local +9 to +11.5) → length 2.5, center +10.25 — between hallway and booth */}
-                <mesh position={[0, 1.25, 10.25]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                <mesh position={[0, 1.25, 10.25]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow material={wallMatMain}>
                     <planeGeometry args={[2.5, 2.5]} />
-                    <meshStandardMaterial
-                        map={textures.wallDiff}
-                        normalMap={textures.wallNorm}
-                        roughness={0.9}
-                        color="#d4ccc4"
-                    />
                 </mesh>
 
                 {/* Upper Wall (solid across full length, above booth opening) */}
-                <mesh position={[0, 4.75, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow>
+                <mesh position={[0, 4.75, 0]} rotation={[0, Math.PI / 2, 0]} castShadow receiveShadow material={wallMatMain}>
                     <planeGeometry args={[ALLEY_LENGTH, 4.5]} />
-                    <meshStandardMaterial
-                        map={textures.wallDiff}
-                        normalMap={textures.wallNorm}
-                        roughness={0.9}
-                        color="#d4ccc4"
-                    />
                 </mesh>
             </group>
 
@@ -115,57 +134,28 @@ export function AlleyGeometry() {
                  */}
 
                 {/* 1. Base Wall Front Segment (Local +11.5 to +15) -> Length 3.5, Center +13.25 */}
-                <mesh position={[0, 1.25, 13.25]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
+                <mesh position={[0, 1.25, 13.25]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow material={wallMatMain}>
                     <planeGeometry args={[3.5, 2.5]} />
-                    <meshStandardMaterial
-                        map={textures.wallDiff}
-                        normalMap={textures.wallNorm}
-                        roughness={0.9}
-                        color="#d4ccc4"
-                    />
                 </mesh>
 
                 {/* 1. Base Wall Back Segment (Local -15 to +6.5) -> Length 21.5, Center -4.25 */}
-                <mesh position={[0, 1.25, -4.25]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
+                <mesh position={[0, 1.25, -4.25]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow material={wallMatMain}>
                     <planeGeometry args={[21.5, 2.5]} />
-                    <meshStandardMaterial
-                        map={textures.wallDiff}
-                        normalMap={textures.wallNorm}
-                        roughness={0.9}
-                        color="#d4ccc4"
-                    />
                 </mesh>
 
                 {/* 2. Top Lintel (Solid from 5.5m to 7m) */}
-                <mesh position={[0, 6.25, 0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
+                <mesh position={[0, 6.25, 0]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow material={wallMatMain}>
                     <planeGeometry args={[ALLEY_LENGTH, 1.5]} />
-                    <meshStandardMaterial
-                        map={textures.wallDiff}
-                        normalMap={textures.wallNorm}
-                        roughness={0.9}
-                        color="#d4ccc4"
-                    />
                 </mesh>
 
-                {/* 3. Pillars (Creating Window Gaps) 
-                    Skipping pillar at Local +9 (Index 4) to leave shop open
-                */}
+                {/* 3. Pillars (Creating Window Gaps) — skip pillar at Local +9 to leave shop open */}
                 {Array.from({ length: 6 }).map((_, i) => {
                     const zStep = ALLEY_LENGTH / 5;
-                    const zPos = (i * zStep) - (ALLEY_LENGTH / 2); // -15, -9, -3, 3, 9, 15
-
-                    // Skip pillar at zPos 9 (approx shop center)
+                    const zPos = (i * zStep) - (ALLEY_LENGTH / 2);
                     if (Math.abs(zPos - 9) < 1) return null;
-
                     return (
-                        <mesh key={i} position={[0, 4, zPos]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow>
-                            <planeGeometry args={[1, 3]} /> {/* Pillar width 1m, height 3m covering the gap */}
-                            <meshStandardMaterial
-                                map={textures.wallDiff}
-                                normalMap={textures.wallNorm}
-                                roughness={0.9}
-                                color="#c4bcb4"
-                            />
+                        <mesh key={i} position={[0, 4, zPos]} rotation={[0, -Math.PI / 2, 0]} castShadow receiveShadow material={wallMatPillar}>
+                            <planeGeometry args={[1, 3]} />
                         </mesh>
                     );
                 })}
@@ -173,18 +163,8 @@ export function AlleyGeometry() {
 
             {/* Back Wall (Behind POV) — matte physical surface, no emissive bleed */}
             <group position={[0, 0, 2]} rotation={[0, Math.PI, 0]}>
-                <mesh position={[0, WALL_HEIGHT / 2, 0]} receiveShadow>
-                    <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 32, 16]} />
-                    <meshStandardMaterial
-                        map={textures.wallDiff}
-                        normalMap={textures.wallNorm}
-                        roughnessMap={textures.wallRough}
-                        roughness={0.92}
-                        metalness={0}
-                        color="#8a827a"
-                        emissive="#000000"
-                        emissiveIntensity={0}
-                    />
+                <mesh position={[0, WALL_HEIGHT / 2, 0]} receiveShadow material={wallMatBack}>
+                    <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 1, 1]} />
                 </mesh>
 
                 {/* Yellow LED Strip — reduced intensity to avoid blowout */}
@@ -209,25 +189,13 @@ export function AlleyGeometry() {
             </group>
 
             {/* New Front Wall at Z=0 (Blocks the view to the back) */}
-            <mesh position={[0, WALL_HEIGHT / 2, 0]} rotation={[0, Math.PI, 0]} receiveShadow>
+            <mesh position={[0, WALL_HEIGHT / 2, 0]} rotation={[0, Math.PI, 0]} receiveShadow material={wallMatFrontFar}>
                 <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT]} />
-                <meshStandardMaterial
-                    map={textures.wallDiff}
-                    normalMap={textures.wallNorm}
-                    roughness={0.9}
-                    color="#a89e96"
-                />
             </mesh>
 
             {/* Far End Wall (closes the alley at Z = -ALLEY_LENGTH) */}
-            <mesh position={[0, WALL_HEIGHT / 2, -ALLEY_LENGTH]} receiveShadow>
-                <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 32, 16]} />
-                <meshStandardMaterial
-                    map={textures.wallDiff}
-                    normalMap={textures.wallNorm}
-                    roughness={0.9}
-                    color="#a89e96"
-                />
+            <mesh position={[0, WALL_HEIGHT / 2, -ALLEY_LENGTH]} receiveShadow material={wallMatFrontFar}>
+                <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 1, 1]} />
             </mesh>
         </group >
     );

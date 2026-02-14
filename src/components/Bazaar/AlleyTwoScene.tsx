@@ -34,7 +34,7 @@ const CONFIG = {
         toneMapping: THREE.ACESFilmicToneMapping,
     },
     shadow: {
-        mapSize: 4096,
+        mapSize: 2048,
         normalBias: 0.02,
         cameraFar: 50,
         cameraLeft: -12,

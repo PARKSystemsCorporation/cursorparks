@@ -45,7 +45,7 @@ export default function DustParticulates({ count = 100, area = [10, 8, 20] }: { 
     });
 
     return (
-        <instancedMesh ref={meshRef} args={[undefined, undefined, count]} frustumCulled={false}>
+        <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
             <dodecahedronGeometry args={[0.05, 0]} />
             <meshBasicMaterial
                 color="#eacca7"

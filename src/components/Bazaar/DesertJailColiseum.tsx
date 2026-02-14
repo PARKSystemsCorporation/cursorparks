@@ -5,21 +5,21 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { getPhase } from "@/src/modules/world/SunMoonCycle";
 
-/** Single pillar spotlight that aims at a target ref (set in useFrame for R3F typing). */
+const BAR_GEOMETRY = new THREE.BoxGeometry(0.08, 1.05, 0.08);
+const CIRCLE_SEGMENTS = 32;
+const CYLINDER_SEGMENTS = 32;
+
+/** Single pillar spotlight; target is set by parent in one shared useFrame. */
 function PillarSpotlight({
     position,
-    targetRef,
+    setLightRef,
 }: {
     position: [number, number, number];
-    targetRef: React.RefObject<THREE.Object3D | null>;
+    setLightRef: (el: THREE.SpotLight | null) => void;
 }) {
-    const lightRef = useRef<THREE.SpotLight>(null);
-    useFrame(() => {
-        if (lightRef.current && targetRef.current) lightRef.current.target = targetRef.current;
-    });
     return (
         <spotLight
-            ref={lightRef}
+            ref={setLightRef}
             position={position}
             intensity={2}
             distance={18}
@@ -69,13 +69,21 @@ export function DesertJailColiseum() {
     );
 
     const arenaFloorTargetRef = useRef<THREE.Group>(null);
+    const spotlightRefsRef = useRef<Record<string, THREE.SpotLight | null>>({});
     const [isNight, setIsNight] = useState(false);
     const prevNightRef = useRef(false);
+
     useFrame(() => {
         const night = getPhase() >= 0.5;
         if (night !== prevNightRef.current) {
             prevNightRef.current = night;
             setIsNight(night);
+        }
+        const target = arenaFloorTargetRef.current;
+        if (target) {
+            Object.values(spotlightRefsRef.current).forEach((light) => {
+                if (light) light.target = target;
+            });
         }
     });
 
@@ -91,7 +99,7 @@ export function DesertJailColiseum() {
 
             {/* Central fight pit */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                <circleGeometry args={[arenaRadius, 48]} />
+                <circleGeometry args={[arenaRadius, CIRCLE_SEGMENTS]} />
                 <meshStandardMaterial color="#7f5f3b" roughness={1} metalness={0} />
             </mesh>
             {/* Red highlighted arena circle: stand here to fight AI exokin */}
@@ -109,17 +117,17 @@ export function DesertJailColiseum() {
 
             {/* Bowl ring / steps */}
             <mesh position={[0, 0.5, 0]} receiveShadow castShadow>
-                <cylinderGeometry args={[bowlOuterRadius, arenaRadius + 1.5, 1.1, 48, 1, true]} />
+                <cylinderGeometry args={[bowlOuterRadius, arenaRadius + 1.5, 1.1, CYLINDER_SEGMENTS, 1, true]} />
                 <meshStandardMaterial color="#967c62" roughness={0.95} metalness={0.05} side={THREE.DoubleSide} />
             </mesh>
 
             <mesh position={[0, 1.25, 0]} receiveShadow castShadow>
-                <cylinderGeometry args={[bowlOuterRadius + 1.2, bowlOuterRadius - 0.9, 1.2, 48, 1, true]} />
+                <cylinderGeometry args={[bowlOuterRadius + 1.2, bowlOuterRadius - 0.9, 1.2, CYLINDER_SEGMENTS, 1, true]} />
                 <meshStandardMaterial color="#8e7358" roughness={0.95} metalness={0.05} side={THREE.DoubleSide} />
             </mesh>
 
             <mesh position={[0, 2.15, 0]} receiveShadow castShadow>
-                <cylinderGeometry args={[bowlOuterRadius + 1.8, bowlOuterRadius + 0.6, 0.9, 48, 1, true]} />
+                <cylinderGeometry args={[bowlOuterRadius + 1.8, bowlOuterRadius + 0.6, 0.9, CYLINDER_SEGMENTS, 1, true]} />
                 <meshStandardMaterial color="#846a52" roughness={0.95} metalness={0.05} side={THREE.DoubleSide} />
             </mesh>
 
@@ -145,8 +153,7 @@ export function DesertJailColiseum() {
                         <meshStandardMaterial color="#2a2622" roughness={0.6} metalness={0.65} />
                     </mesh>
                     {[-0.55, -0.18, 0.18, 0.55].map((x) => (
-                        <mesh key={`${set.key}-${x}`} position={[x, 0, 0.09]} receiveShadow>
-                            <boxGeometry args={[0.08, 1.05, 0.08]} />
+                        <mesh key={`${set.key}-${x}`} position={[x, 0, 0.09]} receiveShadow geometry={BAR_GEOMETRY}>
                             <meshStandardMaterial color="#141210" roughness={0.45} metalness={0.8} />
                         </mesh>
                     ))}
@@ -185,11 +192,11 @@ export function DesertJailColiseum() {
                 <meshStandardMaterial color="#6e553d" roughness={0.98} />
             </mesh>
 
-            {/* Warm practical lights around perimeter (day; reduced at night when pillar spotlights are on) */}
-            {[-8, 0, 8].map((z) => (
+            {/* Warm practical lights around perimeter (day; reduced at night when pillar spotlights are on); 4 lights to limit overlap */}
+            {[-8, 8].map((z) => (
                 <pointLight key={`warm-l-${z}`} position={[bowlOuterRadius - 2, 4.2, z]} intensity={isNight ? 0.35 : 1.1} distance={13} color="#ffbe72" />
             ))}
-            {[-8, 0, 8].map((z) => (
+            {[-8, 8].map((z) => (
                 <pointLight key={`warm-r-${z}`} position={[-bowlOuterRadius + 2, 4.2, z]} intensity={isNight ? 0.35 : 1.1} distance={13} color="#ffbe72" />
             ))}
 
@@ -199,7 +206,9 @@ export function DesertJailColiseum() {
                     <PillarSpotlight
                         key={`pillar-spot-${seg.key}`}
                         position={[seg.x, 4.2, seg.z]}
-                        targetRef={arenaFloorTargetRef}
+                        setLightRef={(el) => {
+                            spotlightRefsRef.current[seg.key] = el;
+                        }}
                     />
                 ))}
         </group>

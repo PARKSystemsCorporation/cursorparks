@@ -1,6 +1,9 @@
 "use client";
 
 import React from "react";
+import * as THREE from "three";
+
+const EYE_SPHERE_GEOMETRY = new THREE.SphereGeometry(0.028, 8, 6);
 
 export type MorphParams = {
   intensity?: string;
@@ -65,8 +68,7 @@ function CreatureEyes({
 }) {
   return (
     <>
-      <mesh position={[-0.04, headY + 0.02, 0.08]} castShadow>
-        <sphereGeometry args={[0.028, 8, 6]} />
+      <mesh position={[-0.04, headY + 0.02, 0.08]} castShadow geometry={EYE_SPHERE_GEOMETRY}>
         <meshStandardMaterial
           color={accent}
           emissive={accent}
@@ -75,8 +77,7 @@ function CreatureEyes({
           metalness={0.1}
         />
       </mesh>
-      <mesh position={[0.04, headY + 0.02, 0.08]} castShadow>
-        <sphereGeometry args={[0.028, 8, 6]} />
+      <mesh position={[0.04, headY + 0.02, 0.08]} castShadow geometry={EYE_SPHERE_GEOMETRY}>
         <meshStandardMaterial
           color={accent}
           emissive={accent}
