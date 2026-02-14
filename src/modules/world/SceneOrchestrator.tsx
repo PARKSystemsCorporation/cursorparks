@@ -180,6 +180,9 @@ export function SceneOrchestrator() {
 
   return (
     <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="#ff6b1a" /></mesh>}>
+      <color attach="background" args={["#60a0ff"]} />
+      <fogExp2 attach="fog" args={["#80b0ff", 0.002]} />
+
       <LightingCycleProvider>
         <CameraOverrideProvider>
           <PerformanceTicker />

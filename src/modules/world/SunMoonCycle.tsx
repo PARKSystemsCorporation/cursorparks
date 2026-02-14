@@ -96,7 +96,12 @@ export function SunMoonCycle() {
     const isSun = phase < 0.5;
     const t = isSun ? phase * 2 : (phase - 0.5) * 2;
     const { elevation, azimuth } = arcPosition(t);
-    toPosition(elevation, azimuth).copy(pos.current);
+    // Fix: copy the calculated position INTO the ref
+    pos.current.set(
+      RADIUS * Math.cos(elevation) * Math.cos(azimuth),
+      RADIUS * Math.sin(elevation),
+      RADIUS * Math.cos(elevation) * Math.sin(azimuth)
+    );
 
     if (dirLightRef.current) {
       dirLightRef.current.position.copy(pos.current);
