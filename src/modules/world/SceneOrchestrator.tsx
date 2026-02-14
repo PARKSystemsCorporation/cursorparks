@@ -26,9 +26,6 @@ import { DeployedRobotsRenderer } from "@/src/modules/ui/inventory/DeployedRobot
 import { CreatureSpawnListener } from "./CreatureSpawnListener";
 import { SunMoonCycle } from "./SunMoonCycle";
 import { CameraFirstBond } from "./CameraFirstBond";
-import { CreatureSpawnListener } from "./CreatureSpawnListener";
-import { SunMoonCycle } from "./SunMoonCycle";
-import { CameraFirstBond } from "./CameraFirstBond";
 import { FirstBondSpotlight } from "./FirstBondSpotlight";
 import { StadiumExit } from "@/src/components/Bazaar/StadiumExit";
 
