@@ -12,7 +12,7 @@ export const GAME_SECONDS_PER_DAY = 24 * 3600;
 export const CLOCK_ACCELERATION = 4;
 
 const RADIUS = 80;
-const SUN_COLOR = new THREE.Color("#ffffff"); // Crisp white sun
+const SUN_COLOR = new THREE.Color("#ffdd44"); // Warm orange-yellow sun
 const SUN_INTENSITY = 12; // Bright but balanced
 const MOON_COLOR = new THREE.Color("#e8eeff");
 const MOON_INTENSITY = 3.2;
