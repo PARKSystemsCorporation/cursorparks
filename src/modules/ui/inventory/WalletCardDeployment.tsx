@@ -41,10 +41,10 @@ export function WalletCardDeployment() {
       if (inside) {
         const hit = raycastGround(camera, gl, bondDragScreenPos.clientX, bondDragScreenPos.clientY);
         setDeployTarget(hit);
-      } else {
+      } else if (deployTarget) {
         setDeployTarget(null);
       }
-    } else if (!dragState?.fromBond) {
+    } else if (deployTarget) {
       setDeployTarget(null);
     }
   });

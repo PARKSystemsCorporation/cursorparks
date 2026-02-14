@@ -3,7 +3,7 @@
 import React, { Suspense } from "react";
 import { CameraOverrideProvider } from "./CameraOverrideContext";
 import { CameraProfileMoment } from "./CameraProfileMoment";
-import { EffectComposer, ToneMapping, SMAA, Vignette, Noise, Bloom } from "@react-three/postprocessing";
+import { EffectComposer, ToneMapping, Bloom } from "@react-three/postprocessing";
 import { AlleyGeometry } from "@/src/components/Bazaar/AlleyGeometry";
 import { AlleyEndingPortal } from "@/src/components/Bazaar/AlleyEnding";
 import { PrisonHallwayAndYard } from "@/src/components/Bazaar/PrisonHallwayAndYard";
@@ -107,10 +107,7 @@ export function SceneOrchestrator() {
       <SpatialAudioZones />
 
       <EffectComposer>
-        <SMAA />
-        <Vignette eskil={false} offset={0.1} darkness={0.3} />
-        <Noise opacity={0.015} />
-        <Bloom luminanceThreshold={1.5} mipmapBlur intensity={1.5} radius={0.4} />
+        <Bloom luminanceThreshold={1.5} mipmapBlur intensity={1.0} radius={0.3} />
         <ToneMapping adaptive={false} resolution={256} middleGrey={0.6} maxLuminance={16.0} adaptationRate={1.0} />
       </EffectComposer>
     </Suspense>

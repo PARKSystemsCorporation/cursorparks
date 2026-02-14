@@ -1,35 +1,19 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
-/** Clean XYZ coordinate tracker — reads camera position via custom event from 3D scene. */
+/** Shared mutable position — written by CameraPosEmitter (3D), read by CoordTracker (HTML). */
+export const cameraPos = { x: 0, y: 0, z: 0 };
+
+/** Clean XYZ coordinate tracker — reads from shared cameraPos ref at ~10fps. No events. */
 export function CoordTracker() {
   const [coords, setCoords] = useState({ x: 0, y: 0, z: 0 });
-  const rafRef = useRef<number | null>(null);
-  const latest = useRef({ x: 0, y: 0, z: 0 });
 
   useEffect(() => {
-    const handler = (e: CustomEvent<{ x: number; y: number; z: number }>) => {
-      const d = e.detail;
-      if (d) {
-        latest.current.x = d.x;
-        latest.current.y = d.y;
-        latest.current.z = d.z;
-      }
-    };
-    window.addEventListener("parks-camera-pos", handler as EventListener);
-
-    // Throttle UI updates to ~10fps
-    const tick = () => {
-      setCoords({ ...latest.current });
-      rafRef.current = window.setTimeout(tick, 100);
-    };
-    tick();
-
-    return () => {
-      window.removeEventListener("parks-camera-pos", handler as EventListener);
-      if (rafRef.current !== null) clearTimeout(rafRef.current);
-    };
+    const id = setInterval(() => {
+      setCoords({ x: cameraPos.x, y: cameraPos.y, z: cameraPos.z });
+    }, 100);
+    return () => clearInterval(id);
   }, []);
 
   return (

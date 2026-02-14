@@ -5,6 +5,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import * as THREE from "three";
 import { EYE_HEIGHT, clampPosition } from "./firstPersonBounds";
 import { useCameraOverride } from "./CameraOverrideContext";
+import { cameraPos } from "@/src/modules/ui/CoordTracker";
 
 const MOUSE_SENSITIVITY = 0.002;
 const MOVE_SPEED = 4;
@@ -99,12 +100,10 @@ export function FirstPersonController() {
     const qPitch = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), rotation.current.pitch);
     camera.quaternion.copy(qYaw.multiply(qPitch));
 
-    // Emit position for CoordTracker
-    window.dispatchEvent(
-      new CustomEvent("parks-camera-pos", {
-        detail: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
-      })
-    );
+    // Write to shared ref for CoordTracker (no event, no alloc)
+    cameraPos.x = camera.position.x;
+    cameraPos.y = camera.position.y;
+    cameraPos.z = camera.position.z;
   });
 
   if (!locked) {
