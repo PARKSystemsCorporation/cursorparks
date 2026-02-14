@@ -57,7 +57,7 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                 shadows
                 dpr={[1, 1.5]}
                 gl={{ antialias: false, toneMapping: THREE.CineonToneMapping, toneMappingExposure: 1.5 }}
-                camera={{ fov: 60, position: [0, 1.65, -2] }}
+                camera={{ fov: 60, position: [0, 1.65, -12] }}
               >
                 <SceneOrchestrator />
               </Canvas>
