@@ -1,7 +1,7 @@
 /**
  * Gender visual identity. Industrial realism; no pink/blue stereotypes.
  * Female: warm, whites, creams, soft alloys, light reflections.
- * Male: cold, blacks, graphite, dark alloys, matte.
+ * Male: cold graphite alloys with readable midtones.
  */
 
 const FEMALE = {
@@ -16,14 +16,14 @@ const FEMALE = {
 };
 
 const MALE = {
-  primary: "#3d3630",
-  secondary: "#4a4238",
-  accent: "#6b5d4d",
-  metal: "#5c5044",
-  metalness: 0.6,
-  roughness: 0.7,
-  emissive: "#1a1612",
-  emissiveIntensity: 0.04,
+  primary: "#5a5147",
+  secondary: "#6a5f54",
+  accent: "#877a6a",
+  metal: "#74685b",
+  metalness: 0.55,
+  roughness: 0.58,
+  emissive: "#2a241f",
+  emissiveIntensity: 0.06,
 };
 
 function getProfile(gender) {

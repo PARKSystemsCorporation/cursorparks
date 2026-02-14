@@ -4,22 +4,30 @@ import { useMemo } from "react";
 import * as THREE from "three";
 
 /**
- * StadiumExit: Replaces the Prison Hallway.
- * A clean, enclosed concrete walkway leading straight out to the Stadium.
- * Positioned at the left wall gap (x=-2, z=-7).
- * Extends into -X.
+ * StadiumExit: walkable alley branch that descends into the coliseum.
+ * Starts at the left wall opening (x=-2, z=-7), extends toward world -X,
+ * then drops down a stepped run into the arena floor.
  */
 export function StadiumExit() {
-    const TUNNEL_LENGTH = 15;
-    const TUNNEL_WIDTH = 2.5;
-    const TUNNEL_HEIGHT = 3.5;
+    const HALL_LENGTH = 12;
+    const HALL_WIDTH = 2.8;
+    const HALL_HEIGHT = 3.4;
+
+    const STEP_COUNT = 9;
+    const STEP_RUN = 0.7;
+    const STEP_DROP = 0.34;
+    const DESCENT_LENGTH = STEP_COUNT * STEP_RUN;
+    const TOTAL_DROP = STEP_COUNT * STEP_DROP;
+    const DESCENT_START_X = -HALL_LENGTH;
+    const DESCENT_CENTER_X = DESCENT_START_X - DESCENT_LENGTH / 2;
+    const LANDING_LENGTH = 6;
 
     const concreteMat = useMemo(
         () =>
             new THREE.MeshStandardMaterial({
-                color: "#888899",
-                roughness: 0.4,
-                metalness: 0.2,
+                color: "#8d8174",
+                roughness: 0.86,
+                metalness: 0.08,
             }),
         []
     );
@@ -27,9 +35,9 @@ export function StadiumExit() {
     const floorMat = useMemo(
         () =>
             new THREE.MeshStandardMaterial({
-                color: "#333344",
-                roughness: 0.6,
-                metalness: 0.1,
+                color: "#7c6b58",
+                roughness: 0.92,
+                metalness: 0.03,
             }),
         []
     );
@@ -37,75 +45,92 @@ export function StadiumExit() {
     const lightMat = useMemo(
         () =>
             new THREE.MeshStandardMaterial({
-                color: "#ffffff",
-                emissive: "#ffffff",
-                emissiveIntensity: 2,
+                color: "#fff2de",
+                emissive: "#fff2de",
+                emissiveIntensity: 1.6,
                 toneMapped: false,
             }),
         []
     );
 
     return (
-        <group position={[-2, 0, -7]} rotation={[0, 0, 0]}>
-            {/* The tunnel goes Left (World -X). So distinct from Alley Z axis. 
-                Local -X is direction of extension.
-            */}
-
-            {/* Floor */}
-            <mesh position={[-TUNNEL_LENGTH / 2, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                <planeGeometry args={[TUNNEL_LENGTH, TUNNEL_WIDTH]} />
+        <group position={[-2, 0, -7]}>
+            {/* Upper hallway floor */}
+            <mesh position={[-HALL_LENGTH / 2, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                <planeGeometry args={[HALL_LENGTH, HALL_WIDTH]} />
                 <primitive object={floorMat} attach="material" />
             </mesh>
 
-            {/* Ceiling */}
-            <mesh position={[-TUNNEL_LENGTH / 2, TUNNEL_HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-                <planeGeometry args={[TUNNEL_LENGTH, TUNNEL_WIDTH]} />
+            {/* Upper hallway ceiling */}
+            <mesh position={[-HALL_LENGTH / 2, HALL_HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]} receiveShadow>
+                <planeGeometry args={[HALL_LENGTH, HALL_WIDTH]} />
                 <primitive object={concreteMat} attach="material" />
             </mesh>
 
-            {/* Light strips on ceiling */}
-            {Array.from({ length: 5 }).map((_, i) => (
-                <mesh key={i} position={[-2.5 - i * 3, TUNNEL_HEIGHT - 0.05, 0]} rotation={[Math.PI / 2, 0, Math.PI / 2]}>
-                    <planeGeometry args={[1.5, 0.2]} />
+            {/* Ceiling light strips */}
+            {Array.from({ length: 4 }).map((_, i) => (
+                <mesh key={i} position={[-2 - i * 3, HALL_HEIGHT - 0.05, 0]} rotation={[Math.PI / 2, 0, Math.PI / 2]}>
+                    <planeGeometry args={[1.4, 0.18]} />
                     <primitive object={lightMat} attach="material" />
                 </mesh>
             ))}
-            <pointLight position={[-5, TUNNEL_HEIGHT - 0.5, 0]} intensity={2} distance={8} color="#ccddff" />
-            <pointLight position={[-12, TUNNEL_HEIGHT - 0.5, 0]} intensity={2} distance={8} color="#ccddff" />
+            <pointLight position={[-4, HALL_HEIGHT - 0.45, 0]} intensity={1.4} distance={8} color="#ffe8c2" />
+            <pointLight position={[-9, HALL_HEIGHT - 0.45, 0]} intensity={1.2} distance={7} color="#ffe8c2" />
 
-
-            {/* Side Walls */}
-            {/* Back Wall (Local +Z relative to tunnel axis? No, tunnel axis is X. Width is Z.) 
-                Side wall 1 at z = -Width/2
-                Side wall 2 at z = Width/2
-            */}
-            <mesh position={[-TUNNEL_LENGTH / 2, TUNNEL_HEIGHT / 2, -TUNNEL_WIDTH / 2]} rotation={[0, 0, 0]} receiveShadow>
-                <boxGeometry args={[TUNNEL_LENGTH, TUNNEL_HEIGHT, 0.2]} />
+            {/* Upper side walls */}
+            <mesh position={[-HALL_LENGTH / 2, HALL_HEIGHT / 2, -HALL_WIDTH / 2]} receiveShadow>
+                <boxGeometry args={[HALL_LENGTH, HALL_HEIGHT, 0.18]} />
+                <primitive object={concreteMat} attach="material" />
+            </mesh>
+            <mesh position={[-HALL_LENGTH / 2, HALL_HEIGHT / 2, HALL_WIDTH / 2]} receiveShadow>
+                <boxGeometry args={[HALL_LENGTH, HALL_HEIGHT, 0.18]} />
                 <primitive object={concreteMat} attach="material" />
             </mesh>
 
-            <mesh position={[-TUNNEL_LENGTH / 2, TUNNEL_HEIGHT / 2, TUNNEL_WIDTH / 2]} rotation={[0, 0, 0]} receiveShadow>
-                <boxGeometry args={[TUNNEL_LENGTH, TUNNEL_HEIGHT, 0.2]} />
-                <primitive object={concreteMat} attach="material" />
+            {/* Descent run (no end cap blockade) */}
+            <mesh position={[DESCENT_CENTER_X, -TOTAL_DROP / 2 + 0.01, 0]} receiveShadow>
+                <boxGeometry args={[DESCENT_LENGTH, TOTAL_DROP + 0.2, HALL_WIDTH]} />
+                <primitive object={floorMat} attach="material" />
             </mesh>
 
-            {/* End Cap / Stadium Entrance Visual */}
-            <group position={[-TUNNEL_LENGTH, TUNNEL_HEIGHT / 2, 0]}>
-                {/* Bright white void for now */}
-                <mesh rotation={[0, Math.PI / 2, 0]}>
-                    <planeGeometry args={[TUNNEL_WIDTH, TUNNEL_HEIGHT]} />
-                    <meshBasicMaterial color="#ffffff" />
-                </mesh>
-                <spotLight
-                    position={[2, 5, 0]}
-                    target-position={[-5, 0, 0]}
-                    intensity={10}
-                    color="#ffffff"
-                    distance={20}
-                    angle={1}
-                />
-            </group>
+            {Array.from({ length: STEP_COUNT }).map((_, i) => {
+                const x = DESCENT_START_X - (i * STEP_RUN + STEP_RUN / 2);
+                const y = -(i + 1) * STEP_DROP + 0.06;
+                return (
+                    <mesh key={`step-${i}`} position={[x, y, 0]} castShadow receiveShadow>
+                        <boxGeometry args={[STEP_RUN, 0.12, HALL_WIDTH]} />
+                        <primitive object={floorMat} attach="material" />
+                    </mesh>
+                );
+            })}
 
+            {/* Retaining walls and rails */}
+            <mesh position={[DESCENT_CENTER_X, -TOTAL_DROP / 2 + 0.95, -HALL_WIDTH / 2 - 0.1]} receiveShadow>
+                <boxGeometry args={[DESCENT_LENGTH + 0.4, 2.1, 0.2]} />
+                <primitive object={concreteMat} attach="material" />
+            </mesh>
+            <mesh position={[DESCENT_CENTER_X, -TOTAL_DROP / 2 + 0.95, HALL_WIDTH / 2 + 0.1]} receiveShadow>
+                <boxGeometry args={[DESCENT_LENGTH + 0.4, 2.1, 0.2]} />
+                <primitive object={concreteMat} attach="material" />
+            </mesh>
+            <mesh position={[DESCENT_CENTER_X, -TOTAL_DROP / 2 + 1.65, -HALL_WIDTH / 2]} receiveShadow>
+                <boxGeometry args={[DESCENT_LENGTH, 0.05, 0.04]} />
+                <meshStandardMaterial color="#2d2925" roughness={0.7} metalness={0.4} />
+            </mesh>
+            <mesh position={[DESCENT_CENTER_X, -TOTAL_DROP / 2 + 1.65, HALL_WIDTH / 2]} receiveShadow>
+                <boxGeometry args={[DESCENT_LENGTH, 0.05, 0.04]} />
+                <meshStandardMaterial color="#2d2925" roughness={0.7} metalness={0.4} />
+            </mesh>
+
+            {/* Landing into the coliseum bowl */}
+            <mesh
+                position={[DESCENT_START_X - DESCENT_LENGTH - LANDING_LENGTH / 2, -TOTAL_DROP + 0.02, 0]}
+                rotation={[-Math.PI / 2, 0, 0]}
+                receiveShadow
+            >
+                <planeGeometry args={[LANDING_LENGTH, HALL_WIDTH + 3.5]} />
+                <primitive object={floorMat} attach="material" />
+            </mesh>
         </group>
     );
 }

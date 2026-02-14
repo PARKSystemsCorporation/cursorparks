@@ -1133,7 +1133,7 @@ export default function HomeClient() {
       <div className="flex min-h-[100dvh] items-center justify-center bg-bg-void">
         <div className="animate-fadeIn text-center">
           <div className="text-[10px] uppercase tracking-[0.5em] text-white/70">Connecting to</div>
-          <div className="mt-1 text-xl font-bold tracking-wider text-white transition-all duration-300">PARKSYSTEMS</div>
+          <div className="mt-1 text-xl font-bold tracking-wider text-white transition-all duration-300">PARKS Public Bazaar</div>
           <div className="mx-auto mt-4 h-px w-12 bg-neon-cyan/30 load-pulse rounded-full" />
         </div>
       </div>
@@ -1147,7 +1147,7 @@ export default function HomeClient() {
         <div className="flex items-center gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] uppercase tracking-[0.35em] text-white/70">PARKSYSTEMS</span>
+              <span className="text-[10px] uppercase tracking-[0.35em] text-white/70">PARKS Public Bazaar</span>
               <div className="pulse-dot" />
             </div>
             <div className="text-sm font-bold text-white">The Trading Whale</div>

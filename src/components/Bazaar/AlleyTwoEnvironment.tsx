@@ -6,7 +6,6 @@ import { BAZAAR_BRIGHTNESS } from "./brightness";
 import { EMISSIVE_SCALE, PRACTICAL_LIGHT_INTENSITY } from "./lightingMode";
 import LedBar from "./LedBar";
 import NeonSign from "./NeonSign";
-import { RoadClosedBarrier } from "./AlleyEnding";
 
 // Alley Two: narrower back alley (x ± 3), extends z 0 → -22
 const ALLEY_TWO_WIDTH = 6;
@@ -558,10 +557,6 @@ export default function AlleyTwoEnvironment({ onReturn }: AlleyTwoEnvironmentPro
             <mesh position={[2, 0.4, -7]} rotation={[0, -0.2, 0]} castShadow receiveShadow material={woodCrate}>
                 <boxGeometry args={[0.5, 0.4, 0.6]} />
             </mesh>
-
-
-            <RoadClosedBarrier position={[0, 0.25, 4.5]} />
-
             <AlleyTwoReturnPortal onReturn={onReturn} />
         </group>
     );

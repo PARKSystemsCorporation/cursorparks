@@ -15,9 +15,47 @@ export const BOUNDS = {
 
 export const EYE_HEIGHT = 1.65;
 
-export function clampPosition(x: number, z: number): { x: number; z: number } {
+type Region = {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+};
+
+const WALK_REGIONS: Region[] = [
+  // Main alley (existing play area)
+  BOUNDS,
+  // Stadium hallway branch running toward world -X around the left wall opening at z=-7
+  { minX: -17.2, maxX: -1.75, minZ: -8.6, maxZ: -5.4 },
+  // Stair landing and transition pad before the coliseum floor
+  { minX: -21.2, maxX: -15.6, minZ: -9.6, maxZ: -4.4 },
+  // Desert jail coliseum + nearby runout
+  { minX: -42, maxX: -15.2, minZ: -22, maxZ: 8 },
+];
+
+function clampToRegion(x: number, z: number, region: Region): { x: number; z: number } {
   return {
-    x: Math.max(BOUNDS.minX, Math.min(BOUNDS.maxX, x)),
-    z: Math.max(BOUNDS.minZ, Math.min(BOUNDS.maxZ, z)),
+    x: Math.max(region.minX, Math.min(region.maxX, x)),
+    z: Math.max(region.minZ, Math.min(region.maxZ, z)),
   };
+}
+
+export function clampPosition(x: number, z: number): { x: number; z: number } {
+  let best = clampToRegion(x, z, WALK_REGIONS[0]);
+  let bestDistSq = Number.POSITIVE_INFINITY;
+
+  for (const region of WALK_REGIONS) {
+    const candidate = clampToRegion(x, z, region);
+    const dx = x - candidate.x;
+    const dz = z - candidate.z;
+    const distSq = dx * dx + dz * dz;
+
+    if (distSq < bestDistSq) {
+      best = candidate;
+      bestDistSq = distSq;
+      if (distSq === 0) break;
+    }
+  }
+
+  return best;
 }

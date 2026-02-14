@@ -19,12 +19,12 @@ import { EtherText } from "@/src/modules/chat/EtherText";
 import { FirstPersonController } from "./FirstPersonController";
 import { PerformanceTicker } from "./PerformanceTicker";
 import { TrainerNPC } from "./TrainerNPC";
-import { ArenaEntrance } from "./ArenaEntrance";
 import { WalletCardDeployment } from "@/src/modules/ui/inventory/WalletCardDeployment";
 import { DeployedRobotsRenderer } from "@/src/modules/ui/inventory/DeployedRobotsRenderer";
 import { CreatureSpawnListener } from "./CreatureSpawnListener";
 import { SunMoonCycle } from "./SunMoonCycle";
 import { StadiumExit } from "@/src/components/Bazaar/StadiumExit";
+import { DesertJailColiseum } from "@/src/components/Bazaar/DesertJailColiseum";
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
 function AlleyProps() {
@@ -81,6 +81,7 @@ export function SceneOrchestrator() {
 
         <AlleyGeometry />
         <StadiumExit />
+        <DesertJailColiseum />
         <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
         <AlleySurfaceBreakupLayer />
         <ContactShadowSystem />
@@ -95,7 +96,6 @@ export function SceneOrchestrator() {
         <EtherText />
 
         <TrainerNPC />
-        <ArenaEntrance />
         <CreatureSpawnListener />
         <WalletCardDeployment />
         <DeployedRobotsRenderer />
@@ -103,6 +103,7 @@ export function SceneOrchestrator() {
 
       <SunMoonCycle />
       <pointLight position={[0, 4, -10]} intensity={1.5} color="#ffaa55" distance={20} decay={2} />
+      <pointLight position={[-30, 6, -7]} intensity={2.2} color="#ffb067" distance={28} decay={2} />
 
       <SpatialAudioZones />
 

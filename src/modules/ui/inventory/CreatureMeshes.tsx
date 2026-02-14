@@ -33,10 +33,13 @@ function matFromProfile(profile: CreatureIdentity["color_profile"]) {
   const p = profile || {};
   const safePrimary =
     typeof p.primary === "string" ? clampHexBrightness(p.primary, "#4a4238", 0.18) : "#4a4238";
+  const safeSecondary =
+    typeof p.secondary === "string" ? clampHexBrightness(p.secondary, "#5a5147", 0.2) : "#5a5147";
   const safeEmissive =
     typeof p.emissive === "string" ? clampHexBrightness(p.emissive, "#221d18", 0.06) : "#221d18";
   return {
     color: safePrimary,
+    secondary: safeSecondary,
     metalness: p.metalness ?? 0.5,
     roughness: p.roughness ?? 0.6,
     emissive: safeEmissive,
@@ -54,7 +57,7 @@ export function ModularCreature({ identity }: { identity: CreatureIdentity }) {
     emissive: m.emissive,
     emissiveIntensity: m.emissiveIntensity,
   };
-  const sec = identity.color_profile?.secondary ?? "#4a4238";
+  const sec = m.secondary;
 
   return (
     <group>
