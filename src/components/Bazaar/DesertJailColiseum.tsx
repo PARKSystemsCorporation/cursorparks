@@ -5,75 +5,113 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
 
-const BAR_GEOMETRY = new THREE.BoxGeometry(0.08, 1.05, 0.08);
-const WALL_BOX_GEOMETRY = new THREE.BoxGeometry(2.4, 2.4, 0.7);
-const GATE_BAR_GEOMETRY = new THREE.BoxGeometry(0.14, 2.6, 0.12);
-const WINDOW_BOX_GEOMETRY = new THREE.BoxGeometry(1.7, 1.1, 0.2);
-const CIRCLE_SEGMENTS = 24;
-const CYLINDER_SEGMENTS = 24;
-const RING_SEGMENTS = 32;
+const CELL_BLOCK_WIDTH = 4;
+const CELL_BLOCK_HEIGHT = 3;
+const CELL_BLOCK_DEPTH = 3;
+const COURT_WIDTH = 20;
+const COURT_LENGTH = 30;
 
-/** Single pillar spotlight; target is set by parent in one shared useFrame. */
-function PillarSpotlight({
-    position,
-    setLightRef,
-}: {
-    position: [number, number, number];
-    setLightRef: (el: THREE.SpotLight | null) => void;
-}) {
+// Reusing geometry for performance
+const CONCRETE_MAT = new THREE.MeshStandardMaterial({ color: "#999999", roughness: 0.9 });
+const DIRTY_WALL_MAT = new THREE.MeshStandardMaterial({ color: "#8c8c8c", roughness: 1 });
+const RUST_MAT = new THREE.MeshStandardMaterial({ color: "#5a4d41", roughness: 0.8, metalness: 0.4 });
+const SAND_MAT = new THREE.MeshStandardMaterial({ color: "#d2b48c", roughness: 1 });
+const COURT_MAT = new THREE.MeshStandardMaterial({ color: "#aaddcc", roughness: 0.9 }); // Faded green/blue concrete court
+const COURT_LINE_MAT = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.9 });
+
+/** 
+ * A single prison cell unit with a barred window/door.
+ */
+function PrisonCell({ position, rotation = [0, 0, 0] }: { position: [number, number, number], rotation?: [number, number, number] }) {
     return (
-        <spotLight
-            ref={setLightRef}
-            position={position}
-            intensity={2}
-            distance={18}
-            angle={Math.PI / 6}
-            penumbra={0.35}
-            decay={2}
-            color="#ffbe72"
-        />
+        <group position={position} rotation={rotation}>
+            {/* Main concrete block */}
+            <mesh receiveShadow castShadow material={CONCRETE_MAT}>
+                <boxGeometry args={[CELL_BLOCK_WIDTH, CELL_BLOCK_HEIGHT, CELL_BLOCK_DEPTH]} />
+            </mesh>
+            {/* Dark interior "door/window" recess */}
+            <mesh position={[0, 0, CELL_BLOCK_DEPTH / 2 + 0.01]} receiveShadow>
+                <planeGeometry args={[1.2, 2]} />
+                <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
+            </mesh>
+            {/* Bars */}
+            <mesh position={[0, 0, CELL_BLOCK_DEPTH / 2 + 0.05]}>
+                <boxGeometry args={[1.3, 2.1, 0.05]} />
+                <meshStandardMaterial color="#333" roughness={0.7} metalness={0.6} wireframe />
+            </mesh>
+            {/* Balcony/Walkway in front */}
+            <mesh position={[0, -1.3, CELL_BLOCK_DEPTH / 2 + 0.8]} receiveShadow castShadow material={DIRTY_WALL_MAT}>
+                <boxGeometry args={[CELL_BLOCK_WIDTH, 0.2, 1.6]} />
+            </mesh>
+            {/* Railing */}
+            <mesh position={[0, -0.8, CELL_BLOCK_DEPTH / 2 + 1.55]} receiveShadow material={RUST_MAT}>
+                <boxGeometry args={[CELL_BLOCK_WIDTH, 0.8, 0.05]} />
+            </mesh>
+        </group>
     );
 }
 
 /**
- * Open-air, prison-inspired desert coliseum connected to StadiumExit stairs.
- * Built as a walkable bowl with ring walls, bars, and warm desert dressing.
+ * A stack of cells forming a wall.
+ */
+function CellBlockRow({ count, startPos, gap, rotation }: { count: number, startPos: [number, number, number], gap: number, rotation?: [number, number, number] }) {
+    const cells = useMemo(() => {
+        return new Array(count).fill(0).map((_, i) => {
+            const xOffset = i * (CELL_BLOCK_WIDTH + gap);
+            return (
+                <group key={i} position={[xOffset, 0, 0]}>
+                    <PrisonCell position={[0, 0, 0]} />
+                    <PrisonCell position={[0, CELL_BLOCK_HEIGHT, 0]} />
+                    <PrisonCell position={[0, CELL_BLOCK_HEIGHT * 2, 0]} />
+                </group>
+            );
+        });
+    }, [count, gap]);
+
+    return <group position={startPos} rotation={rotation}>{cells}</group>;
+}
+
+/**
+ * Laundry hanging on lines
+ */
+function LaundryLine({ position, length }: { position: [number, number, number], length: number }) {
+    const clothes = useMemo(() => {
+        return new Array(Math.floor(length / 1.5)).fill(0).map((_, i) => {
+            const x = (i * 1.5) - (length / 2) + Math.random();
+            const color = new THREE.Color().setHSL(Math.random(), 0.6, 0.5);
+            return (
+                <mesh key={i} position={[x, -0.4, 0]} rotation={[0, Math.random() * 0.5, 0]}>
+                    <boxGeometry args={[0.5, 0.8, 0.1]} />
+                    <meshStandardMaterial color={color} />
+                </mesh>
+            )
+        });
+    }, [length]);
+
+    return (
+        <group position={position}>
+            {/* The Line */}
+            <mesh>
+                <boxGeometry args={[length, 0.02, 0.02]} />
+                <meshBasicMaterial color="#333" />
+            </mesh>
+            {clothes}
+        </group>
+    )
+}
+
+
+/**
+ * Brazilian Outdoor Prison Design.
+ * Replaces the circular "DesertJailColiseum".
  */
 export function DesertJailColiseum() {
     const center: [number, number, number] = [-31, -3.06, -7];
-    const arenaRadius = 8.4;
-    const bowlOuterRadius = 15.5;
 
-    const prisonSegments = useMemo(
-        () =>
-            Array.from({ length: 12 }).map((_, i) => {
-                const t = (i / 12) * Math.PI * 2;
-                return {
-                    key: `seg-${i}`,
-                    x: Math.cos(t) * (bowlOuterRadius - 0.75),
-                    z: Math.sin(t) * (bowlOuterRadius - 0.75),
-                    rotY: -t + Math.PI / 2,
-                };
-            }),
-        [bowlOuterRadius]
-    );
+    // StadiumExit connects at appx [-1.8, 1.6, -7.2] (based on bazaar coords). 
+    // We adjust our center to align somewhat or provide a walkway.
+    // The previous component had center at [-31, -3.06, -7].
 
-    const barSets = useMemo(
-        () =>
-            Array.from({ length: 6 }).map((_, i) => {
-                const t = (i / 6) * Math.PI * 2 + 0.16;
-                return {
-                    key: `bars-${i}`,
-                    x: Math.cos(t) * (bowlOuterRadius - 1.25),
-                    z: Math.sin(t) * (bowlOuterRadius - 1.25),
-                    rotY: -t + Math.PI / 2,
-                };
-            }),
-        [bowlOuterRadius]
-    );
-
-    const arenaFloorTargetRef = useRef<THREE.Group>(null);
-    const spotlightRefsRef = useRef<Record<string, THREE.SpotLight | null>>({});
     const [isNight, setIsNight] = useState(false);
     const prevNightRef = useRef(false);
 
@@ -83,141 +121,106 @@ export function DesertJailColiseum() {
             prevNightRef.current = night;
             setIsNight(night);
         }
-        const target = arenaFloorTargetRef.current;
-        if (target) {
-            Object.values(spotlightRefsRef.current).forEach((light) => {
-                if (light) light.target = target;
-            });
-        }
     });
 
     return (
         <group position={center}>
-            {/* Target for pillar spotlights (arena center) */}
-            <group ref={arenaFloorTargetRef} position={[0, 0, 0]} />
-            {/* Desert apron where stairs spill into the arena grounds */}
-            <mesh position={[7.5, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                <planeGeometry args={[14, 7]} />
-                <meshStandardMaterial color="#cbae82" roughness={1} metalness={0} />
+            {/* --- TERRAIN --- */}
+            {/* Infinite-looking sand plane */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow material={SAND_MAT}>
+                <planeGeometry args={[200, 200, 32, 32]} />
             </mesh>
 
-            {/* Central fight pit */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                <circleGeometry args={[arenaRadius, CIRCLE_SEGMENTS]} />
-                <meshStandardMaterial color="#bda67a" roughness={1} metalness={0} />
+            {/* Uneven sand dunes decoration */}
+            <mesh position={[20, -1, 20]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={SAND_MAT}>
+                <circleGeometry args={[15, 16]} />
             </mesh>
-            {/* Red highlighted arena circle: stand here to fight AI exokin */}
-            <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[arenaRadius - 0.5, arenaRadius, RING_SEGMENTS]} />
-                <meshStandardMaterial
-                    color="#8b0000"
-                    emissive="#c0392b"
-                    emissiveIntensity={0.8}
-                    roughness={0.9}
-                    metalness={0}
-                    side={THREE.DoubleSide}
-                />
+            <mesh position={[-20, -0.5, -25]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={SAND_MAT}>
+                <circleGeometry args={[12, 16]} />
             </mesh>
 
-            {/* Bowl ring / steps — receiveShadow only to avoid cost */}
-            <mesh position={[0, 0.5, 0]} receiveShadow>
-                <cylinderGeometry args={[bowlOuterRadius, arenaRadius + 1.5, 1.1, CYLINDER_SEGMENTS, 1, true]} />
-                <meshStandardMaterial color="#b09b7c" roughness={1} metalness={0} side={THREE.DoubleSide} />
+            {/* --- ARCHITECTURE --- */}
+
+            {/* Main Court Floor (Concrete/Pavement) */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} receiveShadow material={COURT_MAT}>
+                <planeGeometry args={[COURT_WIDTH, COURT_LENGTH]} />
             </mesh>
 
-            <mesh position={[0, 1.25, 0]} receiveShadow>
-                <cylinderGeometry args={[bowlOuterRadius + 1.2, bowlOuterRadius - 0.9, 1.2, CYLINDER_SEGMENTS, 1, true]} />
-                <meshStandardMaterial color="#a68e6f" roughness={1} metalness={0} side={THREE.DoubleSide} />
+            {/* Court Markings (Faded White Lines) */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]} receiveShadow material={COURT_LINE_MAT}>
+                <ringGeometry args={[3, 3.2, 32]} />
+            </mesh>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
+                <planeGeometry args={[COURT_WIDTH - 1, COURT_LENGTH - 1]} />
+                <meshStandardMaterial color="#fff" transparent opacity={0.1} side={THREE.DoubleSide} />
             </mesh>
 
-            <mesh position={[0, 2.15, 0]} receiveShadow>
-                <cylinderGeometry args={[bowlOuterRadius + 1.8, bowlOuterRadius + 0.6, 0.9, CYLINDER_SEGMENTS, 1, true]} />
-                <meshStandardMaterial color="#846a52" roughness={0.95} metalness={0.05} side={THREE.DoubleSide} />
-            </mesh>
 
-            {/* Jail perimeter wall segments — shared geometry */}
-            {prisonSegments.map((seg) => (
-                <mesh
-                    key={seg.key}
-                    position={[seg.x, 3.4, seg.z]}
-                    rotation={[0, seg.rotY, 0]}
-                    geometry={WALL_BOX_GEOMETRY}
-                    receiveShadow
-                >
-                    <meshStandardMaterial color="#6e5a47" roughness={0.92} metalness={0.08} />
+            {/* Cell Blocks surrounding the courtyard */}
+
+            {/* North Wall (Back) */}
+            <CellBlockRow count={6} startPos={[-10, 1.5, -16]} gap={0} />
+
+            {/* South Wall (Front) */}
+            <CellBlockRow count={6} startPos={[-10, 1.5, 16]} gap={0} rotation={[0, Math.PI, 0]} />
+
+            {/* East Wall (Right) */}
+            <CellBlockRow count={8} startPos={[12, 1.5, -14]} gap={0} rotation={[0, -Math.PI / 2, 0]} />
+
+            {/* West Wall (Left) - Entry side */}
+            {/* Leave a gap for the entrance from the bazaar/stadium stairs */}
+            <CellBlockRow count={3} startPos={[-12, 1.5, 14]} gap={0} rotation={[0, Math.PI / 2, 0]} />
+            <CellBlockRow count={3} startPos={[-12, 1.5, -6]} gap={0} rotation={[0, Math.PI / 2, 0]} />
+
+            {/* Entry Platform / Watchtower Gate */}
+            <group position={[-14, 4, 4]}>
+                <mesh castShadow receiveShadow material={CONCRETE_MAT}>
+                    <boxGeometry args={[4, 8, 4]} />
                 </mesh>
-            ))}
-
-            {/* Barred guard windows for prison vibe — shared geometry */}
-            {barSets.map((set) => (
-                <group key={set.key} position={[set.x, 3.15, set.z]} rotation={[0, set.rotY, 0]}>
-                    <mesh receiveShadow geometry={WINDOW_BOX_GEOMETRY}>
-                        <meshStandardMaterial color="#2a2622" roughness={0.6} metalness={0.65} />
-                    </mesh>
-                    {[-0.55, -0.18, 0.18, 0.55].map((x) => (
-                        <mesh key={`${set.key}-${x}`} position={[x, 0, 0.09]} geometry={BAR_GEOMETRY}>
-                            <meshStandardMaterial color="#141210" roughness={0.45} metalness={0.8} />
-                        </mesh>
-                    ))}
-                </group>
-            ))}
-
-            {/* Main gate opposite stair entry */}
-            <group position={[-bowlOuterRadius + 0.2, 2.7, 0]} rotation={[0, Math.PI / 2, 0]}>
-                <mesh receiveShadow>
-                    <boxGeometry args={[4, 3.2, 0.5]} />
-                    <meshStandardMaterial color="#43362b" roughness={0.85} metalness={0.1} />
+                <mesh position={[0, 4.5, 0]} material={RUST_MAT}>
+                    <coneGeometry args={[3, 1, 4]} />
                 </mesh>
-                {[-1.4, -0.8, -0.2, 0.4, 1].map((x) => (
-                    <mesh key={`gate-bar-${x}`} position={[x, -0.2, 0.28]} geometry={GATE_BAR_GEOMETRY}>
-                        <meshStandardMaterial color="#1a1613" roughness={0.45} metalness={0.78} />
-                    </mesh>
-                ))}
             </group>
 
-            {/* Dunes and desert rock dressing — no castShadow to save cost */}
-            <mesh position={[12, -0.2, 8]} rotation={[-Math.PI / 2, 0.5, 0]} receiveShadow>
-                <circleGeometry args={[6.5, 16]} />
-                <meshStandardMaterial color="#d2b48c" roughness={1} />
+
+            {/* --- PROPS --- */}
+
+            {/* Soccer Goal Posts */}
+            <group position={[0, 0, -13]}>
+                <mesh position={[-2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
+                <mesh position={[2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
+                <mesh position={[0, 2, 0]} rotation={[0, 0, Math.PI / 2]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 4]} /></mesh>
+            </group>
+
+            <group position={[0, 0, 13]} rotation={[0, Math.PI, 0]}>
+                <mesh position={[-2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
+                <mesh position={[2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
+                <mesh position={[0, 2, 0]} rotation={[0, 0, Math.PI / 2]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 4]} /></mesh>
+            </group>
+
+            {/* Laundry Lines strung between buildings */}
+            <LaundryLine position={[0, 5, -8]} length={18} />
+            <LaundryLine position={[0, 8, 5]} length={18} />
+
+            {/* Perimeter Fence (Visual separation from infinite sand) */}
+            <mesh position={[0, 2, 20]} rotation={[0, 0, 0]} material={RUST_MAT}>
+                <boxGeometry args={[40, 4, 0.1]} />
             </mesh>
-            <mesh position={[8, -0.1, -10]} rotation={[-Math.PI / 2, -0.35, 0]} receiveShadow>
-                <circleGeometry args={[5, 12]} />
-                <meshStandardMaterial color="#c8a57a" roughness={1} />
-            </mesh>
-            {/* Added more dunes */}
-            <mesh position={[-15, -0.15, -5]} rotation={[-Math.PI / 2, 0.2, 0]} receiveShadow>
-                <circleGeometry args={[7, 12]} />
-                <meshStandardMaterial color="#dcc19d" roughness={1} />
-            </mesh>
-            <mesh position={[0, -0.25, 18]} rotation={[-Math.PI / 2, -0.1, 0]} receiveShadow>
-                <circleGeometry args={[10, 12]} />
-                <meshStandardMaterial color="#cbae82" roughness={1} />
+            <mesh position={[0, 2, -20]} rotation={[0, 0, 0]} material={RUST_MAT}>
+                <boxGeometry args={[40, 4, 0.1]} />
             </mesh>
 
-            <mesh position={[-11.8, 0.4, 9.8]} receiveShadow>
-                <dodecahedronGeometry args={[1.7, 0]} />
-                <meshStandardMaterial color="#a08b73" roughness={1} />
-            </mesh>
-            <mesh position={[-13.2, 0.25, -10.3]} receiveShadow>
-                <dodecahedronGeometry args={[1.25, 0]} />
-                <meshStandardMaterial color="#8e7d6a" roughness={1} />
-            </mesh>
+            {/* Lighting */}
+            <pointLight position={[0, 8, 0]} intensity={isNight ? 0.5 : 0} distance={25} color="#ddaa88" />
 
-            {/* Two perimeter point lights only */}
-            <pointLight position={[bowlOuterRadius - 2, 4.2, 0]} intensity={isNight ? 0.4 : 1.0} distance={16} color="#ffbe72" />
-            <pointLight position={[-bowlOuterRadius + 2, 4.2, 0]} intensity={isNight ? 0.4 : 1.0} distance={16} color="#ffbe72" />
+            {/* Floodlights for night */}
+            {isNight && (
+                <>
+                    <spotLight position={[10, 12, 10]} target-position={[0, 0, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
+                    <spotLight position={[-10, 12, -10]} target-position={[0, 0, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
+                </>
+            )}
 
-            {/* Pillar spotlights: 6 only at night to avoid cost */}
-            {isNight &&
-                prisonSegments.slice(0, 6).map((seg) => (
-                    <PillarSpotlight
-                        key={`pillar-spot-${seg.key}`}
-                        position={[seg.x, 4.2, seg.z]}
-                        setLightRef={(el) => {
-                            spotlightRefsRef.current[seg.key] = el;
-                        }}
-                    />
-                ))}
         </group>
     );
 }
