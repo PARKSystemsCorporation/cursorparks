@@ -1,7 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import React, { Suspense } from "react";
 import { CameraOverrideProvider } from "./CameraOverrideContext";
 import { CameraProfileMoment } from "./CameraProfileMoment";
 import { EffectComposer, ToneMapping, Bloom } from "@react-three/postprocessing";
@@ -28,49 +27,6 @@ import { StadiumExit } from "@/src/components/Bazaar/StadiumExit";
 import { DesertJailColiseum } from "@/src/components/Bazaar/DesertJailColiseum";
 import { ExokinCreationLedStrip } from "./ExokinCreationLedStrip";
 import { LightingCycleProvider } from "@/src/components/Bazaar/LightingCycleContext";
-
-const COLISEUM_CENTER: [number, number, number] = [-31, -3.06, -7];
-const COLISEUM_MAX_DISTANCE = 22;
-const COLISEUM_HYSTERESIS = 4;
-
-/** Renders children only when camera is within maxDistance of point; hysteresis avoids popping. */
-function DistanceGate({
-  point,
-  maxDistance,
-  hysteresis,
-  children,
-}: {
-  point: [number, number, number];
-  maxDistance: number;
-  hysteresis: number;
-  children: React.ReactNode;
-}) {
-  const { camera } = useThree();
-  const [visible, setVisible] = useState(false);
-  const visibleRef = useRef(false);
-
-  useFrame(() => {
-    const dx = camera.position.x - point[0];
-    const dy = camera.position.y - point[1];
-    const dz = camera.position.z - point[2];
-    const distSq = dx * dx + dy * dy + dz * dz;
-    const dist = Math.sqrt(distSq);
-    if (!visibleRef.current) {
-      if (dist < maxDistance) {
-        visibleRef.current = true;
-        setVisible(true);
-      }
-    } else {
-      if (dist > maxDistance + hysteresis) {
-        visibleRef.current = false;
-        setVisible(false);
-      }
-    }
-  });
-
-  if (!visible) return null;
-  return <>{children}</>;
-}
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
 function AlleyProps() {
@@ -234,10 +190,8 @@ export function SceneOrchestrator() {
         <CameraProfileMoment />
 
         <AlleyGeometry />
-        <DistanceGate point={COLISEUM_CENTER} maxDistance={COLISEUM_MAX_DISTANCE} hysteresis={COLISEUM_HYSTERESIS}>
-          <StadiumExit />
-          <DesertJailColiseum />
-        </DistanceGate>
+        <StadiumExit />
+        <DesertJailColiseum />
         <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
         <AlleySurfaceBreakupLayer />
         <ContactShadowSystem />

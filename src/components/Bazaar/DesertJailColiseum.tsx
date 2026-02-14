@@ -6,8 +6,12 @@ import * as THREE from "three";
 import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
 
 const BAR_GEOMETRY = new THREE.BoxGeometry(0.08, 1.05, 0.08);
-const CIRCLE_SEGMENTS = 32;
-const CYLINDER_SEGMENTS = 32;
+const WALL_BOX_GEOMETRY = new THREE.BoxGeometry(2.4, 2.4, 0.7);
+const GATE_BAR_GEOMETRY = new THREE.BoxGeometry(0.14, 2.6, 0.12);
+const WINDOW_BOX_GEOMETRY = new THREE.BoxGeometry(1.7, 1.1, 0.2);
+const CIRCLE_SEGMENTS = 24;
+const CYLINDER_SEGMENTS = 24;
+const RING_SEGMENTS = 32;
 
 /** Single pillar spotlight; target is set by parent in one shared useFrame. */
 function PillarSpotlight({
@@ -42,8 +46,8 @@ export function DesertJailColiseum() {
 
     const prisonSegments = useMemo(
         () =>
-            Array.from({ length: 22 }).map((_, i) => {
-                const t = (i / 22) * Math.PI * 2;
+            Array.from({ length: 12 }).map((_, i) => {
+                const t = (i / 12) * Math.PI * 2;
                 return {
                     key: `seg-${i}`,
                     x: Math.cos(t) * (bowlOuterRadius - 0.75),
@@ -56,8 +60,8 @@ export function DesertJailColiseum() {
 
     const barSets = useMemo(
         () =>
-            Array.from({ length: 10 }).map((_, i) => {
-                const t = (i / 10) * Math.PI * 2 + 0.16;
+            Array.from({ length: 6 }).map((_, i) => {
+                const t = (i / 6) * Math.PI * 2 + 0.16;
                 return {
                     key: `bars-${i}`,
                     x: Math.cos(t) * (bowlOuterRadius - 1.25),
@@ -104,7 +108,7 @@ export function DesertJailColiseum() {
             </mesh>
             {/* Red highlighted arena circle: stand here to fight AI exokin */}
             <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[arenaRadius - 0.5, arenaRadius, 64]} />
+                <ringGeometry args={[arenaRadius - 0.5, arenaRadius, RING_SEGMENTS]} />
                 <meshStandardMaterial
                     color="#8b0000"
                     emissive="#c0392b"
@@ -115,45 +119,43 @@ export function DesertJailColiseum() {
                 />
             </mesh>
 
-            {/* Bowl ring / steps */}
-            <mesh position={[0, 0.5, 0]} receiveShadow castShadow>
+            {/* Bowl ring / steps — receiveShadow only to avoid cost */}
+            <mesh position={[0, 0.5, 0]} receiveShadow>
                 <cylinderGeometry args={[bowlOuterRadius, arenaRadius + 1.5, 1.1, CYLINDER_SEGMENTS, 1, true]} />
                 <meshStandardMaterial color="#967c62" roughness={0.95} metalness={0.05} side={THREE.DoubleSide} />
             </mesh>
 
-            <mesh position={[0, 1.25, 0]} receiveShadow castShadow>
+            <mesh position={[0, 1.25, 0]} receiveShadow>
                 <cylinderGeometry args={[bowlOuterRadius + 1.2, bowlOuterRadius - 0.9, 1.2, CYLINDER_SEGMENTS, 1, true]} />
                 <meshStandardMaterial color="#8e7358" roughness={0.95} metalness={0.05} side={THREE.DoubleSide} />
             </mesh>
 
-            <mesh position={[0, 2.15, 0]} receiveShadow castShadow>
+            <mesh position={[0, 2.15, 0]} receiveShadow>
                 <cylinderGeometry args={[bowlOuterRadius + 1.8, bowlOuterRadius + 0.6, 0.9, CYLINDER_SEGMENTS, 1, true]} />
                 <meshStandardMaterial color="#846a52" roughness={0.95} metalness={0.05} side={THREE.DoubleSide} />
             </mesh>
 
-            {/* Jail perimeter wall segments */}
+            {/* Jail perimeter wall segments — shared geometry */}
             {prisonSegments.map((seg) => (
                 <mesh
                     key={seg.key}
                     position={[seg.x, 3.4, seg.z]}
                     rotation={[0, seg.rotY, 0]}
-                    castShadow
+                    geometry={WALL_BOX_GEOMETRY}
                     receiveShadow
                 >
-                    <boxGeometry args={[2.4, 2.4, 0.7]} />
                     <meshStandardMaterial color="#6e5a47" roughness={0.92} metalness={0.08} />
                 </mesh>
             ))}
 
-            {/* Barred guard windows for prison vibe */}
+            {/* Barred guard windows for prison vibe — shared geometry */}
             {barSets.map((set) => (
                 <group key={set.key} position={[set.x, 3.15, set.z]} rotation={[0, set.rotY, 0]}>
-                    <mesh receiveShadow>
-                        <boxGeometry args={[1.7, 1.1, 0.2]} />
+                    <mesh receiveShadow geometry={WINDOW_BOX_GEOMETRY}>
                         <meshStandardMaterial color="#2a2622" roughness={0.6} metalness={0.65} />
                     </mesh>
                     {[-0.55, -0.18, 0.18, 0.55].map((x) => (
-                        <mesh key={`${set.key}-${x}`} position={[x, 0, 0.09]} receiveShadow geometry={BAR_GEOMETRY}>
+                        <mesh key={`${set.key}-${x}`} position={[x, 0, 0.09]} geometry={BAR_GEOMETRY}>
                             <meshStandardMaterial color="#141210" roughness={0.45} metalness={0.8} />
                         </mesh>
                     ))}
@@ -162,47 +164,42 @@ export function DesertJailColiseum() {
 
             {/* Main gate opposite stair entry */}
             <group position={[-bowlOuterRadius + 0.2, 2.7, 0]} rotation={[0, Math.PI / 2, 0]}>
-                <mesh castShadow receiveShadow>
+                <mesh receiveShadow>
                     <boxGeometry args={[4, 3.2, 0.5]} />
                     <meshStandardMaterial color="#43362b" roughness={0.85} metalness={0.1} />
                 </mesh>
                 {[-1.4, -0.8, -0.2, 0.4, 1].map((x) => (
-                    <mesh key={`gate-bar-${x}`} position={[x, -0.2, 0.28]}>
-                        <boxGeometry args={[0.14, 2.6, 0.12]} />
+                    <mesh key={`gate-bar-${x}`} position={[x, -0.2, 0.28]} geometry={GATE_BAR_GEOMETRY}>
                         <meshStandardMaterial color="#1a1613" roughness={0.45} metalness={0.78} />
                     </mesh>
                 ))}
             </group>
 
-            {/* Dunes and desert rock dressing */}
+            {/* Dunes and desert rock dressing — no castShadow to save cost */}
             <mesh position={[12, -0.2, 8]} rotation={[-Math.PI / 2, 0.5, 0]} receiveShadow>
-                <circleGeometry args={[6, 24]} />
+                <circleGeometry args={[6, 16]} />
                 <meshStandardMaterial color="#b58f64" roughness={1} />
             </mesh>
             <mesh position={[8, -0.1, -10]} rotation={[-Math.PI / 2, -0.35, 0]} receiveShadow>
-                <circleGeometry args={[4.4, 20]} />
+                <circleGeometry args={[4.4, 12]} />
                 <meshStandardMaterial color="#ab825a" roughness={1} />
             </mesh>
-            <mesh position={[-11.8, 0.4, 9.8]} castShadow receiveShadow>
+            <mesh position={[-11.8, 0.4, 9.8]} receiveShadow>
                 <dodecahedronGeometry args={[1.7, 0]} />
                 <meshStandardMaterial color="#7a5f43" roughness={0.98} />
             </mesh>
-            <mesh position={[-13.2, 0.25, -10.3]} castShadow receiveShadow>
+            <mesh position={[-13.2, 0.25, -10.3]} receiveShadow>
                 <dodecahedronGeometry args={[1.25, 0]} />
                 <meshStandardMaterial color="#6e553d" roughness={0.98} />
             </mesh>
 
-            {/* Warm practical lights around perimeter (day; reduced at night when pillar spotlights are on); 4 lights to limit overlap */}
-            {[-8, 8].map((z) => (
-                <pointLight key={`warm-l-${z}`} position={[bowlOuterRadius - 2, 4.2, z]} intensity={isNight ? 0.35 : 1.1} distance={13} color="#ffbe72" />
-            ))}
-            {[-8, 8].map((z) => (
-                <pointLight key={`warm-r-${z}`} position={[-bowlOuterRadius + 2, 4.2, z]} intensity={isNight ? 0.35 : 1.1} distance={13} color="#ffbe72" />
-            ))}
+            {/* Two perimeter point lights only */}
+            <pointLight position={[bowlOuterRadius - 2, 4.2, 0]} intensity={isNight ? 0.4 : 1.0} distance={16} color="#ffbe72" />
+            <pointLight position={[-bowlOuterRadius + 2, 4.2, 0]} intensity={isNight ? 0.4 : 1.0} distance={16} color="#ffbe72" />
 
-            {/* Pillar spotlights: one per segment, inward/down onto arena floor, night only */}
+            {/* Pillar spotlights: 6 only at night to avoid cost */}
             {isNight &&
-                prisonSegments.map((seg) => (
+                prisonSegments.slice(0, 6).map((seg) => (
                     <PillarSpotlight
                         key={`pillar-spot-${seg.key}`}
                         position={[seg.x, 4.2, seg.z]}
