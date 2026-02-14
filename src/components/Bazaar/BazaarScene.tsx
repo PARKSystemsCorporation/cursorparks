@@ -16,6 +16,8 @@ import { ArenaUI } from "@/src/modules/arena";
 import { ExokinChat, ExokinDevice } from "@/src/modules/exokin";
 import { DebugOverlay } from "@/src/modules/ui/DebugOverlay";
 import { CoordTracker } from "@/src/modules/ui/CoordTracker";
+import { produce } from "immer"; // Unused but common
+import { generateVisualIdentity } from "@/src/modules/exokin/identityGenerator";
 import FirstBondPanel, { FirstBondData } from "@/src/ui/FirstBondPanel";
 import "./BazaarLanding.css";
 
@@ -67,15 +69,11 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
             window.dispatchEvent(new CustomEvent("parks-spawn-creature", {
               detail: {
                 type: data.exokin.type,
-                identity: {
-                  // Reconstruct minimal identity for visuals until full load
-                  gender: data.exokin.gender,
-                  role: data.exokin.type === "warform" ? "warrior" : "companion",
-                  // For now we might need to rely on the randomizer in the listener if seeds aren't fully piped
-                  // But we have morphologySeed.
-                  // Ideally we pass the seed to the listener. 
-                  // The listener uses `deployAt`.
-                },
+                identity: generateVisualIdentity(
+                  data.exokin.morphologySeed,
+                  data.exokin.type,
+                  data.exokin.gender
+                ),
                 creatureId: data.exokin.id
               }
             }));
@@ -94,10 +92,11 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
     window.dispatchEvent(new CustomEvent("parks-spawn-creature", {
       detail: {
         type: data.type,
-        identity: {
-          gender: data.gender,
-          role: data.type === "warform" ? "warrior" : "companion",
-        },
+        identity: generateVisualIdentity(
+          data.morphologySeed,
+          data.type,
+          data.gender
+        ),
         // created now
       }
     }));

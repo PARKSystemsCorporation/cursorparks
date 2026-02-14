@@ -559,7 +559,7 @@ export default function AlleyTwoEnvironment({ onReturn }: AlleyTwoEnvironmentPro
                 <boxGeometry args={[0.5, 0.4, 0.6]} />
             </mesh>
 
-            <AlleyEndingPortal positionZ={-18} />
+
             <RoadClosedBarrier position={[0, 0.25, 4.5]} />
 
             <AlleyTwoReturnPortal onReturn={onReturn} />
