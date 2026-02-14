@@ -98,13 +98,13 @@ export function DesertJailColiseum() {
             {/* Desert apron where stairs spill into the arena grounds */}
             <mesh position={[7.5, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
                 <planeGeometry args={[14, 7]} />
-                <meshStandardMaterial color="#9c7f60" roughness={1} metalness={0} />
+                <meshStandardMaterial color="#cbae82" roughness={1} metalness={0} />
             </mesh>
 
             {/* Central fight pit */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
                 <circleGeometry args={[arenaRadius, CIRCLE_SEGMENTS]} />
-                <meshStandardMaterial color="#7f5f3b" roughness={1} metalness={0} />
+                <meshStandardMaterial color="#bda67a" roughness={1} metalness={0} />
             </mesh>
             {/* Red highlighted arena circle: stand here to fight AI exokin */}
             <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -122,12 +122,12 @@ export function DesertJailColiseum() {
             {/* Bowl ring / steps — receiveShadow only to avoid cost */}
             <mesh position={[0, 0.5, 0]} receiveShadow>
                 <cylinderGeometry args={[bowlOuterRadius, arenaRadius + 1.5, 1.1, CYLINDER_SEGMENTS, 1, true]} />
-                <meshStandardMaterial color="#967c62" roughness={0.95} metalness={0.05} side={THREE.DoubleSide} />
+                <meshStandardMaterial color="#b09b7c" roughness={1} metalness={0} side={THREE.DoubleSide} />
             </mesh>
 
             <mesh position={[0, 1.25, 0]} receiveShadow>
                 <cylinderGeometry args={[bowlOuterRadius + 1.2, bowlOuterRadius - 0.9, 1.2, CYLINDER_SEGMENTS, 1, true]} />
-                <meshStandardMaterial color="#8e7358" roughness={0.95} metalness={0.05} side={THREE.DoubleSide} />
+                <meshStandardMaterial color="#a68e6f" roughness={1} metalness={0} side={THREE.DoubleSide} />
             </mesh>
 
             <mesh position={[0, 2.15, 0]} receiveShadow>
@@ -177,20 +177,30 @@ export function DesertJailColiseum() {
 
             {/* Dunes and desert rock dressing — no castShadow to save cost */}
             <mesh position={[12, -0.2, 8]} rotation={[-Math.PI / 2, 0.5, 0]} receiveShadow>
-                <circleGeometry args={[6, 16]} />
-                <meshStandardMaterial color="#b58f64" roughness={1} />
+                <circleGeometry args={[6.5, 16]} />
+                <meshStandardMaterial color="#d2b48c" roughness={1} />
             </mesh>
             <mesh position={[8, -0.1, -10]} rotation={[-Math.PI / 2, -0.35, 0]} receiveShadow>
-                <circleGeometry args={[4.4, 12]} />
-                <meshStandardMaterial color="#ab825a" roughness={1} />
+                <circleGeometry args={[5, 12]} />
+                <meshStandardMaterial color="#c8a57a" roughness={1} />
             </mesh>
+            {/* Added more dunes */}
+            <mesh position={[-15, -0.15, -5]} rotation={[-Math.PI / 2, 0.2, 0]} receiveShadow>
+                <circleGeometry args={[7, 12]} />
+                <meshStandardMaterial color="#dcc19d" roughness={1} />
+            </mesh>
+            <mesh position={[0, -0.25, 18]} rotation={[-Math.PI / 2, -0.1, 0]} receiveShadow>
+                <circleGeometry args={[10, 12]} />
+                <meshStandardMaterial color="#cbae82" roughness={1} />
+            </mesh>
+
             <mesh position={[-11.8, 0.4, 9.8]} receiveShadow>
                 <dodecahedronGeometry args={[1.7, 0]} />
-                <meshStandardMaterial color="#7a5f43" roughness={0.98} />
+                <meshStandardMaterial color="#a08b73" roughness={1} />
             </mesh>
             <mesh position={[-13.2, 0.25, -10.3]} receiveShadow>
                 <dodecahedronGeometry args={[1.25, 0]} />
-                <meshStandardMaterial color="#6e553d" roughness={0.98} />
+                <meshStandardMaterial color="#8e7d6a" roughness={1} />
             </mesh>
 
             {/* Two perimeter point lights only */}

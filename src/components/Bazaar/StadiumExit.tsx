@@ -25,9 +25,9 @@ export function StadiumExit() {
     const concreteMat = useMemo(
         () =>
             new THREE.MeshStandardMaterial({
-                color: "#8d8174",
-                roughness: 0.86,
-                metalness: 0.08,
+                color: "#bba692", // Warmer sandstone
+                roughness: 0.9,
+                metalness: 0.05,
             }),
         []
     );
@@ -35,9 +35,9 @@ export function StadiumExit() {
     const floorMat = useMemo(
         () =>
             new THREE.MeshStandardMaterial({
-                color: "#7c6b58",
-                roughness: 0.92,
-                metalness: 0.03,
+                color: "#a68b6c", // Sandy floor
+                roughness: 1.0,
+                metalness: 0.0,
             }),
         []
     );
@@ -45,9 +45,9 @@ export function StadiumExit() {
     const lightMat = useMemo(
         () =>
             new THREE.MeshStandardMaterial({
-                color: "#e8dcc8",
-                emissive: "#e8dcc8",
-                emissiveIntensity: 0.5,
+                color: "#fff2d0", // Warmer yellow light
+                emissive: "#fff2d0",
+                emissiveIntensity: 0.8,
                 toneMapped: true,
             }),
         []

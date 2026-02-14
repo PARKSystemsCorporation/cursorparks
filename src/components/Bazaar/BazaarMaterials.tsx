@@ -60,9 +60,9 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
         const concreteWall = new THREE.MeshStandardMaterial({
             map: txConcrete,
             normalMap: txConcreteNormal,
-            color: "#d6c6b9", // Warm sandstone
-            roughness: 0.9,
-            metalness: 0.1,
+            color: "#e2d1c3", // Brighter, warm sandstone
+            roughness: 0.95,
+            metalness: 0.05,
         });
 
         const concreteWallRight = concreteWall.clone();
@@ -73,10 +73,10 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
         const wetFloor = new THREE.MeshStandardMaterial({
             map: txFloor,
             roughnessMap: txFloorRough,
-            color: "#8c857b", // Dusty stone
+            color: "#a09489", // Warmer dusty stone
             roughness: 1.0,
-            metalness: 0.1, // Reduced wetness
-            envMapIntensity: 0.3, // Subtle bounce only
+            metalness: 0.0, // Totally dry
+            envMapIntensity: 0.2,
         });
 
         // Ground - Dusty
@@ -84,7 +84,7 @@ export function BazaarMaterialsProvider({ children }: { children: React.ReactNod
             map: txDirt,
             normalMap: txDirtNormal,
             roughnessMap: txDirtRough,
-            color: "#8f7e6b", // Warmer dirt
+            color: "#c2ae95", // Brighter desert sand/dirt
             roughness: 1.0,
             metalness: 0,
             envMapIntensity: 0.1,
