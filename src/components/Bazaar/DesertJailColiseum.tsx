@@ -6,6 +6,7 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { EXRLoader } from 'three-stdlib';
 import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
+import { CombatScene } from "@/src/modules/combat/CombatScene";
 
 // Standard Textures
 const CONCRETE_TEXTURE_PATH = "/textures/prison_concrete_wall.png";
@@ -271,6 +272,22 @@ function TunnelExitFrame({ material }: { material: THREE.Material }) {
         </group>
     );
 }
+
+/**
+ * Stairs leading out of the tunnel towards the pyramid
+ */
+function TunnelStairs({ material }: { material: THREE.Material }) {
+    return (
+        <group position={[0, 0, -11]}>
+            {/* Create a series of steps rising from the tunnel floor */}
+            {new Array(5).fill(0).map((_, i) => (
+                <mesh key={i} position={[0, i * 0.3, i * 0.5]} receiveShadow material={material}>
+                    <boxGeometry args={[8, 0.3, 0.5]} />
+                </mesh>
+            ))}
+        </group>
+    );
+}
 function SteppedPyramid({ templeMat, stepsMat, tunnelMat }: { templeMat: THREE.Material, stepsMat: THREE.Material, tunnelMat: THREE.Material }) {
     return (
         <group>
@@ -329,8 +346,8 @@ function SteppedPyramid({ templeMat, stepsMat, tunnelMat }: { templeMat: THREE.M
  * Main Component: Desert Jail Coliseum Redesign
  */
 export function DesertJailColiseum() {
-    // Center the pyramid in front of the camera (Camera is at z=-12 looking -Z)
-    const center: [number, number, number] = [0, 0, -60];
+    // Center the pyramid in front of the camera, moved to Z=1 as requested
+    const center: [number, number, number] = [0, 0, 1];
 
     const [pebbles, brownRock, concrete] = useTexture([
         "/textures/prison_floor_dirty.png",
@@ -405,6 +422,7 @@ export function DesertJailColiseum() {
         <group>
             {/* --- TUNNEL EXIT FRAME (At Camera Start) --- */}
             <TunnelExitFrame material={tunnelMat} />
+            <TunnelStairs material={tunnelMat} />
 
             <group position={center}>
                 {/* --- TERRAIN & ENVIRONMENT --- */}
@@ -429,6 +447,8 @@ export function DesertJailColiseum() {
                         <spotLight position={[-10, 40, -10]} target-position={[0, 20, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
                     </>
                 )}
+
+                <CombatScene />
             </group>
         </group>
     );
