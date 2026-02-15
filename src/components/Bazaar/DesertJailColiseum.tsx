@@ -4,10 +4,30 @@ import { useMemo, useRef, useState } from "react";
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { EXRLoader } from 'three-stdlib';
 import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
 
+// Standard Textures
 const CONCRETE_TEXTURE_PATH = "/textures/prison_concrete_wall.png";
 const CONCRETE_FLOOR_TEXTURE_PATH = "/textures/prison_floor_dirty.png";
+
+// Aerial Rocks 2 (Steps)
+const ROCKS_DIFF = "/textures/aerial_rocks_02/aerial_rocks_02_diff_4k.jpg";
+const ROCKS_DISP = "/textures/aerial_rocks_02/aerial_rocks_02_disp_4k.png";
+const ROCKS_NOR = "/textures/aerial_rocks_02/aerial_rocks_02_nor_gl_4k.exr";
+const ROCKS_ROUGH = "/textures/aerial_rocks_02/aerial_rocks_02_rough_4k.jpg";
+
+// Rocky Pitted Mossy (Temple)
+const MOSSY_DIFF = "/textures/rock_pitted_mossy/rock_pitted_mossy_diff_4k.jpg";
+const MOSSY_DISP = "/textures/rock_pitted_mossy/rock_pitted_mossy_disp_4k.png";
+const MOSSY_NOR = "/textures/rock_pitted_mossy/rock_pitted_mossy_nor_gl_4k.exr";
+const MOSSY_ROUGH = "/textures/rock_pitted_mossy/rock_pitted_mossy_rough_4k.exr";
+
+// Damaged Plaster (Tunnel)
+const PLASTER_DIFF = "/textures/damaged_plaster/damaged_plaster_diff_4k.jpg";
+const PLASTER_DISP = "/textures/damaged_plaster/damaged_plaster_disp_4k.png";
+const PLASTER_NOR = "/textures/damaged_plaster/damaged_plaster_nor_gl_4k.exr";
+const PLASTER_ROUGH = "/textures/damaged_plaster/damaged_plaster_rough_4k.exr";
 
 // --- MATERIALS ---
 const CONCRETE_MAT = new THREE.MeshStandardMaterial({ color: "#999999", roughness: 0.9 });
@@ -229,59 +249,54 @@ function PrisonYardTop({ material }: { material: THREE.Material }) {
 /**
  * The Mayan Stepped Pyramid Structure
  */
-function SteppedPyramid({ material }: { material: THREE.Material }) {
+function SteppedPyramid({ templeMat, stepsMat, tunnelMat }: { templeMat: THREE.Material, stepsMat: THREE.Material, tunnelMat: THREE.Material }) {
     return (
         <group>
             {/* Base Level - Hollow for Bazaar */}
-            {/* We use 4 walls instead of a solid box to create the hollow space */}
             {/* Front Wall (with Tunnel) */}
-            <mesh position={[0, 5, 32.5]} material={material}>
-                <boxGeometry args={[PYRAMID_BASE_SIZE, 10, 5]} />
+            <mesh position={[0, 5, 32.5]} material={tunnelMat}>
+                <boxGeometry args={[PYRAMID_BASE_SIZE, 10, 5, 64, 16, 16]} />
             </mesh>
-            {/* Tunnel Entrance cutout is implied by the geometry or we can just leave a gap if we built it from blocks. 
-                For simplicity, let's make the front wall split.
-            */}
 
             {/* Back Wall */}
-            <mesh position={[0, 5, -32.5]} material={material}>
-                <boxGeometry args={[PYRAMID_BASE_SIZE, 10, 5]} />
+            <mesh position={[0, 5, -32.5]} material={templeMat}>
+                <boxGeometry args={[PYRAMID_BASE_SIZE, 10, 5, 64, 16, 16]} />
             </mesh>
             {/* Left Wall */}
-            <mesh position={[-32.5, 5, 0]} rotation={[0, Math.PI / 2, 0]} material={material}>
-                <boxGeometry args={[60, 10, 5]} />
+            <mesh position={[-32.5, 5, 0]} rotation={[0, Math.PI / 2, 0]} material={templeMat}>
+                <boxGeometry args={[60, 10, 5, 64, 16, 16]} />
             </mesh>
             {/* Right Wall */}
-            <mesh position={[32.5, 5, 0]} rotation={[0, Math.PI / 2, 0]} material={material}>
-                <boxGeometry args={[60, 10, 5]} />
+            <mesh position={[32.5, 5, 0]} rotation={[0, Math.PI / 2, 0]} material={templeMat}>
+                <boxGeometry args={[60, 10, 5, 64, 16, 16]} />
             </mesh>
 
             {/* Tunnel Entrance Geometry Replacements for Front Wall */}
-            {/* We want a gap in the middle of the front wall at Z ~ 30-35 */}
-            <mesh position={[-20, 5, 32.5]} material={material}>
-                <boxGeometry args={[30, 10, 5]} />
+            <mesh position={[-20, 5, 32.5]} material={tunnelMat}>
+                <boxGeometry args={[30, 10, 5, 64, 16, 16]} />
             </mesh>
-            <mesh position={[20, 5, 32.5]} material={material}>
-                <boxGeometry args={[30, 10, 5]} />
+            <mesh position={[20, 5, 32.5]} material={tunnelMat}>
+                <boxGeometry args={[30, 10, 5, 64, 16, 16]} />
             </mesh>
             {/* Tunnel Roof */}
-            <mesh position={[0, 8, 32.5]} material={material}>
-                <boxGeometry args={[10, 4, 5]} />
+            <mesh position={[0, 8, 32.5]} material={tunnelMat}>
+                <boxGeometry args={[10, 4, 5, 16, 8, 8]} />
             </mesh>
 
 
             {/* Level 2 (Mid) */}
-            <mesh position={[0, 15, 0]} material={material}>
-                <boxGeometry args={[50, 10, 50]} />
+            <mesh position={[0, 15, 0]} material={templeMat}>
+                <boxGeometry args={[50, 10, 50, 64, 16, 64]} />
             </mesh>
 
             {/* Level 3 (Top Base) */}
-            <mesh position={[0, 20, 0]} material={material}>
-                <boxGeometry args={[40, 10, 40]} />
+            <mesh position={[0, 20, 0]} material={templeMat}>
+                <boxGeometry args={[40, 10, 40, 64, 16, 64]} />
             </mesh>
 
             {/* Stairs on the outside (Mayan style) */}
-            <mesh position={[0, 10, 26]} rotation={[-0.8, 0, 0]} material={material}>
-                <boxGeometry args={[8, 20, 2]} />
+            <mesh position={[0, 10, 26]} rotation={[-0.8, 0, 0]} material={stepsMat}>
+                <boxGeometry args={[8, 20, 2, 32, 64, 8]} />
             </mesh>
         </group>
     );
@@ -300,17 +315,52 @@ export function DesertJailColiseum() {
         "/textures/prison_concrete_wall.png",
     ]);
 
-    pebbles.wrapS = pebbles.wrapT = THREE.RepeatWrapping;
-    pebbles.repeat.set(16, 16);
+    // --- LOAD NEW TEXTURES ---
+    const [rocksDiff, rocksDisp, rocksRough] = useTexture([ROCKS_DIFF, ROCKS_DISP, ROCKS_ROUGH]);
+    const [mossyDiff, mossyDisp] = useTexture([MOSSY_DIFF, MOSSY_DISP]);
+    const [plasterDiff, plasterDisp] = useTexture([PLASTER_DIFF, PLASTER_DISP]);
 
-    brownRock.wrapS = brownRock.wrapT = THREE.RepeatWrapping;
-    brownRock.repeat.set(4, 6);
+    const [rocksNor, mossyNor, mossyRough, plasterNor, plasterRough] = useLoader(EXRLoader, [
+        ROCKS_NOR, MOSSY_NOR, MOSSY_ROUGH, PLASTER_NOR, PLASTER_ROUGH
+    ]);
 
-    concrete.wrapS = concrete.wrapT = THREE.RepeatWrapping;
-    concrete.repeat.set(2, 2);
+    // Handle texture encoding / repeating
+    useMemo(() => {
+        rocksDiff.colorSpace = THREE.SRGBColorSpace;
+        mossyDiff.colorSpace = THREE.SRGBColorSpace;
+        plasterDiff.colorSpace = THREE.SRGBColorSpace;
+
+        [rocksDiff, rocksDisp, rocksNor, rocksRough, mossyDiff, mossyDisp, mossyNor, mossyRough, plasterDiff, plasterDisp, plasterNor, plasterRough].forEach(t => {
+            t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        });
+
+        // Steps
+        rocksDiff.repeat.set(2, 4); rocksDisp.repeat.set(2, 4); rocksNor.repeat.set(2, 4); rocksRough.repeat.set(2, 4);
+
+        // Temple
+        mossyDiff.repeat.set(8, 2); mossyDisp.repeat.set(8, 2); mossyNor.repeat.set(8, 2); mossyRough.repeat.set(8, 2);
+
+        // Tunnel / Broken Plaster
+        plasterDiff.repeat.set(4, 2); plasterDisp.repeat.set(4, 2); plasterNor.repeat.set(4, 2); plasterRough.repeat.set(4, 2);
+
+    }, [rocksDiff, rocksDisp, rocksNor, rocksRough, mossyDiff, mossyDisp, mossyNor, mossyRough, plasterDiff, plasterDisp, plasterNor, plasterRough]);
+
+
+    // --- MATERIALS ---
+    const stepsMat = useMemo(() => new THREE.MeshStandardMaterial({
+        map: rocksDiff, displacementMap: rocksDisp, displacementScale: 0.2, normalMap: rocksNor, roughnessMap: rocksRough, roughness: 1
+    }), [rocksDiff, rocksDisp, rocksNor, rocksRough]);
+
+    const templeMat = useMemo(() => new THREE.MeshStandardMaterial({
+        map: mossyDiff, displacementMap: mossyDisp, displacementScale: 0.3, normalMap: mossyNor, roughnessMap: mossyRough, roughness: 1
+    }), [mossyDiff, mossyDisp, mossyNor, mossyRough]);
+
+    const tunnelMat = useMemo(() => new THREE.MeshStandardMaterial({
+        map: plasterDiff, displacementMap: plasterDisp, displacementScale: 0.1, normalMap: plasterNor, roughnessMap: plasterRough, roughness: 1
+    }), [plasterDiff, plasterDisp, plasterNor, plasterRough]);
 
     const concreteMat = useMemo(() => new THREE.MeshStandardMaterial({ map: concrete, roughness: 0.9 }), [concrete]);
-    const rockMat = useMemo(() => new THREE.MeshStandardMaterial({ map: brownRock, roughness: 1.0, color: "#8c7c6c" }), [brownRock]); // Darker rock
+
 
     const [isNight, setIsNight] = useState(false);
     const prevNightRef = useRef(false);
@@ -332,7 +382,7 @@ export function DesertJailColiseum() {
             </mesh>
 
             {/* --- STRUCTURE --- */}
-            <SteppedPyramid material={rockMat} />
+            <SteppedPyramid templeMat={templeMat} stepsMat={stepsMat} tunnelMat={tunnelMat} />
 
             {/* --- INTERIOR --- */}
             <BazaarInterior />
