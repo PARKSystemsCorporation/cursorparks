@@ -147,12 +147,10 @@ function HangingCables({ start, end }: { start: [number, number, number], end: [
 
     const points = useMemo(() => curve.getPoints(20), [curve]);
     const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
+    const material = useMemo(() => new THREE.LineBasicMaterial({ color: "black" }), []);
+    const line = useMemo(() => new THREE.Line(geometry, material), [geometry, material]);
 
-    return (
-        <line geometry={geometry}>
-            <lineBasicMaterial color="black" linewidth={2} />
-        </line>
-    );
+    return <primitive object={line} />;
 }
 
 

@@ -1,37 +1,26 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { EXRLoader } from 'three-stdlib';
 import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
 import { CombatScene } from "@/src/modules/combat/CombatScene";
-
-// Standard Textures
-const CONCRETE_TEXTURE_PATH = "/textures/prison_concrete_wall.png";
-const CONCRETE_FLOOR_TEXTURE_PATH = "/textures/prison_floor_dirty.png";
 
 // Aerial Rocks 2 (Steps)
 const ROCKS_DIFF = "/textures/aerial_rocks_02/aerial_rocks_02_diff_4k.jpg";
 const ROCKS_DISP = "/textures/aerial_rocks_02/aerial_rocks_02_disp_4k.png";
-const ROCKS_NOR = "/textures/aerial_rocks_02/aerial_rocks_02_nor_gl_4k.exr";
 const ROCKS_ROUGH = "/textures/aerial_rocks_02/aerial_rocks_02_rough_4k.jpg";
 
 // Rocky Pitted Mossy (Temple)
 const MOSSY_DIFF = "/textures/rock_pitted_mossy/rock_pitted_mossy_diff_4k.jpg";
 const MOSSY_DISP = "/textures/rock_pitted_mossy/rock_pitted_mossy_disp_4k.png";
-const MOSSY_NOR = "/textures/rock_pitted_mossy/rock_pitted_mossy_nor_gl_4k.exr";
-const MOSSY_ROUGH = "/textures/rock_pitted_mossy/rock_pitted_mossy_rough_4k.exr";
 
 // Damaged Plaster (Tunnel)
 const PLASTER_DIFF = "/textures/damaged_plaster/damaged_plaster_diff_4k.jpg";
 const PLASTER_DISP = "/textures/damaged_plaster/damaged_plaster_disp_4k.png";
-const PLASTER_NOR = "/textures/damaged_plaster/damaged_plaster_nor_gl_4k.exr";
-const PLASTER_ROUGH = "/textures/damaged_plaster/damaged_plaster_rough_4k.exr";
 
 // --- MATERIALS ---
-const CONCRETE_MAT = new THREE.MeshStandardMaterial({ color: "#999999", roughness: 0.9 });
 const DIRTY_WALL_MAT = new THREE.MeshStandardMaterial({ color: "#555555", roughness: 1 });
 const RUST_MAT = new THREE.MeshStandardMaterial({ color: "#5a4d41", roughness: 0.8, metalness: 0.4 });
 const SAND_MAT = new THREE.MeshStandardMaterial({ color: "#d2b48c", roughness: 1 });
@@ -46,7 +35,6 @@ const CELL_BLOCK_WIDTH = 4;
 const CELL_BLOCK_HEIGHT = 3;
 const CELL_BLOCK_DEPTH = 3;
 const PYRAMID_BASE_SIZE = 70;
-const PYRAMID_LEVEL_HEIGHT = 10;
 const PRISON_LEVEL_Y = 20; // Top of the pyramid
 
 /**
@@ -98,7 +86,8 @@ function CellBlockRow({ count, startPos, gap, rotation, material }: { count: num
 /** 
  * Cyberpunk Neon Sign 
  */
-function NeonSign({ position, rotation, color, text }: { position: [number, number, number], rotation?: [number, number, number], color: THREE.Material, text?: string }) {
+
+function NeonSign({ position, rotation, color }: { position: [number, number, number], rotation?: [number, number, number], color: THREE.Material }) {
     // Simple geometric abstraction for now
     return (
         <group position={position} rotation={rotation}>
@@ -119,6 +108,7 @@ function NeonSign({ position, rotation, color, text }: { position: [number, numb
 function BazaarInterior() {
     return (
         <group position={[0, 0, 0]}>
+
             {/* Ground Floor */}
             <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
                 <planeGeometry args={[40, 40]} />
@@ -357,9 +347,7 @@ export function DesertJailColiseum() {
     // Center the pyramid in front of the camera, moved to Z=1 as requested
     const center: [number, number, number] = [0, 0, 1];
 
-    const [pebbles, brownRock, concrete] = useTexture([
-        "/textures/prison_floor_dirty.png",
-        "/textures/floor-stone.png",
+    const [concrete] = useTexture([
         "/textures/prison_concrete_wall.png",
     ]);
 
