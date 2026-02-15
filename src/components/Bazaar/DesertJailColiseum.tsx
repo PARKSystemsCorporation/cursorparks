@@ -9,108 +9,45 @@ import { isNight as getIsNight } from "@/src/modules/world/SunMoonCycle";
 const CONCRETE_TEXTURE_PATH = "/textures/prison_concrete_wall.png";
 const CONCRETE_FLOOR_TEXTURE_PATH = "/textures/prison_floor_dirty.png";
 
-/**
- * Tunnel/Alleyway with the custom concrete texture.
- */
-function AlleywayTunnel({ position, rotation }: { position: [number, number, number], rotation?: [number, number, number] }) {
-    const wallMap = useLoader(THREE.TextureLoader, CONCRETE_TEXTURE_PATH);
-    const floorMap = useLoader(THREE.TextureLoader, CONCRETE_FLOOR_TEXTURE_PATH);
+// --- MATERIALS ---
+const CONCRETE_MAT = new THREE.MeshStandardMaterial({ color: "#999999", roughness: 0.9 });
+const DIRTY_WALL_MAT = new THREE.MeshStandardMaterial({ color: "#555555", roughness: 1 });
+const RUST_MAT = new THREE.MeshStandardMaterial({ color: "#5a4d41", roughness: 0.8, metalness: 0.4 });
+const SAND_MAT = new THREE.MeshStandardMaterial({ color: "#d2b48c", roughness: 1 });
+const COURT_MAT = new THREE.MeshStandardMaterial({ color: "#aaddcc", roughness: 0.9 });
+const COURT_LINE_MAT = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.9 });
+const NEON_PINK = new THREE.MeshStandardMaterial({ color: "#ff00ff", emissive: "#ff00ff", emissiveIntensity: 2, toneMapped: false });
+const NEON_BLUE = new THREE.MeshStandardMaterial({ color: "#00ffff", emissive: "#00ffff", emissiveIntensity: 2, toneMapped: false });
+const NEON_PURPLE = new THREE.MeshStandardMaterial({ color: "#ae00ff", emissive: "#ae00ff", emissiveIntensity: 2, toneMapped: false });
 
-    // Configure texture for repeating
-    useMemo(() => {
-        wallMap.wrapS = wallMap.wrapT = THREE.RepeatWrapping;
-        wallMap.repeat.set(2, 1);
-
-        floorMap.wrapS = floorMap.wrapT = THREE.RepeatWrapping;
-        floorMap.repeat.set(1, 2);
-    }, [wallMap, floorMap]);
-
-    const tunnelMaterial = useMemo(() => {
-        return new THREE.MeshStandardMaterial({
-            map: wallMap,
-            roughness: 0.8,
-            color: "#aaaaaa"
-        });
-    }, [wallMap]);
-
-    const floorMaterial = useMemo(() => {
-        return new THREE.MeshStandardMaterial({
-            map: floorMap,
-            roughness: 0.9,
-            color: "#bbbbbb"
-        });
-    }, [floorMap]);
-
-    return (
-        <group position={position} rotation={rotation}>
-            {/* Floor */}
-            <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} material={floorMaterial}>
-                <planeGeometry args={[6, 12]} />
-            </mesh>
-
-            {/* Left Wall */}
-            <mesh castShadow receiveShadow position={[-3, 2.5, 0]} material={tunnelMaterial}>
-                <boxGeometry args={[0.5, 5, 12]} />
-            </mesh>
-
-            {/* Right Wall */}
-            <mesh castShadow receiveShadow position={[3, 2.5, 0]} material={tunnelMaterial}>
-                <boxGeometry args={[0.5, 5, 12]} />
-            </mesh>
-
-            {/* Ceiling Beams */}
-            <mesh position={[0, 4.8, -4]} castShadow material={RUST_MAT}>
-                <boxGeometry args={[6.5, 0.4, 0.4]} />
-            </mesh>
-            <mesh position={[0, 4.8, 0]} castShadow material={RUST_MAT}>
-                <boxGeometry args={[6.5, 0.4, 0.4]} />
-            </mesh>
-            <mesh position={[0, 4.8, 4]} castShadow material={RUST_MAT}>
-                <boxGeometry args={[6.5, 0.4, 0.4]} />
-            </mesh>
-        </group>
-    );
-}
-
+// --- CONSTANTS ---
 const CELL_BLOCK_WIDTH = 4;
 const CELL_BLOCK_HEIGHT = 3;
 const CELL_BLOCK_DEPTH = 3;
-const COURT_WIDTH = 20;
-const COURT_LENGTH = 30;
+const PYRAMID_BASE_SIZE = 70;
+const PYRAMID_LEVEL_HEIGHT = 10;
+const PRISON_LEVEL_Y = 20; // Top of the pyramid
 
-// Reusing geometry for performance
-const CONCRETE_MAT = new THREE.MeshStandardMaterial({ color: "#999999", roughness: 0.9 });
-const DIRTY_WALL_MAT = new THREE.MeshStandardMaterial({ color: "#8c8c8c", roughness: 1 });
-const RUST_MAT = new THREE.MeshStandardMaterial({ color: "#5a4d41", roughness: 0.8, metalness: 0.4 });
-const SAND_MAT = new THREE.MeshStandardMaterial({ color: "#d2b48c", roughness: 1 });
-const COURT_MAT = new THREE.MeshStandardMaterial({ color: "#aaddcc", roughness: 0.9 }); // Faded green/blue concrete court
-const COURT_LINE_MAT = new THREE.MeshStandardMaterial({ color: "#ffffff", roughness: 0.9 });
-
-/** 
+/**
  * A single prison cell unit with a barred window/door.
  */
 function PrisonCell({ position, rotation = [0, 0, 0], material }: { position: [number, number, number], rotation?: [number, number, number], material: THREE.Material }) {
     return (
         <group position={position} rotation={rotation}>
-            {/* Main concrete block */}
             <mesh receiveShadow castShadow material={material}>
                 <boxGeometry args={[CELL_BLOCK_WIDTH, CELL_BLOCK_HEIGHT, CELL_BLOCK_DEPTH]} />
             </mesh>
-            {/* Dark interior "door/window" recess */}
             <mesh position={[0, 0, CELL_BLOCK_DEPTH / 2 + 0.01]} receiveShadow>
                 <planeGeometry args={[1.2, 2]} />
                 <meshStandardMaterial color="#1a1a1a" roughness={0.9} />
             </mesh>
-            {/* Bars */}
             <mesh position={[0, 0, CELL_BLOCK_DEPTH / 2 + 0.05]}>
                 <boxGeometry args={[1.3, 2.1, 0.05]} />
                 <meshStandardMaterial color="#333" roughness={0.7} metalness={0.6} wireframe />
             </mesh>
-            {/* Balcony/Walkway in front */}
             <mesh position={[0, -1.3, CELL_BLOCK_DEPTH / 2 + 0.8]} receiveShadow castShadow material={material}>
                 <boxGeometry args={[CELL_BLOCK_WIDTH, 0.2, 1.6]} />
             </mesh>
-            {/* Railing */}
             <mesh position={[0, -0.8, CELL_BLOCK_DEPTH / 2 + 1.55]} receiveShadow material={RUST_MAT}>
                 <boxGeometry args={[CELL_BLOCK_WIDTH, 0.8, 0.05]} />
             </mesh>
@@ -129,51 +66,233 @@ function CellBlockRow({ count, startPos, gap, rotation, material }: { count: num
                 <group key={i} position={[xOffset, 0, 0]}>
                     <PrisonCell position={[0, 0, 0]} material={material} />
                     <PrisonCell position={[0, CELL_BLOCK_HEIGHT, 0]} material={material} />
-                    <PrisonCell position={[0, CELL_BLOCK_HEIGHT * 2, 0]} material={material} />
                 </group>
             );
         });
-    }, [count, gap]);
+    }, [count, gap, material]);
 
     return <group position={startPos} rotation={rotation}>{cells}</group>;
 }
 
-/**
- * Laundry hanging on lines
+/** 
+ * Cyberpunk Neon Sign 
  */
-function LaundryLine({ position, length }: { position: [number, number, number], length: number }) {
-    const clothes = useMemo(() => {
-        return new Array(Math.floor(length / 1.5)).fill(0).map((_, i) => {
-            const x = (i * 1.5) - (length / 2) + Math.random();
-            const color = new THREE.Color().setHSL(Math.random(), 0.6, 0.5);
-            return (
-                <mesh key={i} position={[x, -0.4, 0]} rotation={[0, Math.random() * 0.5, 0]}>
-                    <boxGeometry args={[0.5, 0.8, 0.1]} />
-                    <meshStandardMaterial color={color} />
-                </mesh>
-            )
-        });
-    }, [length]);
-
+function NeonSign({ position, rotation, color, text }: { position: [number, number, number], rotation?: [number, number, number], color: THREE.Material, text?: string }) {
+    // Simple geometric abstraction for now
     return (
-        <group position={position}>
-            {/* The Line */}
-            <mesh>
-                <boxGeometry args={[length, 0.02, 0.02]} />
-                <meshBasicMaterial color="#333" />
+        <group position={position} rotation={rotation}>
+            <mesh material={color}>
+                <boxGeometry args={[3, 1, 0.2]} />
             </mesh>
-            {clothes}
+            <mesh position={[0, 0, 0.15]} material={color}>
+                <ringGeometry args={[0.5, 0.6, 32]} />
+            </mesh>
         </group>
-    )
+    );
+}
+
+/** 
+ * The Cyberpunk Bazaar Interior 
+ * Located inside the pyramid base.
+ */
+function BazaarInterior() {
+    return (
+        <group position={[0, 0, 0]}>
+            {/* Ground Floor */}
+            <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
+                <planeGeometry args={[40, 40]} />
+                <meshStandardMaterial color="#222" roughness={0.6} metalness={0.5} />
+            </mesh>
+
+            {/* Ceiling (Bottom of next level) */}
+            <mesh receiveShadow rotation={[Math.PI / 2, 0, 0]} position={[0, 9.9, 0]}>
+                <planeGeometry args={[40, 40]} />
+                <meshStandardMaterial color="#111" roughness={0.9} />
+            </mesh>
+
+            {/* Stalls / Shops */}
+            <group position={[-12, 0, -10]}>
+                <mesh position={[0, 2, 0]} material={DIRTY_WALL_MAT}><boxGeometry args={[6, 4, 6]} /></mesh>
+                <NeonSign position={[0, 3.5, 3.1]} color={NEON_PINK} />
+            </group>
+            <group position={[12, 0, -10]}>
+                <mesh position={[0, 2, 0]} material={DIRTY_WALL_MAT}><boxGeometry args={[6, 4, 6]} /></mesh>
+                <NeonSign position={[0, 3.5, 3.1]} color={NEON_BLUE} />
+            </group>
+            <group position={[-12, 0, 10]}>
+                <mesh position={[0, 2, 0]} material={DIRTY_WALL_MAT}><boxGeometry args={[6, 4, 6]} /></mesh>
+                <NeonSign position={[0, 3.5, 3.1]} color={NEON_PURPLE} />
+            </group>
+            <group position={[12, 0, 10]}>
+                <mesh position={[0, 2, 0]} material={DIRTY_WALL_MAT}><boxGeometry args={[6, 4, 6]} /></mesh>
+                <NeonSign position={[0, 3.5, 3.1]} color={NEON_PINK} />
+            </group>
+
+            {/* 2nd Story Mezzanine */}
+            <mesh position={[0, 5, -15]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={RUST_MAT}>
+                <planeGeometry args={[40, 10]} />
+            </mesh>
+            <mesh position={[0, 5, 15]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={RUST_MAT}>
+                <planeGeometry args={[40, 10]} />
+            </mesh>
+
+            {/* Stairs */}
+            <group position={[-15, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+                {new Array(20).fill(0).map((_, i) => (
+                    <mesh key={i} position={[0, i * 0.25, i * 0.4]} receiveShadow castShadow material={RUST_MAT}>
+                        <boxGeometry args={[4, 0.25, 0.4]} />
+                    </mesh>
+                ))}
+                {/* Railing */}
+                <mesh position={[-1.9, 2.5, 4]} rotation={[Math.PI / 5.5, 0, 0]} material={RUST_MAT}>
+                    <cylinderGeometry args={[0.05, 0.05, 10]} />
+                </mesh>
+                <mesh position={[1.9, 2.5, 4]} rotation={[Math.PI / 5.5, 0, 0]} material={RUST_MAT}>
+                    <cylinderGeometry args={[0.05, 0.05, 10]} />
+                </mesh>
+            </group>
+
+            {/* Cables / Wires */}
+            {/* Random cables hanging from ceiling */}
+            {new Array(10).fill(0).map((_, i) => {
+                const x = (Math.random() - 0.5) * 30;
+                const z = (Math.random() - 0.5) * 30;
+                const length = 2 + Math.random() * 4;
+                return (
+                    <mesh key={i} position={[x, 9.9, z]} rotation={[0, 0, 0]} material={new THREE.MeshStandardMaterial({ color: "#111" })}>
+                        <cylinderGeometry args={[0.05, 0.05, length]} />
+                    </mesh>
+                )
+            })}
+
+            {/* Horizontal cables across the void */}
+            <mesh position={[0, 8, 0]} rotation={[0, 0, Math.PI / 2]} material={new THREE.MeshStandardMaterial({ color: "#222" })}>
+                <cylinderGeometry args={[0.02, 0.02, 38]} />
+            </mesh>
+            <mesh position={[5, 7.5, 0]} rotation={[0, 0, Math.PI / 2]} material={new THREE.MeshStandardMaterial({ color: "#222" })}>
+                <cylinderGeometry args={[0.02, 0.02, 38]} />
+            </mesh>
+
+            {/* Interior Ambient Light */}
+            <pointLight position={[0, 8, 0]} intensity={2} color="#aa00ff" distance={30} decay={2} />
+            <pointLight position={[-10, 4, -10]} intensity={2} color="#00ffff" distance={15} decay={2} />
+            <pointLight position={[10, 4, 10]} intensity={2} color="#ff0044" distance={15} decay={2} />
+
+        </group>
+    );
+}
+
+/**
+ * The Relocated Prison Yard
+ * Sits on top of the pyramid.
+ */
+function PrisonYardTop({ material }: { material: THREE.Material }) {
+    return (
+        <group position={[0, PRISON_LEVEL_Y, 0]}>
+            {/* Main Court Floor */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} receiveShadow material={COURT_MAT}>
+                <planeGeometry args={[20, 30]} />
+            </mesh>
+
+            {/* Court Markings */}
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]} receiveShadow material={COURT_LINE_MAT}>
+                <ringGeometry args={[3, 3.2, 32]} />
+            </mesh>
+
+            {/* Walls / Cells */}
+            <CellBlockRow count={5} startPos={[-8, 1.5, -16]} gap={0} material={material} />
+            <CellBlockRow count={5} startPos={[-8, 1.5, 16]} gap={0} rotation={[0, Math.PI, 0]} material={material} />
+            <CellBlockRow count={3} startPos={[12, 1.5, -6]} gap={0} rotation={[0, -Math.PI / 2, 0]} material={material} />
+            <CellBlockRow count={3} startPos={[-12, 1.5, 6]} gap={0} rotation={[0, Math.PI / 2, 0]} material={material} />
+
+            {/* Cage / Roof */}
+            <mesh position={[0, 8, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                <planeGeometry args={[26, 36]} />
+                <meshStandardMaterial color="#333" wireframe transparent opacity={0.3} />
+            </mesh>
+
+            {/* Props */}
+            <group position={[0, 0, -13]}>
+                <mesh position={[-2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
+                <mesh position={[2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
+                <mesh position={[0, 2, 0]} rotation={[0, 0, Math.PI / 2]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 4]} /></mesh>
+            </group>
+            <group position={[0, 0, 13]} rotation={[0, Math.PI, 0]}>
+                <mesh position={[-2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
+                <mesh position={[2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
+                <mesh position={[0, 2, 0]} rotation={[0, 0, Math.PI / 2]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 4]} /></mesh>
+            </group>
+        </group>
+    );
+}
+
+/**
+ * The Mayan Stepped Pyramid Structure
+ */
+function SteppedPyramid({ material }: { material: THREE.Material }) {
+    return (
+        <group>
+            {/* Base Level - Hollow for Bazaar */}
+            {/* We use 4 walls instead of a solid box to create the hollow space */}
+            {/* Front Wall (with Tunnel) */}
+            <mesh position={[0, 5, 32.5]} material={material}>
+                <boxGeometry args={[PYRAMID_BASE_SIZE, 10, 5]} />
+            </mesh>
+            {/* Tunnel Entrance cutout is implied by the geometry or we can just leave a gap if we built it from blocks. 
+                For simplicity, let's make the front wall split.
+            */}
+
+            {/* Back Wall */}
+            <mesh position={[0, 5, -32.5]} material={material}>
+                <boxGeometry args={[PYRAMID_BASE_SIZE, 10, 5]} />
+            </mesh>
+            {/* Left Wall */}
+            <mesh position={[-32.5, 5, 0]} rotation={[0, Math.PI / 2, 0]} material={material}>
+                <boxGeometry args={[60, 10, 5]} />
+            </mesh>
+            {/* Right Wall */}
+            <mesh position={[32.5, 5, 0]} rotation={[0, Math.PI / 2, 0]} material={material}>
+                <boxGeometry args={[60, 10, 5]} />
+            </mesh>
+
+            {/* Tunnel Entrance Geometry Replacements for Front Wall */}
+            {/* We want a gap in the middle of the front wall at Z ~ 30-35 */}
+            <mesh position={[-20, 5, 32.5]} material={material}>
+                <boxGeometry args={[30, 10, 5]} />
+            </mesh>
+            <mesh position={[20, 5, 32.5]} material={material}>
+                <boxGeometry args={[30, 10, 5]} />
+            </mesh>
+            {/* Tunnel Roof */}
+            <mesh position={[0, 8, 32.5]} material={material}>
+                <boxGeometry args={[10, 4, 5]} />
+            </mesh>
+
+
+            {/* Level 2 (Mid) */}
+            <mesh position={[0, 15, 0]} material={material}>
+                <boxGeometry args={[50, 10, 50]} />
+            </mesh>
+
+            {/* Level 3 (Top Base) */}
+            <mesh position={[0, 20, 0]} material={material}>
+                <boxGeometry args={[40, 10, 40]} />
+            </mesh>
+
+            {/* Stairs on the outside (Mayan style) */}
+            <mesh position={[0, 10, 26]} rotation={[-0.8, 0, 0]} material={material}>
+                <boxGeometry args={[8, 20, 2]} />
+            </mesh>
+        </group>
+    );
 }
 
 
 /**
- * Brazilian Outdoor Prison Design.
- * Replaces the circular "DesertJailColiseum".
+ * Main Component: Desert Jail Coliseum Redesign
  */
 export function DesertJailColiseum() {
-    const center: [number, number, number] = [-31, -3.06, -7];
+    const center: [number, number, number] = [-31, 0, -7]; // Y=0 base
 
     const [pebbles, brownRock, concrete] = useTexture([
         "/textures/prison_floor_dirty.png",
@@ -191,8 +310,7 @@ export function DesertJailColiseum() {
     concrete.repeat.set(2, 2);
 
     const concreteMat = useMemo(() => new THREE.MeshStandardMaterial({ map: concrete, roughness: 0.9 }), [concrete]);
-    const courtMat = useMemo(() => new THREE.MeshStandardMaterial({ map: brownRock, roughness: 0.9 }), [brownRock]);
-    const pebblesMat = useMemo(() => new THREE.MeshStandardMaterial({ map: pebbles, roughness: 1 }), [pebbles]);
+    const rockMat = useMemo(() => new THREE.MeshStandardMaterial({ map: brownRock, roughness: 1.0, color: "#8c7c6c" }), [brownRock]); // Darker rock
 
     const [isNight, setIsNight] = useState(false);
     const prevNightRef = useRef(false);
@@ -207,168 +325,28 @@ export function DesertJailColiseum() {
 
     return (
         <group position={center}>
-            {/* --- TERRAIN --- */}
-            {/* Infinite-looking sand plane */}
+            {/* --- TERRAIN & ENVIRONMENT --- */}
+            {/* Infinite Sand */}
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow material={SAND_MAT}>
                 <planeGeometry args={[200, 200, 32, 32]} />
             </mesh>
 
-            {/* Uneven sand dunes decoration */}
-            <mesh position={[20, -1, 20]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={SAND_MAT}>
-                <circleGeometry args={[15, 16]} />
-            </mesh>
-            <mesh position={[-20, -0.5, -25]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={SAND_MAT}>
-                <circleGeometry args={[12, 16]} />
-            </mesh>
+            {/* --- STRUCTURE --- */}
+            <SteppedPyramid material={rockMat} />
 
-            {/* --- ARCHITECTURE --- */}
+            {/* --- INTERIOR --- */}
+            <BazaarInterior />
 
-            {/* Main Court Floor (Brown Rock) */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]} receiveShadow material={courtMat}>
-                <planeGeometry args={[COURT_WIDTH, COURT_LENGTH]} />
-            </mesh>
+            {/* --- ROOFTOP PRISON --- */}
+            <PrisonYardTop material={concreteMat} />
 
-            {/* Alleyway/Tunnel Floor (Pebbles) - Surrounding area */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.04, 0]} receiveShadow material={pebblesMat}>
-                <planeGeometry args={[50, 50]} />
-            </mesh>
-
-            {/* Court Markings (Faded White Lines) */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]} receiveShadow material={COURT_LINE_MAT}>
-                <ringGeometry args={[3, 3.2, 32]} />
-            </mesh>
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
-                <planeGeometry args={[COURT_WIDTH - 1, COURT_LENGTH - 1]} />
-                <meshStandardMaterial color="#fff" transparent opacity={0.1} side={THREE.DoubleSide} />
-            </mesh>
-
-
-            {/* Cell Blocks surrounding the courtyard */}
-
-            {/* North Wall (Back) */}
-            <CellBlockRow count={6} startPos={[-10, 1.5, -16]} gap={0} material={concreteMat} />
-
-            {/* South Wall (Front) */}
-            <CellBlockRow count={6} startPos={[-10, 1.5, 16]} gap={0} rotation={[0, Math.PI, 0]} material={concreteMat} />
-
-            {/* East Wall (Right) - Split for Entrance Tunnel */}
-            <CellBlockRow count={3} startPos={[12, 1.5, -14]} gap={0} rotation={[0, -Math.PI / 2, 0]} material={concreteMat} />
-            <CellBlockRow count={3} startPos={[12, 1.5, 6]} gap={0} rotation={[0, -Math.PI / 2, 0]} material={concreteMat} />
-
-            {/* West Wall (Left) - Entry side */}
-            {/* Leave a gap for the entrance from the bazaar/stadium stairs */}
-            <CellBlockRow count={3} startPos={[-12, 1.5, 14]} gap={0} rotation={[0, Math.PI / 2, 0]} material={concreteMat} />
-            <CellBlockRow count={3} startPos={[-12, 1.5, -6]} gap={0} rotation={[0, Math.PI / 2, 0]} material={concreteMat} />
-
-            {/* Entry Platform / Watchtower Gate */}
-            <group position={[-14, 4, 4]}>
-                <mesh castShadow receiveShadow material={concreteMat}>
-                    <boxGeometry args={[4, 8, 4]} />
-                </mesh>
-                <mesh position={[0, 4.5, 0]} material={RUST_MAT}>
-                    <coneGeometry args={[3, 1, 4]} />
-                </mesh>
-            </group>
-
-            {/* NEW: Alleyway/Tunnel Entrance */}
-            {/* Positioned to lead OUT from the west side approx z=4 (center of gap between 14 and -6 is... 4) */}
-            {/* Gap Start: 14. Gap End: -6. Midpoint: 4. */}
-            {/* The tunnel should stick out from the wall. Wall x is approx -12. */}
-            <AlleywayTunnel position={[-18, 0, 4]} rotation={[0, 0, 0]} />
-
-
-            {/* --- PROPS --- */}
-
-            {/* Soccer Goal Posts */}
-            <group position={[0, 0, -13]}>
-                <mesh position={[-2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
-                <mesh position={[2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
-                <mesh position={[0, 2, 0]} rotation={[0, 0, Math.PI / 2]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 4]} /></mesh>
-            </group>
-
-            <group position={[0, 0, 13]} rotation={[0, Math.PI, 0]}>
-                <mesh position={[-2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
-                <mesh position={[2, 1, 0]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 2]} /></mesh>
-                <mesh position={[0, 2, 0]} rotation={[0, 0, Math.PI / 2]} material={RUST_MAT}><cylinderGeometry args={[0.05, 0.05, 4]} /></mesh>
-            </group>
-
-            {/* Laundry Lines strung between buildings */}
-            <LaundryLine position={[0, 5, -8]} length={18} />
-            <LaundryLine position={[0, 8, 5]} length={18} />
-
-            {/* Perimeter Fence (Visual separation from infinite sand) */}
-            <mesh position={[0, 2, 20]} rotation={[0, 0, 0]} material={RUST_MAT}>
-                <boxGeometry args={[40, 4, 0.1]} />
-            </mesh>
-            <mesh position={[0, 2, -20]} rotation={[0, 0, 0]} material={RUST_MAT}>
-                <boxGeometry args={[40, 4, 0.1]} />
-            </mesh>
-
-            {/* Lighting */}
-            <pointLight position={[0, 8, 0]} intensity={isNight ? 0.5 : 0} distance={25} color="#ddaa88" />
-
-            {/* Floodlights for night */}
+            {/* --- LIGHTING --- */}
             {isNight && (
                 <>
-                    <spotLight position={[10, 12, 10]} target-position={[0, 0, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
-                    <spotLight position={[-10, 12, -10]} target-position={[0, 0, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
+                    <spotLight position={[10, 40, 10]} target-position={[0, 20, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
+                    <spotLight position={[-10, 40, -10]} target-position={[0, 20, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
                 </>
             )}
-
-            {/* --- MOUNTAIN ILLUSION --- */}
-            {/* Layers of mountain silhouettes in the West (-X) direction where sun sets */}
-
-            {/* Layer 1: Darker, Closer */}
-            <mesh position={[-60, 5, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow>
-                <planeGeometry args={[100, 30]} />
-                {/* 
-                   We use a simple shape here, but ideally this would be a jagged geometry.
-                   For "illusion", we can use a basic displacement or alpha map if we had one.
-                   Without texture, we can use multiple overlapping peaks (Cylinders/Cones).
-                */}
-                <meshStandardMaterial color="#2d1b15" roughness={1} />
-            </mesh>
-
-            {/* Procedural Peaks Group (closer) */}
-            <group position={[-55, -2, 0]}>
-                <mesh position={[0, 0, -20]} scale={[15, 12, 1]}>
-                    <coneGeometry args={[1, 1, 4]} />
-                    <meshStandardMaterial color="#3a221a" roughness={1} />
-                </mesh>
-                <mesh position={[0, 0, 10]} scale={[20, 15, 1]}>
-                    <coneGeometry args={[1, 1, 4]} />
-                    <meshStandardMaterial color="#3a221a" roughness={1} />
-                </mesh>
-                <mesh position={[0, 0, 0]} scale={[25, 10, 1]}>
-                    <coneGeometry args={[1, 1, 4]} />
-                    <meshStandardMaterial color="#3a221a" roughness={1} />
-                </mesh>
-            </group>
-
-            {/* Layer 2: Further, Lighter (Fog will handle color) */}
-            <group position={[-90, -5, 0]}>
-                <mesh position={[0, 0, -30]} scale={[30, 20, 1]}>
-                    <coneGeometry args={[1, 1, 4]} />
-                    <meshStandardMaterial color="#4d2e24" roughness={1} />
-                </mesh>
-                <mesh position={[0, 0, 15]} scale={[40, 25, 1]}>
-                    <coneGeometry args={[1, 1, 4]} />
-                    <meshStandardMaterial color="#4d2e24" roughness={1} />
-                </mesh>
-            </group>
-
-            {/* Layer 3: Distant, Faded */}
-            <group position={[-130, -10, 0]}>
-                <mesh position={[0, 0, -10]} scale={[60, 40, 1]}>
-                    <coneGeometry args={[1, 1, 4]} />
-                    <meshStandardMaterial color="#5e3a2e" roughness={1} />
-                </mesh>
-                <mesh position={[0, 0, 40]} scale={[50, 35, 1]}>
-                    <coneGeometry args={[1, 1, 4]} />
-                    <meshStandardMaterial color="#5e3a2e" roughness={1} />
-                </mesh>
-            </group>
-
         </group>
     );
-}
+} 

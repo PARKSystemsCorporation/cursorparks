@@ -92,6 +92,11 @@ const STYLES = {
     textDecoration: "none",
     fontFamily: "monospace",
   },
+  buttonDisabled: {
+    opacity: 0.5,
+    cursor: "not-allowed",
+    pointerEvents: "none",
+  },
 };
 
 export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
@@ -125,13 +130,10 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
         setError("Passwords do not match.");
         return;
       }
-      if (mode === "create" && !accepted18Terms) {
-        setError("You must confirm you are 18+ and accept the Terms.");
-        return;
-      }
+      // 18+ check is now enforced before entering this screen
       setBusy(true);
       try {
-        await enterWithHandle(trimmed, password, { acceptTerms18: mode === "create" ? accepted18Terms : undefined });
+        await enterWithHandle(trimmed, password, { acceptTerms18: true }); // Always true as it's pre-verified
         onEnter({ type: "handle", handle: trimmed });
         // Copy onboarding flow for newly created accounts even if guest intro was already done.
         if (onFirstTimeIntro) {
@@ -148,15 +150,12 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
   );
 
   const handleGuest = useCallback(() => {
-    if (!accepted18Terms) {
-      setError("You must confirm you are 18+ and accept the Terms.");
-      return;
-    }
+    // 18+ check is already enforced by button state
     createGuestSessionId();
     const firstTime = isFirstTimeUser();
     onEnter({ type: "guest" });
     if (firstTime && onFirstTimeIntro) onFirstTimeIntro();
-  }, [accepted18Terms, onEnter, onFirstTimeIntro]);
+  }, [onEnter, onFirstTimeIntro]);
 
   if (mode === "signin" || mode === "create") {
     return (
@@ -234,16 +233,6 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
               Back
             </button>
           </div>
-          <label style={{ marginTop: "0.75rem", maxWidth: 280, display: "flex", gap: "0.5rem", alignItems: "flex-start", fontSize: "11px", color: "#c8b8a8" }}>
-            <input
-              type="checkbox"
-              checked={accepted18Terms}
-              onChange={(e) => setAccepted18Terms(e.target.checked)}
-              disabled={busy}
-              style={{ marginTop: "2px" }}
-            />
-            <span>I am 18+ and I accept the Terms & Conditions.</span>
-          </label>
           <button
             type="button"
             style={{ ...STYLES.button, background: "transparent", border: "none", fontSize: "10px", marginTop: "0.5rem" }}
@@ -270,9 +259,13 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
       <div style={STYLES.title}>THE PUBLIC BAZAAR</div>
       <div style={STYLES.buttonGroup}>
         <button
-          style={STYLES.button}
-          onClick={() => setMode("signin")}
-          onMouseEnter={(e) => Object.assign(e.target.style, STYLES.buttonHover)}
+          style={{
+            ...STYLES.button,
+            ...(!accepted18Terms ? STYLES.buttonDisabled : {})
+          }}
+          onClick={() => accepted18Terms && setMode("signin")}
+          disabled={!accepted18Terms}
+          onMouseEnter={(e) => accepted18Terms && Object.assign(e.target.style, STYLES.buttonHover)}
           onMouseLeave={(e) => {
             e.target.style.borderColor = STYLES.button.border;
             e.target.style.background = STYLES.button.background;
@@ -282,9 +275,13 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
           Sign In
         </button>
         <button
-          style={STYLES.button}
-          onClick={() => setMode("create")}
-          onMouseEnter={(e) => Object.assign(e.target.style, STYLES.buttonHover)}
+          style={{
+            ...STYLES.button,
+            ...(!accepted18Terms ? STYLES.buttonDisabled : {})
+          }}
+          onClick={() => accepted18Terms && setMode("create")}
+          disabled={!accepted18Terms}
+          onMouseEnter={(e) => accepted18Terms && Object.assign(e.target.style, STYLES.buttonHover)}
           onMouseLeave={(e) => {
             e.target.style.borderColor = STYLES.button.border;
             e.target.style.background = STYLES.button.background;
@@ -294,9 +291,13 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
           Create Handle
         </button>
         <button
-          style={STYLES.button}
+          style={{
+            ...STYLES.button,
+            ...(!accepted18Terms ? STYLES.buttonDisabled : {})
+          }}
           onClick={handleGuest}
-          onMouseEnter={(e) => Object.assign(e.target.style, STYLES.buttonHover)}
+          disabled={!accepted18Terms}
+          onMouseEnter={(e) => accepted18Terms && Object.assign(e.target.style, STYLES.buttonHover)}
           onMouseLeave={(e) => {
             e.target.style.borderColor = STYLES.button.border;
             e.target.style.background = STYLES.button.background;
@@ -306,12 +307,12 @@ export default function EntryScreen({ onEnter, onFirstTimeIntro }) {
           Continue as Guest
         </button>
       </div>
-      <label style={{ marginTop: "1rem", maxWidth: 280, display: "flex", gap: "0.5rem", alignItems: "flex-start", fontSize: "11px", color: "#c8b8a8" }}>
+      <label style={{ marginTop: "1rem", maxWidth: 280, display: "flex", gap: "0.5rem", alignItems: "flex-start", fontSize: "11px", color: "#c8b8a8", cursor: "pointer" }}>
         <input
           type="checkbox"
           checked={accepted18Terms}
           onChange={(e) => setAccepted18Terms(e.target.checked)}
-          style={{ marginTop: "2px" }}
+          style={{ marginTop: "2px", cursor: "pointer" }}
         />
         <span>I am 18+ and I accept the Terms & Conditions.</span>
       </label>
