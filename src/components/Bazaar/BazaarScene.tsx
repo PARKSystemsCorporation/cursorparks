@@ -22,7 +22,9 @@ import { ColiseumArenaTrigger } from "@/src/modules/world/ColiseumArenaTrigger";
 import { BackpackMenu } from "@/src/modules/ui/BackpackMenu";
 import { MobileControlsProvider } from "@/src/modules/world/MobileControlsContext";
 import { MobileDualStickOverlay } from "./MobileDualStickOverlay";
+
 import "./BazaarLanding.css";
+import { Loader } from "@react-three/drei";
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
   constructor(props: { children: React.ReactNode }) {
@@ -68,6 +70,12 @@ export default function BazaarScene({ onEnterAlleyTwo }: { onEnterAlleyTwo?: () 
                       >
                         <SceneOrchestrator />
                       </Canvas>
+                      <Loader
+                        containerStyles={{ background: "#e6ccb2" }}
+                        innerStyles={{ background: "rgba(20,20,20,0.8)", width: 300, height: 20 }}
+                        barStyles={{ background: "#ff6b1a", height: 20 }}
+                        dataStyles={{ color: "#8b6914", fontFamily: "monospace" }}
+                      />
                     </ErrorBoundary>
 
                     <DebugOverlay />

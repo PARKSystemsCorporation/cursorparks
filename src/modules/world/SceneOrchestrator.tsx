@@ -10,23 +10,15 @@ import { AlleySurfaceBreakupLayer } from "@/src/components/Bazaar/AlleySurfaceBr
 import { ContactShadowSystem } from "@/src/components/Bazaar/ContactShadowSystem";
 import { EnvironmentalMicroMotion } from "@/src/components/Bazaar/EnvironmentalMicroMotion";
 import { SpatialAudioZones } from "@/src/components/Bazaar/SpatialAudioZones";
-import { RobotRepairShop } from "@/src/components/Bazaar/RobotRepairShop";
-import { BrokerBooth } from "@/src/components/Bazaar/BrokerBooth";
-import BazaarVendors from "@/src/components/Bazaar/BazaarVendors";
-import FloatingMessages from "@/src/components/Bazaar/FloatingMessage";
 import { useSceneState } from "./SceneStateContext";
-import { EtherText } from "@/src/modules/chat/EtherText";
 import { FirstPersonController } from "./FirstPersonController";
 import { PerformanceTicker } from "./PerformanceTicker";
-import { TrainerNPC } from "./TrainerNPC";
-import { WalletCardDeployment } from "@/src/modules/ui/inventory/WalletCardDeployment";
-import { DeployedRobotsRenderer } from "@/src/modules/ui/inventory/DeployedRobotsRenderer";
-import { CreatureSpawnListener } from "./CreatureSpawnListener";
 import { SunMoonCycle } from "./SunMoonCycle";
 import { StadiumExit } from "@/src/components/Bazaar/StadiumExit";
 import { DesertJailColiseum } from "@/src/components/Bazaar/DesertJailColiseum";
-import { ExokinCreationLedStrip } from "./ExokinCreationLedStrip";
 import { LightingCycleProvider } from "@/src/components/Bazaar/LightingCycleContext";
+
+const DeferredSceneContent = React.lazy(() => import("./SceneParts"));
 
 /** AlleyProps: lights and sign (from original BazaarScene). */
 function AlleyProps() {
@@ -176,7 +168,7 @@ function AlleyProps() {
  * Use inside Canvas. Expects PerformanceProvider and SceneStateProvider above.
  */
 export function SceneOrchestrator() {
-  const { setRadialMenu, onEnterAlleyTwo } = useSceneState();
+  const { onEnterAlleyTwo } = useSceneState();
 
   return (
     <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial wireframe color="#ff6b1a" /></mesh>}>
@@ -198,18 +190,11 @@ export function SceneOrchestrator() {
           <EnvironmentalMicroMotion />
 
           <AlleyProps />
-          <RobotRepairShop />
-          <BazaarVendors onRightClick={(id, x, y) => setRadialMenu({ vendorId: id, x, y })} />
-          <BrokerBooth />
 
-          <FloatingMessages />
-          <EtherText />
+          <Suspense fallback={null}>
+            <DeferredSceneContent />
+          </Suspense>
 
-          <TrainerNPC />
-          <CreatureSpawnListener />
-          <ExokinCreationLedStrip />
-          <WalletCardDeployment />
-          <DeployedRobotsRenderer />
         </CameraOverrideProvider>
       </LightingCycleProvider>
 

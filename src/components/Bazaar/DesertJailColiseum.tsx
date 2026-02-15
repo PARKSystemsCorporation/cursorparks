@@ -247,47 +247,7 @@ function PrisonYardTop({ material }: { material: THREE.Material }) {
     );
 }
 
-/**
- * Framing geometry for the tunnel exit view
- */
-function TunnelExitFrame({ material }: { material: THREE.Material }) {
-    return (
-        <group position={[0, 0, -15]} rotation={[0, 0, 0]}>
-            {/* Left Wall */}
-            <mesh position={[-4, 2.5, 0]} receiveShadow material={material}>
-                <boxGeometry args={[4, 8, 8]} />
-            </mesh>
-            {/* Right Wall */}
-            <mesh position={[4, 2.5, 0]} receiveShadow material={material}>
-                <boxGeometry args={[4, 8, 8]} />
-            </mesh>
-            {/* Ceiling / Arch */}
-            <mesh position={[0, 5.5, 0]} receiveShadow material={material}>
-                <boxGeometry args={[12, 2, 8]} />
-            </mesh>
-            {/* Floor (Tunnel extension) */}
-            <mesh position={[0, -0.1, 0]} receiveShadow material={material}>
-                <boxGeometry args={[12, 0.2, 8]} />
-            </mesh>
-        </group>
-    );
-}
 
-/**
- * Stairs leading out of the tunnel towards the pyramid
- */
-function TunnelStairs({ material }: { material: THREE.Material }) {
-    return (
-        <group position={[0, 0, -11]}>
-            {/* Create a series of steps rising from the tunnel floor */}
-            {new Array(5).fill(0).map((_, i) => (
-                <mesh key={i} position={[0, i * 0.3, i * 0.5]} receiveShadow material={material}>
-                    <boxGeometry args={[8, 0.3, 0.5]} />
-                </mesh>
-            ))}
-        </group>
-    );
-}
 function SteppedPyramid({ templeMat, stepsMat, tunnelMat }: { templeMat: THREE.Material, stepsMat: THREE.Material, tunnelMat: THREE.Material }) {
     return (
         <group>
@@ -341,6 +301,54 @@ function SteppedPyramid({ templeMat, stepsMat, tunnelMat }: { templeMat: THREE.M
     );
 }
 
+
+
+/**
+ * Mayan Temple Style Stairs
+ * Goes from startPos to endPos
+ */
+function MayanStairs({ startPos, endPos, width = 4, material }: { startPos: [number, number, number], endPos: [number, number, number], width?: number, material: THREE.Material }) {
+    const height = endPos[1] - startPos[1];
+    const xDist = endPos[0] - startPos[0];
+    const zDist = endPos[2] - startPos[2];
+
+    // Calculate number of steps based on desired step height ~0.25
+    const stepHeight = 0.25;
+    const count = Math.ceil(height / stepHeight);
+
+    // Determine orientation for geometry
+    const isXMotion = Math.abs(xDist) > Math.abs(zDist);
+
+    return (
+        <group>
+            {new Array(count).fill(0).map((_, i) => {
+                const t = i / count;
+                const x = startPos[0] + xDist * t;
+                const y = startPos[1] + height * t;
+                const z = startPos[2] + zDist * t;
+
+                return (
+                    <mesh key={i} position={[x, y, z]} receiveShadow castShadow material={material}>
+                        <boxGeometry args={[isXMotion ? 0.5 : width, stepHeight, isXMotion ? width : 0.5]} />
+                    </mesh>
+                )
+            })}
+            {/* Side Rails / Walls for the stairs */}
+            {/* Left Rail */}
+            <mesh position={[startPos[0] + xDist / 2, startPos[1] + height / 2, startPos[2] - width / 2 - 0.25]}
+                rotation={[0, 0, Math.atan2(height, xDist)]}
+                receiveShadow castShadow material={material}>
+                <boxGeometry args={[Math.sqrt(xDist * xDist + height * height) + 2, 1, 0.5]} />
+            </mesh>
+            {/* Right Rail */}
+            <mesh position={[startPos[0] + xDist / 2, startPos[1] + height / 2, startPos[2] + width / 2 + 0.25]}
+                rotation={[0, 0, Math.atan2(height, xDist)]}
+                receiveShadow castShadow material={material}>
+                <boxGeometry args={[Math.sqrt(xDist * xDist + height * height) + 2, 1, 0.5]} />
+            </mesh>
+        </group>
+    );
+}
 
 /**
  * Main Component: Desert Jail Coliseum Redesign
@@ -436,6 +444,19 @@ export function DesertJailColiseum() {
                 {/* --- ROOFTOP PRISON --- */}
                 <PrisonYardTop material={concreteMat} />
 
+                {/* --- MAYAN STAIRS --- */}
+                {/* 
+                  User Request: "stairs start as -18.3, 1.6, -8.9 then all the way to the top of the prison like a mayan temple"
+                  We interpret "to the top" as reaching y=20 (PRISON_LEVEL_Y).
+                  We assume the stairs go towards x=0 (center) because x=-18.3 is outside the top platform.
+                */}
+                <MayanStairs
+                    startPos={[-18.3, 1.6, -8.9]}
+                    endPos={[0, 20, -8.9]}
+                    width={4}
+                    material={stepsMat}
+                />
+
                 {/* --- LIGHTING --- */}
                 {isNight && (
                     <>
@@ -448,4 +469,5 @@ export function DesertJailColiseum() {
             </group>
         </group>
     );
-} 
+}
+

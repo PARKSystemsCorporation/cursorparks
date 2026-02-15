@@ -28,18 +28,21 @@ export function SceneStateProvider({
   const [sceneMode, setSceneMode] = useState<SceneMode>("idle");
   const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
   const [radialMenu, setRadialMenu] = useState<RadialMenuState>(null);
+  const value = React.useMemo(
+    () => ({
+      sceneMode,
+      setSceneMode,
+      selectedVendorId,
+      setSelectedVendorId,
+      radialMenu,
+      setRadialMenu,
+      onEnterAlleyTwo,
+    }),
+    [sceneMode, selectedVendorId, radialMenu, onEnterAlleyTwo]
+  );
+
   return (
-    <SceneStateContext.Provider
-      value={{
-        sceneMode,
-        setSceneMode,
-        selectedVendorId,
-        setSelectedVendorId,
-        radialMenu,
-        setRadialMenu,
-        onEnterAlleyTwo,
-      }}
-    >
+    <SceneStateContext.Provider value={value}>
       {children}
     </SceneStateContext.Provider>
   );
@@ -50,11 +53,11 @@ export function useSceneState(): SceneStateContextValue {
   if (!ctx) {
     return {
       sceneMode: "idle",
-      setSceneMode: () => {},
+      setSceneMode: () => { },
       selectedVendorId: null,
-      setSelectedVendorId: () => {},
+      setSelectedVendorId: () => { },
       radialMenu: null,
-      setRadialMenu: () => {},
+      setRadialMenu: () => { },
       onEnterAlleyTwo: null,
     };
   }

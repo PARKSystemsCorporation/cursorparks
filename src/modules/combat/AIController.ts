@@ -72,7 +72,7 @@ export function updateAI(
             break;
 
         case "HIT": // If we add a HIT state
-        case "BLOCK":
+        case "BLOCKING":
             // Transient states, usually reset by timer in Engine
             break;
 

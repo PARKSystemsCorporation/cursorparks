@@ -57,12 +57,15 @@ export function PerformanceProvider({ children }: { children: React.ReactNode })
     return () => clearInterval(interval);
   }, []);
 
-  const value: PerformanceContextValue = {
-    snapshot,
-    activeEtherCount,
-    setActiveEtherCount,
-    tick,
-  };
+  const value = React.useMemo<PerformanceContextValue>(
+    () => ({
+      snapshot,
+      activeEtherCount,
+      setActiveEtherCount,
+      tick,
+    }),
+    [snapshot, activeEtherCount, setActiveEtherCount, tick]
+  );
 
   return (
     <PerformanceContext.Provider value={value}>
@@ -77,8 +80,8 @@ export function usePerformance(): PerformanceContextValue {
     return {
       snapshot: defaultSnapshot,
       activeEtherCount: 0,
-      setActiveEtherCount: () => {},
-      tick: () => {},
+      setActiveEtherCount: () => { },
+      tick: () => { },
     };
   }
   return ctx;
