@@ -38,6 +38,7 @@ export function FirstPersonController() {
   const lastShiftTime = useRef(0);
   const currentSpeed = useRef(BASE_SPEED);
   const isFlipping = useRef(false);
+  const dashVelocity = useRef(new THREE.Vector3(0, 0, 0));
 
   // Vectors for calculation
   const moveVec = useRef(new THREE.Vector3());
@@ -91,6 +92,27 @@ export function FirstPersonController() {
       });
     };
 
+    // Dash Logic
+    // dashVelocity is now at component scope
+
+    const performDash = () => {
+      // Dash 3 units in direction of camera
+      const direction = new THREE.Vector3();
+      camera.getWorldDirection(direction);
+
+      // We want to move 3 units. Let's do it via a velocity impulse.
+      // If we want it snappy, we can do it over a few frames or add a large velocity that decays.
+      // Let's add a velocity that will result in approx 3 units of movement.
+      // If we simply add to position, we skip physics (collisions).
+      // Let's use a "dash velocity" that decays.
+      // v0 * T = 3? With drag?
+      // Simpler: Set dash velocity to a high value and let useFrame handle it with high drag specifically for dash.
+
+      // Let's try explicit impulse:
+      // Speed = 30 units/s for 0.1s -> 3 units.
+      dashVelocity.current.copy(direction.multiplyScalar(30));
+    };
+
     // Jump Logic
     const handleJump = () => {
       if (isGrounded.current) {
@@ -101,14 +123,23 @@ export function FirstPersonController() {
       } else {
         // Air Jumps
         if (jumpCount.current === 1) {
-          // 2nd Jump
+          // 2nd Jump (Double Jump)
           velocity.current.y = JUMP_FORCE;
           jumpCount.current = 2;
-        } else if (jumpCount.current === 2) {
-          // 3rd Jump (Frontflip)
-          velocity.current.y = FLIP_FORCE;
-          jumpCount.current = 3;
-          performFrontflip();
+        } else {
+          // 3+ Jumps: Loop Frontflip -> Dash
+          jumpCount.current += 1;
+
+          if (jumpCount.current % 2 !== 0) {
+            // Odd (3, 5, 7...): Frontflip
+            velocity.current.y = FLIP_FORCE;
+            performFrontflip();
+          } else {
+            // Even (4, 6, 8...): Dash
+            // Cancel vertical velocity for better dash feel?
+            velocity.current.y = 0;
+            performDash();
+          }
         }
       }
     };
@@ -200,10 +231,20 @@ export function FirstPersonController() {
     // Apply Velocity to Camera
     camera.position.y += velocity.current.y * delta;
 
+    // Apply Dash Velocity
+    // Decaying Dash
+    if (dashVelocity.current.lengthSq() > 0.1) {
+      camera.position.addScaledVector(dashVelocity.current, delta);
+      // High drag for dash to make it a burst
+      const dashDrag = 10.0;
+      dashVelocity.current.multiplyScalar(Math.max(0, 1 - dashDrag * delta));
+    }
+
     // Ground Collision
     if (camera.position.y <= EYE_HEIGHT) {
       camera.position.y = EYE_HEIGHT;
       velocity.current.y = 0;
+      dashVelocity.current.set(0, 0, 0); // Stop dash on ground
       isGrounded.current = true;
       jumpCount.current = 0;
       // Note: jumpCount resets on landing, allowing next cycle
@@ -248,6 +289,16 @@ export function FirstPersonController() {
       moveVec.current.normalize().multiplyScalar(currentSpeed.current * delta);
       const x = camera.position.x + moveVec.current.x;
       const z = camera.position.z + moveVec.current.z;
+      const c = clampPosition(x, z);
+      camera.position.x = c.x;
+      camera.position.z = c.z;
+    }
+
+    // Also clamp Dash movement
+    // Doing it after moveVec ensures we clamp the final position from both sources
+    if (dashVelocity.current.lengthSq() > 0.1) {
+      const x = camera.position.x;
+      const z = camera.position.z;
       const c = clampPosition(x, z);
       camera.position.x = c.x;
       camera.position.z = c.z;
