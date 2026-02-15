@@ -247,8 +247,30 @@ function PrisonYardTop({ material }: { material: THREE.Material }) {
 }
 
 /**
- * The Mayan Stepped Pyramid Structure
+ * Framing geometry for the tunnel exit view
  */
+function TunnelExitFrame({ material }: { material: THREE.Material }) {
+    return (
+        <group position={[0, 0, -15]} rotation={[0, 0, 0]}>
+            {/* Left Wall */}
+            <mesh position={[-4, 2.5, 0]} receiveShadow material={material}>
+                <boxGeometry args={[4, 8, 8]} />
+            </mesh>
+            {/* Right Wall */}
+            <mesh position={[4, 2.5, 0]} receiveShadow material={material}>
+                <boxGeometry args={[4, 8, 8]} />
+            </mesh>
+            {/* Ceiling / Arch */}
+            <mesh position={[0, 5.5, 0]} receiveShadow material={material}>
+                <boxGeometry args={[12, 2, 8]} />
+            </mesh>
+            {/* Floor (Tunnel extension) */}
+            <mesh position={[0, -0.1, 0]} receiveShadow material={material}>
+                <boxGeometry args={[12, 0.2, 8]} />
+            </mesh>
+        </group>
+    );
+}
 function SteppedPyramid({ templeMat, stepsMat, tunnelMat }: { templeMat: THREE.Material, stepsMat: THREE.Material, tunnelMat: THREE.Material }) {
     return (
         <group>
@@ -307,7 +329,8 @@ function SteppedPyramid({ templeMat, stepsMat, tunnelMat }: { templeMat: THREE.M
  * Main Component: Desert Jail Coliseum Redesign
  */
 export function DesertJailColiseum() {
-    const center: [number, number, number] = [-31, 0, -7]; // Y=0 base
+    // Center the pyramid in front of the camera (Camera is at z=-12 looking -Z)
+    const center: [number, number, number] = [0, 0, -60];
 
     const [pebbles, brownRock, concrete] = useTexture([
         "/textures/prison_floor_dirty.png",
@@ -320,9 +343,11 @@ export function DesertJailColiseum() {
     const [mossyDiff, mossyDisp] = useTexture([MOSSY_DIFF, MOSSY_DISP]);
     const [plasterDiff, plasterDisp] = useTexture([PLASTER_DIFF, PLASTER_DISP]);
 
-    const [rocksNor, mossyNor, mossyRough, plasterNor, plasterRough] = useLoader(EXRLoader, [
-        ROCKS_NOR, MOSSY_NOR, MOSSY_ROUGH, PLASTER_NOR, PLASTER_ROUGH
-    ]);
+    // Load EXR textures - Temporarily disabled due to crashes
+    // const [rocksNor, mossyNor, mossyRough, plasterNor, plasterRough] = useLoader(EXRLoader, [
+    //     ROCKS_NOR, MOSSY_NOR, MOSSY_ROUGH, PLASTER_NOR, PLASTER_ROUGH
+    // ]);
+    const rocksNor = null, mossyNor = null, mossyRough = null, plasterNor = null, plasterRough = null;
 
     // Handle texture encoding / repeating
     useMemo(() => {
@@ -330,18 +355,21 @@ export function DesertJailColiseum() {
         mossyDiff.colorSpace = THREE.SRGBColorSpace;
         plasterDiff.colorSpace = THREE.SRGBColorSpace;
 
-        [rocksDiff, rocksDisp, rocksNor, rocksRough, mossyDiff, mossyDisp, mossyNor, mossyRough, plasterDiff, plasterDisp, plasterNor, plasterRough].forEach(t => {
-            t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        [rocksDiff, rocksDisp, mossyDiff, mossyDisp, plasterDiff, plasterDisp].forEach(t => {
+            if (t) t.wrapS = t.wrapT = THREE.RepeatWrapping;
         });
 
         // Steps
-        rocksDiff.repeat.set(2, 4); rocksDisp.repeat.set(2, 4); rocksNor.repeat.set(2, 4); rocksRough.repeat.set(2, 4);
+        rocksDiff.repeat.set(2, 4); rocksDisp.repeat.set(2, 4);
+        // if(rocksNor) rocksNor.repeat.set(2, 4); if(rocksRough) rocksRough.repeat.set(2, 4);
 
         // Temple
-        mossyDiff.repeat.set(8, 2); mossyDisp.repeat.set(8, 2); mossyNor.repeat.set(8, 2); mossyRough.repeat.set(8, 2);
+        mossyDiff.repeat.set(8, 2); mossyDisp.repeat.set(8, 2);
+        // if(mossyNor) mossyNor.repeat.set(8, 2); if(mossyRough) mossyRough.repeat.set(8, 2);
 
-        // Tunnel / Broken Plaster
-        plasterDiff.repeat.set(4, 2); plasterDisp.repeat.set(4, 2); plasterNor.repeat.set(4, 2); plasterRough.repeat.set(4, 2);
+        // Tunnel
+        plasterDiff.repeat.set(4, 2); plasterDisp.repeat.set(4, 2);
+        // if(plasterNor) plasterNor.repeat.set(4, 2); if(plasterRough) plasterRough.repeat.set(4, 2);
 
     }, [rocksDiff, rocksDisp, rocksNor, rocksRough, mossyDiff, mossyDisp, mossyNor, mossyRough, plasterDiff, plasterDisp, plasterNor, plasterRough]);
 
@@ -374,29 +402,34 @@ export function DesertJailColiseum() {
     });
 
     return (
-        <group position={center}>
-            {/* --- TERRAIN & ENVIRONMENT --- */}
-            {/* Infinite Sand */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow material={SAND_MAT}>
-                <planeGeometry args={[200, 200, 32, 32]} />
-            </mesh>
+        <group>
+            {/* --- TUNNEL EXIT FRAME (At Camera Start) --- */}
+            <TunnelExitFrame material={tunnelMat} />
 
-            {/* --- STRUCTURE --- */}
-            <SteppedPyramid templeMat={templeMat} stepsMat={stepsMat} tunnelMat={tunnelMat} />
+            <group position={center}>
+                {/* --- TERRAIN & ENVIRONMENT --- */}
+                {/* Infinite Sand */}
+                <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.1, 0]} receiveShadow material={SAND_MAT}>
+                    <planeGeometry args={[200, 200, 32, 32]} />
+                </mesh>
 
-            {/* --- INTERIOR --- */}
-            <BazaarInterior />
+                {/* --- STRUCTURE --- */}
+                <SteppedPyramid templeMat={templeMat} stepsMat={stepsMat} tunnelMat={tunnelMat} />
 
-            {/* --- ROOFTOP PRISON --- */}
-            <PrisonYardTop material={concreteMat} />
+                {/* --- INTERIOR --- */}
+                <BazaarInterior />
 
-            {/* --- LIGHTING --- */}
-            {isNight && (
-                <>
-                    <spotLight position={[10, 40, 10]} target-position={[0, 20, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
-                    <spotLight position={[-10, 40, -10]} target-position={[0, 20, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
-                </>
-            )}
+                {/* --- ROOFTOP PRISON --- */}
+                <PrisonYardTop material={concreteMat} />
+
+                {/* --- LIGHTING --- */}
+                {isNight && (
+                    <>
+                        <spotLight position={[10, 40, 10]} target-position={[0, 20, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
+                        <spotLight position={[-10, 40, -10]} target-position={[0, 20, 0]} intensity={4} angle={0.5} penumbra={0.5} castShadow />
+                    </>
+                )}
+            </group>
         </group>
     );
 } 
