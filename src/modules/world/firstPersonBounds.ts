@@ -24,13 +24,17 @@ type Region = {
 
 const WALK_REGIONS: Region[] = [
   // Main alley (existing play area)
+  // Main alley (existing play area)
   BOUNDS,
   // Stadium hallway branch running toward world -X around the left wall opening at z=-7
   { minX: -17.2, maxX: -1.75, minZ: -8.6, maxZ: -5.4 },
   // Stair landing and transition pad before the coliseum floor
   { minX: -21.2, maxX: -15.6, minZ: -9.6, maxZ: -4.4 },
-  // Desert jail coliseum + nearby runout
-  { minX: -42, maxX: -15.2, minZ: -22, maxZ: 8 },
+  // Desert jail coliseum (moved to z=-80) + nearby runout
+  { minX: -42, maxX: -15.2, minZ: -102, maxZ: -72 },
+  // New Abandoned Street connecting Alley (-30) to Coliseum (-80 approx)
+  // Street width ~10m (x +/- 5)
+  { minX: -5, maxX: 5, minZ: -80, maxZ: -18 },
 ];
 
 function clampToRegion(x: number, z: number, region: Region): { x: number; z: number } {

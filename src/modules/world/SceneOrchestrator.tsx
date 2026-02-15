@@ -17,6 +17,7 @@ import { SunMoonCycle } from "./SunMoonCycle";
 import { StadiumExit } from "@/src/components/Bazaar/StadiumExit";
 import { DesertJailColiseum } from "@/src/components/Bazaar/DesertJailColiseum";
 import { LightingCycleProvider } from "@/src/components/Bazaar/LightingCycleContext";
+import { AbandonedApartments } from "@/src/components/Bazaar/AbandonedApartments";
 
 const DeferredSceneContent = React.lazy(() => import("./SceneParts"));
 
@@ -183,7 +184,10 @@ export function SceneOrchestrator() {
 
           <AlleyGeometry />
           <StadiumExit />
-          <DesertJailColiseum />
+          <group position={[0, 0, -80]}>
+            <DesertJailColiseum />
+          </group>
+          <AbandonedApartments />
           <AlleyEndingPortal onEnterPortal={onEnterAlleyTwo ?? undefined} />
           <AlleySurfaceBreakupLayer />
           <ContactShadowSystem />

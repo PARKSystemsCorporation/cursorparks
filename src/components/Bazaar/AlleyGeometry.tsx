@@ -197,10 +197,7 @@ export function AlleyGeometry() {
                 <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT]} />
             </mesh>
 
-            {/* Far End Wall (closes the alley at Z = -ALLEY_LENGTH) */}
-            <mesh position={[0, WALL_HEIGHT / 2, -ALLEY_LENGTH]} receiveShadow material={wallMatFrontFar}>
-                <planeGeometry args={[ALLEY_WIDTH, WALL_HEIGHT, 1, 1]} />
-            </mesh>
+
         </group >
     );
 }
