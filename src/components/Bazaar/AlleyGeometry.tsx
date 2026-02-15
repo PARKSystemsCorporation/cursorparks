@@ -27,18 +27,19 @@ export function AlleyGeometry() {
         PLASTER_DIFF_URL, PLASTER_DISP_URL
     ]);
 
-    // Load EXR textures
-    const [rockyNor, rockyRough, plasterNor, plasterRough] = useLoader(EXRLoader, [
-        ROCKY_NOR_URL, ROCKY_ROUGH_URL,
-        PLASTER_NOR_URL, PLASTER_ROUGH_URL
-    ]);
+    // Load EXR textures - Temporarily disabled due to loading error
+    // const [rockyNor, rockyRough, plasterNor, plasterRough] = useLoader(EXRLoader, [
+    //     ROCKY_NOR_URL, ROCKY_ROUGH_URL,
+    //     PLASTER_NOR_URL, PLASTER_ROUGH_URL
+    // ]);
+    const rockyNor = null, rockyRough = null, plasterNor = null, plasterRough = null;
 
     // Configure textures
     const textures = useMemo(() => {
         rockyDiff.colorSpace = THREE.SRGBColorSpace;
         plasterDiff.colorSpace = THREE.SRGBColorSpace;
 
-        [rockyDiff, rockyDisp, rockyNor, rockyRough, plasterDiff, plasterDisp, plasterNor, plasterRough].forEach(t => {
+        [rockyDiff, rockyDisp, plasterDiff, plasterDisp].forEach(t => {
             t.wrapS = t.wrapT = THREE.RepeatWrapping;
         });
 
@@ -47,16 +48,16 @@ export function AlleyGeometry() {
         const floorRepeatY = ALLEY_LENGTH / 2;
         rockyDiff.repeat.set(floorRepeatX, floorRepeatY);
         rockyDisp.repeat.set(floorRepeatX, floorRepeatY);
-        rockyNor.repeat.set(floorRepeatX, floorRepeatY);
-        rockyRough.repeat.set(floorRepeatX, floorRepeatY);
+        // rockyNor.repeat.set(floorRepeatX, floorRepeatY);
+        // rockyRough.repeat.set(floorRepeatX, floorRepeatY);
 
         // Wall repeat
         const wallRepeatX = 3;
         const wallRepeatY = 1;
         plasterDiff.repeat.set(wallRepeatX, wallRepeatY);
         plasterDisp.repeat.set(wallRepeatX, wallRepeatY);
-        plasterNor.repeat.set(wallRepeatX, wallRepeatY);
-        plasterRough.repeat.set(wallRepeatX, wallRepeatY);
+        // plasterNor.repeat.set(wallRepeatX, wallRepeatY);
+        // plasterRough.repeat.set(wallRepeatX, wallRepeatY);
 
         return {
             floorDiff: rockyDiff,
