@@ -420,10 +420,6 @@ export function DesertJailColiseum() {
 
     return (
         <group>
-            {/* --- TUNNEL EXIT FRAME (At Camera Start) --- */}
-            <TunnelExitFrame material={tunnelMat} />
-            <TunnelStairs material={tunnelMat} />
-
             <group position={center}>
                 {/* --- TERRAIN & ENVIRONMENT --- */}
                 {/* Infinite Sand */}

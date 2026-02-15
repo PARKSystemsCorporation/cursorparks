@@ -5,6 +5,7 @@ import { useInventory } from "./inventory/InventoryContext";
 import { useRobot } from "@/src/modules/robot/RobotContext";
 import type { InventoryItem, PocketId } from "./inventory/types";
 import { POCKET_SLOTS } from "./inventory/types";
+import { SkillTreeTab } from "./SkillTreeTab";
 
 const COLORS = {
   bg: "rgba(26, 20, 16, 0.96)",
@@ -15,7 +16,7 @@ const COLORS = {
   border: "#8b6914",
 };
 
-type MenuTab = "backpack" | "stats";
+type MenuTab = "backpack" | "stats" | "skills";
 
 function Pocket({
   id,
@@ -242,6 +243,22 @@ export function BackpackMenu() {
             >
               Exokin Stats
             </button>
+            <button
+              type="button"
+              style={{
+                padding: "6px 12px",
+                background: tab === "skills" ? COLORS.accent : "transparent",
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: 4,
+                color: tab === "skills" ? "#1a1410" : COLORS.text,
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: tab === "skills" ? "bold" : "normal",
+              }}
+              onClick={() => setTab("skills")}
+            >
+              Skills
+            </button>
           </div>
           <button
             type="button"
@@ -262,6 +279,7 @@ export function BackpackMenu() {
         <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
           {tab === "backpack" && <BackpackTab />}
           {tab === "stats" && <ExokinStatsTab />}
+          {tab === "skills" && <SkillTreeTab />}
         </div>
       </div>
     </div>

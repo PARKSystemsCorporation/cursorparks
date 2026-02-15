@@ -1,15 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useSceneState } from "@/src/modules/world/SceneStateContext";
 import { useRobot } from "@/src/modules/robot/RobotContext";
-import {
-  resolveTurn,
-  createDefaultRobotStats,
-  applyCalibration,
-  type RobotStats,
-  type TurnResult,
-} from "./combatResolver";
+import { useCombat } from "@/src/modules/combat/CombatContext";
+import { CombatEvent } from "@/src/modules/combat/CombatTypes";
+import { MOVE_DATABASE } from "@/src/modules/combat/SkillTreeData";
 
 const COLORS = {
   bg: "rgba(26, 20, 16, 0.92)",
@@ -20,61 +16,76 @@ const COLORS = {
 
 export function ArenaUI() {
   const { sceneMode, setSceneMode } = useSceneState();
-  const { getCombatCalibration, recordEvent } = useRobot();
-  const [robotA, setRobotA] = useState<RobotStats | null>(null);
-  const [robotB, setRobotB] = useState<RobotStats>(() => createDefaultRobotStats({ block: 48 }));
+  const { recordEvent } = useRobot();
+  const engine = useCombat();
+
+  const [hpA, setHpA] = useState(100);
+  const [maxHpA, setMaxHpA] = useState(100);
+  const [hpB, setHpB] = useState(100);
+  const [maxHpB, setMaxHpB] = useState(100);
+
   const [log, setLog] = useState<string[]>([]);
-  const [attacker, setAttacker] = useState<"A" | "B">("A");
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const arenaInitRef = useRef(false);
-
-  useEffect(() => {
-    if (sceneMode !== "in_arena") {
-      arenaInitRef.current = false;
-      return;
-    }
-    if (!arenaInitRef.current) {
-      arenaInitRef.current = true;
-      const cal = getCombatCalibration();
-      setRobotA(applyCalibration(createDefaultRobotStats({ strike: 55 }), cal));
-      setRobotB(createDefaultRobotStats({ block: 48 }));
-      setLog([]);
-      setAttacker("A");
-      recordEvent("combat_engage", 0.5);
-    }
-  }, [sceneMode, getCombatCalibration, recordEvent]);
-
-  const doTurn = useCallback(() => {
-    if (robotA == null || robotA.hp <= 0 || robotB.hp <= 0) return;
-    const result: TurnResult =
-      attacker === "A"
-        ? resolveTurn("Robot A", "Robot B", robotA, robotB)
-        : resolveTurn("Robot B", "Robot A", robotB, robotA);
-    setLog((prev) => [...prev.slice(-19), result.logLine]);
-    if (result.defenderHp <= 0) {
-      if (result.defenderId === "Robot B") recordEvent("combat_win", 1);
-      else recordEvent("combat_loss", 1);
-    }
-    if (attacker === "A") {
-      setRobotA((prev) => (prev ? { ...prev, stamina: result.attackerStamina } : prev));
-      setRobotB((prev) => ({ ...prev, hp: result.defenderHp }));
-    } else {
-      setRobotB((prev) => ({ ...prev, stamina: result.attackerStamina }));
-      setRobotA((prev) => (prev ? { ...prev, hp: result.defenderHp } : prev));
-    }
-    setAttacker((prev) => (prev === "A" ? "B" : "A"));
-  }, [attacker, robotA, robotB, recordEvent]);
+  const [winner, setWinner] = useState<string | null>(null);
 
   useEffect(() => {
     if (sceneMode !== "in_arena") return;
-    tickRef.current = setInterval(doTurn, 1200);
-    return () => {
-      if (tickRef.current) clearInterval(tickRef.current);
-    };
-  }, [sceneMode, doTurn]);
+
+    // Init state from engine
+    const fA = engine.getFighter("A");
+    const fB = engine.getFighter("B");
+    if (fA) { setHpA(fA.stats.hp); setMaxHpA(fA.stats.maxHp); }
+    if (fB) { setHpB(fB.stats.hp); setMaxHpB(fB.stats.maxHp); }
+    setWinner(null);
+    setLog([]);
+
+    // Subscribe to events
+    const unsub = engine.subscribe((e: CombatEvent) => {
+      const source = engine.getFighter(e.sourceId)?.name || e.sourceId;
+      const target = engine.getFighter(e.targetId)?.name || e.targetId;
+
+      if (e.type === "HIT" || e.type === "CRIT") {
+        const isCrit = e.type === "CRIT";
+        const moveName = e.moveType ? MOVE_DATABASE[e.moveType].name : "Attack";
+
+        let msg = `${source} used ${moveName} on ${target} for ${e.damage?.toFixed(0)}`;
+        if (isCrit) msg += " (CRITICAL!)";
+        if (e.comboCount && e.comboCount > 1) msg += ` [${e.comboCount}x COMBO]`;
+
+        setLog(prev => [...prev.slice(-19), msg]);
+
+        // Flash effect for Crit
+        if (isCrit) {
+          const flash = document.createElement("div");
+          flash.style.position = "fixed";
+          flash.style.inset = "0";
+          flash.style.background = "white";
+          flash.style.opacity = "0.3";
+          flash.style.pointerEvents = "none";
+          flash.style.zIndex = "999";
+          document.body.appendChild(flash);
+          setTimeout(() => flash.remove(), 100);
+        }
+      } else if (e.type === "DODGE") {
+        setLog(prev => [...prev.slice(-19), `${target} dodged ${source}`]);
+      } else if (e.type === "KO") {
+        setLog(prev => [...prev.slice(-19), `${target} was KO'd!`]);
+        const winId = e.targetId === "A" ? "B" : "A";
+        setWinner(winId);
+        if (winId === "A") recordEvent("combat_win", 1);
+        else recordEvent("combat_loss", 1);
+      }
+
+      // Update HPs
+      const currentFA = engine.getFighter("A");
+      const currentFB = engine.getFighter("B");
+      if (currentFA) setHpA(currentFA.stats.hp);
+      if (currentFB) setHpB(currentFB.stats.hp);
+    });
+
+    return unsub;
+  }, [sceneMode, engine, recordEvent]);
 
   if (sceneMode !== "in_arena") return null;
-  if (robotA == null) return null;
 
   const leave = () => setSceneMode("idle");
 
@@ -95,7 +106,7 @@ export function ArenaUI() {
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <span style={{ color: COLORS.accent, fontWeight: "bold" }}>ARENA</span>
+        <span style={{ color: COLORS.accent, fontWeight: "bold" }}>ARENA {winner ? `- WINNER: ${winner === "A" ? "UNIT-ALPHA" : "UNIT-OMEGA"}` : ""}</span>
         <button
           type="button"
           onClick={leave}
@@ -114,24 +125,18 @@ export function ArenaUI() {
       </div>
       <div style={{ display: "flex", gap: 24, marginBottom: 12 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: "#8b6914", marginBottom: 4 }}>Robot A</div>
+          <div style={{ fontSize: 11, color: "#8b6914", marginBottom: 4 }}>Unit-Alpha</div>
           <div style={{ height: 8, background: "#1a1410", borderRadius: 4, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${(robotA.hp / 100) * 100}%`, background: "#c0392b", transition: "width 0.2s" }} />
+            <div style={{ height: "100%", width: `${(hpA / maxHpA) * 100}%`, background: "#00ffff", transition: "width 0.2s" }} />
           </div>
-          <div style={{ fontSize: 10, color: COLORS.text, marginTop: 2 }}>HP {robotA.hp.toFixed(0)}</div>
-          <div style={{ height: 4, background: "#1a1410", borderRadius: 2, overflow: "hidden", marginTop: 4 }}>
-            <div style={{ height: "100%", width: `${robotA.stamina}%`, background: "#ff6b1a", transition: "width 0.2s" }} />
-          </div>
+          <div style={{ fontSize: 10, color: COLORS.text, marginTop: 2 }}>HP {hpA.toFixed(0)}</div>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, color: "#8b6914", marginBottom: 4 }}>Robot B</div>
+          <div style={{ fontSize: 11, color: "#8b6914", marginBottom: 4 }}>Unit-Omega</div>
           <div style={{ height: 8, background: "#1a1410", borderRadius: 4, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${(robotB.hp / 100) * 100}%`, background: "#c0392b", transition: "width 0.2s" }} />
+            <div style={{ height: "100%", width: `${(hpB / maxHpB) * 100}%`, background: "#ff0044", transition: "width 0.2s" }} />
           </div>
-          <div style={{ fontSize: 10, color: COLORS.text, marginTop: 2 }}>HP {robotB.hp.toFixed(0)}</div>
-          <div style={{ height: 4, background: "#1a1410", borderRadius: 2, overflow: "hidden", marginTop: 4 }}>
-            <div style={{ height: "100%", width: `${robotB.stamina}%`, background: "#ff6b1a", transition: "width 0.2s" }} />
-          </div>
+          <div style={{ fontSize: 10, color: COLORS.text, marginTop: 2 }}>HP {hpB.toFixed(0)}</div>
         </div>
       </div>
       <div style={{ maxHeight: 120, overflowY: "auto", fontSize: 11, color: COLORS.text, fontFamily: "monospace" }}>
